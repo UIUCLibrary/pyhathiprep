@@ -1,7 +1,8 @@
 language: python
 python:
   - "3.6"
-
+env:
+  - pytest_args="--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
 install:
   - pip install tox
 script:
