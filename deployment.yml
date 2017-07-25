@@ -7,11 +7,11 @@ maintainer:
   name: Henry Borchers
   email: hborcher@illinois.edu
 deployment:
-  hostnames: #  Fill in
-#    - LIBSTFDCC02
-#    - LIBSTFDCC03
-#    - LIBSTFDCC04
-#    - LIBSTFDCC06
-#    - LIBSTFDCC08
-#    - LIBSTFDCC09
-#    - LIBSTFDCC013
+  hostnames:
+    - LIBSTFDCC02
+    - LIBSTFDCC03
+    - LIBSTFDCC04
+    - LIBSTFDCC06
+    - LIBSTFDCC08
+    - LIBSTFDCC09
+    - LIBSTFDCC013
