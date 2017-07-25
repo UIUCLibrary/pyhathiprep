@@ -73,15 +73,15 @@ pipeline {
 
                         },
                         // MyPy doesn't currently work correctly within tox for some reason
-                        // "MyPy": {
-                        //   node(label: "!Windows"){
-                        //     deleteDir()
-                        //     unstash "Source"
-                        //     sh "${env.TOX} -e mypy"
-                        //     junit 'mypy.xml'
-                        //   }
-                        //
-                        // }
+                         "MyPy": {
+                           node(label: "!Windows"){
+                             deleteDir()
+                             unstash "Source"
+                             sh "${env.TOX} -e mypy"
+                             junit 'mypy.xml'
+                           }
+
+                         }
                 )
             }
             post {
