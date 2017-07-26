@@ -1,22 +1,24 @@
 import os
 import io
 import abc
-from ruamel.yaml import YAML
-from pytz import timezone
 import typing
 from datetime import datetime
+import ruamel.yaml  # type: ignore
+import tzlocal  # type: ignore
 
 
 class AbsYmlBuilder(metaclass=abc.ABCMeta):
     def __init__(self):
+        self.data = dict()
         self._page_data = dict()
+        for k, v in self.boilerplate().items():
+            self.data[k] = v
 
     def add_pagedata(self, filename, **attributes) -> None:
         if filename in self._page_data:
             raise KeyError("{} Already exists".format(filename))
         else:
             self._page_data[filename] = attributes
-
 
     @abc.abstractmethod
     def boilerplate(self) -> typing.Dict[str, str]:
@@ -31,9 +33,6 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
 
 
 class HathiYmlBuilder(AbsYmlBuilder):
-    def __init__(self):
-        super().__init__()
-        self._capture_date = None
 
     def boilerplate(self) -> typing.Dict[str, str]:
         return {
@@ -41,21 +40,41 @@ class HathiYmlBuilder(AbsYmlBuilder):
             "scanner_user": "University of Illinois Digital Content Creation Unit"
         }
 
+    def set_data(self, key, value):
+        self.data[key] = value
+
     def set_capture_date(self, date: datetime):
-        # # datetime.tzinfo = timezone("US/Central")
-        # if date.tzinfo is None:
-        #     date.replace(tzinfo = timezone("US/Central"))
-        self._capture_date = date
+        tz = tzlocal.get_localzone()
+        if date.tzinfo is None:
+            capture_date = tz.localize(date)
+        else:
+            capture_date = date
+        self.data["capture_date"] = capture_date.isoformat(timespec="minutes")
 
     def build(self):
-        yml = YAML()
+        ordered = [
+            "capture_date",
+            "capture_agent",
+            "scanner_user"
+
+        ]
+
+        yml = ruamel.yaml.YAML()
+        yml.indent = 4
         yml.default_flow_style = False
-        yml.preserve_quotes = False
 
         data = dict()
-        data["capture_date"] = self._capture_date.isoformat(timespec="seconds")
-        for key, value in self.boilerplate().items():
+
+        # Put the items require an order to them first
+        for key in ordered:
+            if self.data[key]:
+                data[key] = self.data[key]
+
+        # Then anything else
+        for key, value in filter(lambda i: i[0] not in ordered, self.data.items()):
             data[key] = value
+
+        # Finally add the pages
         data["pagedata"] = self._page_data
 
         # Render the dict as yml formatted string
@@ -66,24 +85,27 @@ class HathiYmlBuilder(AbsYmlBuilder):
         return yml_str
 
 
-
-def make_yml(directory: str, output_name: str, **overrides):
+def make_yml(directory: str, title_page=None, **overrides) -> str:
     # Check if directory is a valid path
 
     if not os.path.isdir(directory):
         raise FileNotFoundError("Invalid directory, {}".format(directory))
+
     builder = HathiYmlBuilder()
-    # TODO change to be dynamic in this
-    builder.set_capture_date(datetime.now())
 
     for key, value in overrides.items():
-        print(key, value)
-
+        if key == "capture_date":
+            builder.set_capture_date(value)
+        else:
+            builder.set_data(key, value)
 
     for image in get_images(directory):
-        print(image)
-
-    raise NotImplementedError
+        attribute = dict()
+        relative_path = os.path.relpath(image, directory)
+        if relative_path == title_page:
+            attribute["label"] = "TITLE"
+        builder.add_pagedata(relative_path, **attribute)
+    return builder.build()
 
 
 def get_images(directory, page_data_extensions=(".jp2", ".tif")):
