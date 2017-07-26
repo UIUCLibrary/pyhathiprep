@@ -37,7 +37,7 @@ class HathiYmlBuilder(AbsYmlBuilder):
     def boilerplate(self) -> typing.Dict[str, str]:
         return {
             "capture_agent": "IU",
-            "scanner_user": "University of Illinois Digital Content Creation Unit"
+            "scanner_user": "University of Illinois Digitization Services"
         }
 
     def set_data(self, key, value):
@@ -86,6 +86,17 @@ class HathiYmlBuilder(AbsYmlBuilder):
 
 
 def make_yml(directory: str, title_page=None, **overrides) -> str:
+    """
+    Create the data for HathiTrust YAML file from a given directory.
+
+    Args:
+        directory: Path to the HathiTrust Package
+        title_page: Optional, the file name of a title page.
+        **overrides: key and value of any additional variations.
+
+    Returns: YAML formatted data.
+
+    """
     # Check if directory is a valid path
 
     if not os.path.isdir(directory):
