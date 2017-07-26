@@ -22,7 +22,8 @@ setup(
     long_description=readme,
     install_requires=[
         "ruamel.yaml",
-        "pytz"
+        "pytz",
+        "tzlocal"
     ],
     test_suite="tests",
     setup_requires=['pytest-runner'],
