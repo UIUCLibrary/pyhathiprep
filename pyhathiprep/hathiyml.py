@@ -86,6 +86,17 @@ class HathiYmlBuilder(AbsYmlBuilder):
 
 
 def make_yml(directory: str, title_page=None, **overrides) -> str:
+    """
+    Create the data for HathiTrust YAML file from a given directory.
+
+    Args:
+        directory: Path to the HathiTrust Package
+        title_page: Optional, the file name of a title page.
+        **overrides: key and value of any additional variations.
+
+    Returns: YAML formatted data.
+
+    """
     # Check if directory is a valid path
 
     if not os.path.isdir(directory):
