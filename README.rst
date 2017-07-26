@@ -1,9 +1,9 @@
+|build-status|
+
 ======
 README
 ======
 
-
-|build-status|
 
 This it the readme for PyHathiPrep.
 
