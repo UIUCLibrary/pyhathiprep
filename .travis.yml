@@ -2,6 +2,6 @@ language: python
 python:
   - "3.6"
 install:
-  - pip install tox
+  - pip install -r requirements.txt
 script:
   - tox -e $(echo py$TRAVIS_PYTHON_VERSION | tr -d .)
