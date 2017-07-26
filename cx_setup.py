@@ -73,7 +73,10 @@ build_exe_options = {
         "six",
         "appdirs",
         # # "tests",
-        "pyhathiprep"
+        "pyhathiprep",
+        "ruamel.yaml",
+        "pytz",
+        "tzlocal"
     ],
     "excludes": ["tkinter"],
     "include_files": INCLUDE_FILES,
