@@ -2,7 +2,6 @@ import os
 import sys
 import cx_Freeze
 import pytest
-# import pyhathiprep
 import platform
 
 about = {}
@@ -79,7 +78,7 @@ build_exe_options = {
         "appdirs",
         # # "tests",
         "pyhathiprep",
-        "ruamel.yaml",
+        "ruamel",
         "pytz",
         "tzlocal"
     ],
