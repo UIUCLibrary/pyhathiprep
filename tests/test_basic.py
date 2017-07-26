@@ -105,7 +105,7 @@ def test_make_yml_with_title(dummy_fixture):
 def test_hathi_yml_builder():
     expected_yml = """capture_date: 2017-07-03T14:22-05:00
 capture_agent: IU
-scanner_user: University of Illinois Digital Content Creation Unit
+scanner_user: University of Illinois Digitization Services
 pagedata:
     00000001.jp2: {}
     00000002.jp2: {}
