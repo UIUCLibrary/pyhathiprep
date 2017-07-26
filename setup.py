@@ -1,18 +1,17 @@
 from setuptools import setup
-import pyhathiprep
-
+from pyhathiprep import metadata
 with open('README.rst', 'r', encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
 setup(
-    name=pyhathiprep.__title__,
-    version=pyhathiprep.__version__,
+    name=metadata.__title__,
+    version=metadata.__version__,
     packages=['pyhathiprep'],
-    url=pyhathiprep.__url__,
+    url=metadata.__url__,
     license='University of Illinois/NCSA Open Source License',
-    author=pyhathiprep.__author__,
-    author_email=pyhathiprep.__author_email__,
-    description=pyhathiprep.__description__,
+    author=metadata.__author__,
+    author_email=metadata.__author_email__,
+    description=metadata.__description__,
     long_description=readme,
     install_requires=[
         "ruamel.yaml",
