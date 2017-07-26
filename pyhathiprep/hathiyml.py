@@ -37,7 +37,7 @@ class HathiYmlBuilder(AbsYmlBuilder):
     def boilerplate(self) -> typing.Dict[str, str]:
         return {
             "capture_agent": "IU",
-            "scanner_user": "University of Illinois Digital Content Creation Unit"
+            "scanner_user": "University of Illinois Digitization Services"
         }
 
     def set_data(self, key, value):
