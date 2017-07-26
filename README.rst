@@ -4,9 +4,13 @@ README
 
 This it the readme for PyHathiPrep.
 
+|build-status|
+
 Master Branch:
 --------------
-[![Build Status](https://travis-ci.org/UIUCLibrary/pyhathiprep.svg?branch=master)](https://travis-ci.org/UIUCLibrary/pyhathiprep)
+
+.. |Build Status| image (https://travis-ci.org/UIUCLibrary/pyhathiprep.svg?style=flat)]
+    :target: https://travis-ci.org/UIUCLibrary/pyhathiprep
 
 Dev Branch:
 -----------
