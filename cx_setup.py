@@ -2,9 +2,14 @@ import os
 import sys
 import cx_Freeze
 import pytest
-import pyhathiprep
+# import pyhathiprep
 import platform
 
+about = {}
+metadata_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pyhathiprep', '__version__.py')
+
+with open(metadata_file, 'r', encoding='utf-8') as f:
+    exec(f.read(), about)
 
 
 def create_msi_tablename(python_name, fullname):
@@ -39,14 +44,14 @@ directory_table = [
     (
         "PMenu",  # Directory
         "ProgramMenuFolder",  # Directory_parent
-        create_msi_tablename(pyhathiprep.__title__, pyhathiprep.FULL_TITLE)
+        create_msi_tablename(about["__title__"], about["FULL_TITLE"])
     ),
 ]
 shortcut_table = [
     (
         "startmenuShortcutDoc",  # Shortcut
         "PMenu",  # Directory_
-        "{} Documentation".format(create_msi_tablename(pyhathiprep.__title__, pyhathiprep.FULL_TITLE)),
+        "{} Documentation".format(create_msi_tablename(about["__title__"], about["FULL_TITLE"])),
         "TARGETDIR",  # Component_
         "[TARGETDIR]documentation.url",  # Target
         None,  # Arguments
@@ -85,12 +90,12 @@ build_exe_options = {
 
 target_name = 'pyhathiprep.exe' if platform.system() == "Windows" else 'pyhathiprep'
 cx_Freeze.setup(
-    name=pyhathiprep.FULL_TITLE,
-    description=pyhathiprep.__description__,
+    name=about["FULL_TITLE"],
+    description=about["__description__"],
     license="University of Illinois/NCSA Open Source License",
-    version=pyhathiprep.__version__,
-    author=pyhathiprep.__author__,
-    author_email=pyhathiprep.__author_email__,
+    version=about["__version__"],
+    author=about["__author__"],
+    author_email=about["__author_email__"],
     options={
         "build_exe": build_exe_options,
         "bdist_msi": {
