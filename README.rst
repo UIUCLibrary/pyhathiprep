@@ -9,7 +9,7 @@ This it the readme for PyHathiPrep.
 Master Branch:
 --------------
 
-.. |Build Status| image:: https://travis-ci.org/UIUCLibrary/pyhathiprep.svg?style=flat
+.. |build-status| image:: https://travis-ci.org/UIUCLibrary/pyhathiprep.svg?style=flat
     :target: https://travis-ci.org/UIUCLibrary/pyhathiprep
 
 Dev Branch:
