@@ -14,6 +14,10 @@ setup(
     author_email=pyhathiprep.__author_email__,
     description=pyhathiprep.__description__,
     long_description=readme,
+    install_requires=[
+        "ruamel.yaml",
+        "pytz"
+    ],
     test_suite="tests",
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
