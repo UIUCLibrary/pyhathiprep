@@ -211,6 +211,7 @@ pipeline {
                     echo "Updating online documentation"
                     try {
                         sh("rsync -rv -e \"ssh -i ${env.DCC_DOCS_KEY}\" html/ ${env.DCC_DOCS_SERVER}/${params.URL_SUBFOLDER}/ --delete")
+                        echo "Documentation deployed to http://www.library.illinois.edu/dccdocs/${params.URL_SUBFOLDER}"
                     } catch (error) {
                         echo "Error with uploading docs"
                         throw error
