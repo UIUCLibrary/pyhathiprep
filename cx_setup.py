@@ -67,21 +67,19 @@ if os.path.exists(MSVC):
     INCLUDE_FILES.append(MSVC)
 
 build_exe_options = {
-    "includes":        pytest.freeze_includes(),
+    "includes": pytest.freeze_includes(),
     "include_msvcr": True,
     "packages": [
         "os",
         'pytest',
-        # "lxml",
         "packaging",
         "six",
         "appdirs",
-        # # "tests",
-        "pyhathiprep",
-        "ruamel",
         "pytz",
-        "tzlocal"
+        "tzlocal",
+        "pyhathiprep",
     ],
+    "namespace_packages": ["ruamel.yaml"],
     "excludes": ["tkinter"],
     "include_files": INCLUDE_FILES,
 
@@ -98,7 +96,7 @@ cx_Freeze.setup(
     options={
         "build_exe": build_exe_options,
         "bdist_msi": {
-			# TODO: Fill in upgrade_code. example: {D8846842-2CF4-4F9A-8A2A-FFAFD8A5E10B}
+            # TODO: Fill in upgrade_code. example: {D8846842-2CF4-4F9A-8A2A-FFAFD8A5E10B}
             # "upgrade_code": "",
             "data": {
                 "Shortcut": shortcut_table,
@@ -108,6 +106,6 @@ cx_Freeze.setup(
         }
     },
     executables=[cx_Freeze.Executable("pyhathiprep/__main__.py",
-                            targetName=target_name, base="Console")],
+                                      targetName=target_name, base="Console")],
 
 )
