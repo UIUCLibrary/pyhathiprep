@@ -41,16 +41,16 @@ pipeline {
 
                             }
                         },
-                        "Linux": {
-                            node(label: "!Windows") {
-                                deleteDir()
-                                unstash "Source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    sh "${env.TOX}  -e pytest"
-                                }
-                                junit 'reports/junit-*.xml'
-                            }
-                        }
+                        // "Linux": {
+                        //     node(label: "!Windows") {
+                        //         deleteDir()
+                        //         unstash "Source"
+                        //         withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                        //             sh "${env.TOX}  -e pytest"
+                        //         }
+                        //         junit 'reports/junit-*.xml'
+                        //     }
+                        // }
                 )
             }
         }
@@ -121,6 +121,7 @@ pipeline {
                                 bat """${env.PYTHON3} -m venv .env
                                        call .env/Scripts/activate.bat
                                        pip install -r requirements.txt
+                                       pip install ruamel.base
                                        python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi
                                        call .env/Scripts/deactivate.bat
                                     """
