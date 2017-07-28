@@ -64,4 +64,6 @@ def test_create_package(package_source_fixture, tmpdir):
     print("Checking for {}".format(yml_file))
     assert os.path.exists(yml_file)
 
-    pass
+    checksum = os.path.join(new_created_package, "checksum.md5")
+    print("Checking for {}".format(checksum))
+    assert os.path.exists(checksum)
