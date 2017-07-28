@@ -58,7 +58,7 @@ def calculate_md5_hash(file_path: str) -> str:
 def create_checksum_report(path) -> str:
     report_builder = HathiChecksumReport()
 
-    for f in filter(lambda x: os.path.isfile(str(x)), os.scandir(path)):
+    for f in filter(lambda x: os.path.isfile(x.path), os.scandir(path)):
         hash_value = calculate_md5_hash(f.path)
         report_builder.add_entry(f.name, hash_value)
     return report_builder.build()
