@@ -77,13 +77,19 @@ def package_source_fixture_b(tmpdir_factory):
     return new_package
 
 
-def test_create_checksum(tmpdir):
-    data = b"0000000000"
-    test_file = tmpdir.mkdir("testchecksum").join("dummy.txt")
-    test_file.write(data)
-    expected_hash = "f1b708bba17f1ce948dc979f4d7092bc"
-    assert expected_hash == checksum.calculate_md5_hash(test_file)
+class TestChecksums:
+    def test_create_checksum(self, tmpdir):
+        data = b"0000000000"
+        test_file = tmpdir.mkdir("testchecksum").join("dummy.txt")
+        test_file.write(data)
+        expected_hash = "f1b708bba17f1ce948dc979f4d7092bc"
+        assert expected_hash == checksum.calculate_md5_hash(test_file)
 
 
-def test_generate_report(package_source_fixture_b):
-    assert checksum.create_checksum_report(package_source_fixture_b) == expected_report
+    def test_generate_report(self, package_source_fixture_b):
+        expected_report_lines = expected_report.split("\n")
+        report = checksum.create_checksum_report(package_source_fixture_b)
+        report_lines = report.split("\n")
+        for expected_line, actual_line in zip(report.split("\n"), expected_report.split("\n")):
+            assert expected_line == actual_line
+        # assert checksum.create_checksum_report(package_source_fixture_b) == expected_report
