@@ -6,11 +6,30 @@
 Welcome to PyHathiPrep's documentation!
 =======================================
 
+User Documentation
+------------------
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+
+   about
+   installation
+   usage
+
+
+API Documentation
+-----------------
+.. toctree::
+   :maxdepth: 1
 
    modules
+
+Extras
+------
+.. toctree::
+   :maxdepth: 1
+
+   dependencies
 
 
 
