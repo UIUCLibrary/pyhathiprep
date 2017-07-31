@@ -25,8 +25,10 @@ def get_tests():
     root = "tests"
     test_files = []
     for x in filter(lambda x: x.is_file and os.path.splitext(x.name)[1] == ".py", os.scandir(root)):
-        test_files.append(os.path.join(root, x.name))
-    print("Found files {}".format(", ".join(test_files)))
+        relative_path = os.path.join(root, x.name)
+        absolute_path = x.path
+        test_files.append((absolute_path, relative_path))
+    print("Found files {}".format(", ".join(x[0] for x in test_files)))
     return test_files
 
 
