@@ -1,7 +1,7 @@
 deployer:
   name: Scott
 package:
-  filename: # TODO: Fill in
+  filename: PyHathiPrep-amd64.msi
   path: \\files.library.illinois.edu\groupfiles\Digital Content Creation\SCCM Upload\
 maintainer:
   name: Henry Borchers
