@@ -20,6 +20,22 @@ pyhathiprep\.hathiyml module
     :undoc-members:
     :show-inheritance:
 
+pyhathiprep\.package\_creater module
+------------------------------------
+
+.. automodule:: pyhathiprep.package_creater
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pyhathiprep\.utils module
+-------------------------
+
+.. automodule:: pyhathiprep.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

@@ -25,8 +25,10 @@ def get_tests():
     root = "tests"
     test_files = []
     for x in filter(lambda x: x.is_file and os.path.splitext(x.name)[1] == ".py", os.scandir(root)):
-        test_files.append(os.path.join(root, x.name))
-    print("Found files {}".format(", ".join(test_files)))
+        relative_path = os.path.join(root, x.name)
+        absolute_path = x.path
+        test_files.append((absolute_path, relative_path))
+    print("Found files {}".format(", ".join(x[0] for x in test_files)))
     return test_files
 
 
@@ -96,8 +98,7 @@ cx_Freeze.setup(
     options={
         "build_exe": build_exe_options,
         "bdist_msi": {
-            # TODO: Fill in upgrade_code. example: {D8846842-2CF4-4F9A-8A2A-FFAFD8A5E10B}
-            # "upgrade_code": "",
+            "upgrade_code": "{D08D5F4C-EF6E-4D16-939C-2C441DF88675}",
             "data": {
                 "Shortcut": shortcut_table,
                 "Directory": directory_table
