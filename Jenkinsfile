@@ -171,13 +171,12 @@ pipeline {
 
             post {
                 success {
-                    git url: 'https://github.com/UIUCLibrary/sccm_deploy_message_generator.git'
                     unstash "Deployment"
                     sh """${env.PYTHON3} -m venv .env
                           . .env/bin/activate
-                          pip install --upgrade pip
-                          pip install setuptools --upgrade
-                          python setup.py install
+                          pip install --upgrade pip setuptools
+                          pip install https://github.com/UIUCLibrary/sccm_deploy_message_generator/releases/download/v0.1.0/deploy_message-0.1.0-py3-none-any.whl
+
                           deploymessage deployment.yml --save=deployment_request.txt
                       """
                     archiveArtifacts artifacts: "deployment_request.txt"
