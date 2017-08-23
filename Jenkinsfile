@@ -1,3 +1,6 @@
+@Library("ds-utils")
+import org.ds.*
+
 pipeline {
     agent any
     environment {
