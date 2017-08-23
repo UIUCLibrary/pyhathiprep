@@ -1,3 +1,6 @@
+@Library("ds-utils")
+import org.ds.*
+
 pipeline {
     agent any
     environment {
@@ -22,7 +25,6 @@ pipeline {
                 deleteDir()
                 checkout scm
                 stash includes: '**', name: "Source", useDefaultExcludes: false
-                stash includes: 'deployment.yml', name: "Deployment"
             }
 
         }
@@ -33,24 +35,31 @@ pipeline {
             steps {
                 parallel(
                         "Windows": {
-                            node(label: 'Windows') {
-                                deleteDir()
-                                unstash "Source"
-                                bat "${env.TOX}  -e pytest"
-                                junit 'reports/junit-*.xml'
-
+                            script {
+                                def runner = new Tox(this)
+                                runner.env = "pytest"
+                                runner.windows = true
+                                runner.stash = "Source"
+                                runner.label = "Windows"
+                                runner.post = {
+                                    junit 'reports/junit-*.xml'
+                                }
+                                runner.run()
                             }
-                        },
-                        // "Linux": {
-                        //     node(label: "!Windows") {
-                        //         deleteDir()
-                        //         unstash "Source"
-                        //         withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                        //             sh "${env.TOX}  -e pytest"
-                        //         }
-                        //         junit 'reports/junit-*.xml'
-                        //     }
-                        // }
+                        }
+//                        "Linux": {
+//                            script {
+//                                def runner = new Tox(this)
+//                                runner.env = "pytest"
+//                                runner.windows = false
+//                                runner.stash = "Source"
+//                                runner.label = "!Windows"
+//                                runner.post = {
+//                                    junit 'reports/junit-*.xml'
+//                                }
+//                                runner.run()
+//                            }
+//                        }
                 )
             }
         }
@@ -62,55 +71,54 @@ pipeline {
             steps {
                 parallel(
                         "Documentation": {
-                          node(label: "!Windows"){
-                            deleteDir()
-                            unstash "Source"
-                            sh "${env.TOX} -e docs"
-                            dir('.tox/dist/') {
-                              stash includes: 'html/**', name: "HTML Documentation", useDefaultExcludes: false
+                            script {
+                                def runner = new Tox(this)
+                                runner.env = "docs"
+                                runner.windows = false
+                                runner.stash = "Source"
+                                runner.label = "!Windows"
+                                runner.post = {
+                                    dir('.tox/dist/html/') {
+                                        stash includes: '**', name: "HTML Documentation", useDefaultExcludes: false
+                                    }
+                                }
+                                runner.run()
+
                             }
-                          }
-
                         },
-                        // MyPy doesn't currently work correctly within tox for some reason
-                         "MyPy": {
-                           node(label: "!Windows"){
-                             deleteDir()
-                             unstash "Source"
-                             sh "${env.TOX} -e mypy"
-                             junit 'mypy.xml'
-                           }
+                        "MyPy": {
+                            script {
+                                def runner = new Tox(this)
+                                runner.env = "mypy"
+                                runner.windows = false
+                                runner.stash = "Source"
+                                runner.label = "!Windows"
+                                runner.post = {
+                                    junit 'mypy.xml'
+                                }
+                                runner.run()
 
-                         }
+                            }
+                        }
                 )
-            }
-            post {
-              success {
-                deleteDir()
-                unstash "HTML Documentation"
-                sh 'tar -czvf sphinx_html_docs.tar.gz -C html .'
-                archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
-              }
             }
         }
 
         stage("Packaging") {
             when {
-                expression { params.PACKAGE == true }
+                expression { params.PACKAGE == true || params.DEPLOY == true }
             }
 
             steps {
                 parallel(
-                        "Source and Wheel formats": {
+                        "Source Release": {
+                            createSourceRelease(env.PYTHON3, "Source")
+                        },
+                        "Windows Wheel": {
                             node(label: "Windows") {
                                 deleteDir()
                                 unstash "Source"
-                                bat """${env.PYTHON3} -m venv .env
-                                        call .env/Scripts/activate.bat
-                                        pip install --upgrade pip setuptools
-                                        pip install -r requirements.txt
-                                        python setup.py bdist_wheel sdist
-                                    """
+                                bat "${env.PYTHON3} setup.py bdist_wheel --universal"
                                 archiveArtifacts artifacts: "dist/**", fingerprint: true
                             }
                         },
@@ -146,13 +154,11 @@ pipeline {
         stage("Deploy - Staging") {
             agent any
             when {
-                expression { params.DEPLOY == true && params.PACKAGE == true }
+                expression { params.DEPLOY == true }
             }
 
             steps {
-                deleteDir()
-                unstash "msi"
-                sh "rsync -rv ./ \"${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/\""
+                deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
                 input("Deploy to production?")
             }
         }
@@ -160,27 +166,22 @@ pipeline {
         stage("Deploy - SCCM upload") {
             agent any
             when {
-                expression { params.DEPLOY == true && params.PACKAGE == true }
+                expression { params.DEPLOY == true }
             }
 
             steps {
-                deleteDir()
-                unstash "msi"
-                sh "rsync -rv ./ ${env.SCCM_UPLOAD_FOLDER}/"
+                deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
             }
 
             post {
                 success {
-                    unstash "Deployment"
-                    sh """${env.PYTHON3} -m venv .env
-                          . .env/bin/activate
-                          pip install --upgrade pip setuptools
-                          pip install https://github.com/UIUCLibrary/sccm_deploy_message_generator/releases/download/v0.1.0/deploy_message-0.1.0-py3-none-any.whl
-
-                          deploymessage deployment.yml --save=deployment_request.txt
-                      """
-                    archiveArtifacts artifacts: "deployment_request.txt"
-                    echo(readFile('deployment_request.txt'))
+                    script{
+                        unstash "Source"
+                        def  deployment_request = requestDeploy this, "deployment.yml"
+                        echo deployment_request
+                        writeFile file: "deployment_request.txt", text: deployment_request
+                        archiveArtifacts artifacts: "deployment_request.txt"
+                    }
                 }
             }
         }
@@ -191,35 +192,7 @@ pipeline {
             }
 
             steps {
-                deleteDir()
-                script {
-                    try {
-                        unstash "HTML Documentation"
-                    } catch (error) { // No docs have been created yet, so generate it
-                        echo "Building documentation"
-                        unstash "Source"
-                        sh "${env.PYTHON3} setup.py build_sphinx"
-                        dir("doc/build"){
-                            stash includes: 'html/**', name: "HTML Documentation", useDefaultExcludes: false
-                        }
-                        deleteDir()
-                        unstash "HTML Documentation"
-
-                    }
-
-                    echo "Updating online documentation"
-                    try {
-                        sh("rsync -rv -e \"ssh -i ${env.DCC_DOCS_KEY}\" html/ ${env.DCC_DOCS_SERVER}/${params.URL_SUBFOLDER}/ --delete")
-                        echo "Documentation deployed to http://www.library.illinois.edu/dccdocs/${params.URL_SUBFOLDER}"
-                    } catch (error) {
-                        echo "Error with uploading docs"
-                        throw error
-                    }
-                    echo "Archiving deployed docs"
-                    sh 'tar -czvf sphinx_html_docs.tar.gz -C html .'
-                    archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
-
-                }
+                updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
             }
         }
     }
