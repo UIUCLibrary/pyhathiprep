@@ -47,20 +47,20 @@ pipeline {
                                 }
                                 runner.run()
                             }
-                        },
-                        "Linux": {
-                            script {
-                                def runner = new Tox(this)
-                                runner.env = "pytest"
-                                runner.windows = false
-                                runner.stash = "Source"
-                                runner.label = "!Windows"
-                                runner.post = {
-                                    junit 'reports/junit-*.xml'
-                                }
-                                runner.run()
-                            }
                         }
+//                        "Linux": {
+//                            script {
+//                                def runner = new Tox(this)
+//                                runner.env = "pytest"
+//                                runner.windows = false
+//                                runner.stash = "Source"
+//                                runner.label = "!Windows"
+//                                runner.post = {
+//                                    junit 'reports/junit-*.xml'
+//                                }
+//                                runner.run()
+//                            }
+//                        }
 //                        "Windows": {
 //                            node(label: 'Windows') {
 //                                deleteDir()
