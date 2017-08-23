@@ -136,7 +136,7 @@ pipeline {
 
         stage("Packaging") {
             when {
-                expression { params.PACKAGE == true }
+                expression { params.PACKAGE == true || params.DEPLOY == true }
             }
 
             steps {
@@ -152,19 +152,6 @@ pipeline {
                                 archiveArtifacts artifacts: "dist/**", fingerprint: true
                             }
                         },
-//                        "Source and Wheel formats": {
-//                            node(label: "Windows") {
-//                                deleteDir()
-//                                unstash "Source"
-//                                bat """${env.PYTHON3} -m venv .env
-//                                        call .env/Scripts/activate.bat
-//                                        pip install --upgrade pip setuptools
-//                                        pip install -r requirements.txt
-//                                        python setup.py bdist_wheel sdist
-//                                    """
-//                                archiveArtifacts artifacts: "dist/**", fingerprint: true
-//                            }
-//                        },
                         "Windows CX_Freeze MSI": {
                             node(label: "Windows") {
                                 deleteDir()
@@ -197,13 +184,14 @@ pipeline {
         stage("Deploy - Staging") {
             agent any
             when {
-                expression { params.DEPLOY == true && params.PACKAGE == true }
+                expression { params.DEPLOY == true }
             }
 
             steps {
-                deleteDir()
-                unstash "msi"
-                sh "rsync -rv ./ \"${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/\""
+                deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
+//                deleteDir()
+//                unstash "msi"
+//                sh "rsync -rv ./ \"${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/\""
                 input("Deploy to production?")
             }
         }
@@ -211,27 +199,35 @@ pipeline {
         stage("Deploy - SCCM upload") {
             agent any
             when {
-                expression { params.DEPLOY == true && params.PACKAGE == true }
+                expression { params.DEPLOY == true }
             }
 
             steps {
-                deleteDir()
-                unstash "msi"
-                sh "rsync -rv ./ ${env.SCCM_UPLOAD_FOLDER}/"
+                deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+//                deleteDir()
+//                unstash "msi"
+//                sh "rsync -rv ./ ${env.SCCM_UPLOAD_FOLDER}/"
             }
 
             post {
                 success {
-                    unstash "Deployment"
-                    sh """${env.PYTHON3} -m venv .env
-                          . .env/bin/activate
-                          pip install --upgrade pip setuptools
-                          pip install https://github.com/UIUCLibrary/sccm_deploy_message_generator/releases/download/v0.1.0/deploy_message-0.1.0-py3-none-any.whl
-
-                          deploymessage deployment.yml --save=deployment_request.txt
-                      """
-                    archiveArtifacts artifacts: "deployment_request.txt"
-                    echo(readFile('deployment_request.txt'))
+                    script{
+                        unstash "Source"
+                        def  deployment_request = requestDeploy this, "deployment.yml"
+                        echo deployment_request
+                        writeFile file: "deployment_request.txt", text: deployment_request
+                        archiveArtifacts artifacts: "deployment_request.txt"
+                    }
+//                    unstash "Deployment"
+//                    sh """${env.PYTHON3} -m venv .env
+//                          . .env/bin/activate
+//                          pip install --upgrade pip setuptools
+//                          pip install https://github.com/UIUCLibrary/sccm_deploy_message_generator/releases/download/v0.1.0/deploy_message-0.1.0-py3-none-any.whl
+//
+//                          deploymessage deployment.yml --save=deployment_request.txt
+//                      """
+//                    archiveArtifacts artifacts: "deployment_request.txt"
+//                    echo(readFile('deployment_request.txt'))
                 }
             }
         }
