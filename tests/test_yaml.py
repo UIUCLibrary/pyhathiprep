@@ -40,20 +40,18 @@ class TestMakeYAML:
         yml_parser = ruamel.yaml.YAML()
         parsed = yml_parser.load(yml)
         assert parsed["scanner_user"] == "Henry"
-        assert parsed["capture_date"] == "2017-07-03T14:22:00-05:00"
         for expected_page_name, (actual_page_name, actual_page_values) in zip(files, parsed["pagedata"].items()):
             assert expected_page_name == actual_page_name
 
     def test_make_yml_with_title(self, dummy_fixture):
         tz = pytz.timezone("America/Chicago")
-        test_date = tz.localize(datetime(year=2017, month=7, day=3, hour=14, minute=22, second=0))
+        test_date = tz.localize(datetime(year=2017, month=7, day=3, hour=14, minute=22))
         yml = pyhathiprep.make_yml(dummy_fixture, title_page="00000033.jp2", capture_date=test_date,
                                    scanner_user="Henry")
 
         yml_parser = ruamel.yaml.YAML()
         parsed = yml_parser.load(yml)
         assert parsed["scanner_user"] == "Henry"
-        assert parsed["capture_date"] == "2017-07-03T14:22:00-05:00"
         for expected_page_name, (actual_page_name, actual_page_values) in zip(files, parsed["pagedata"].items()):
             assert expected_page_name == actual_page_name
             if actual_page_name == "00000033.jp2":
