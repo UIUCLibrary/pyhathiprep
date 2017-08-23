@@ -5,6 +5,7 @@ import typing
 from datetime import datetime
 import ruamel.yaml  # type: ignore
 import tzlocal  # type: ignore
+import functools
 
 
 class AbsYmlBuilder(metaclass=abc.ABCMeta):
@@ -31,36 +32,37 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
     def build(self):
         pass
 
-# TODO: Make into a decorator
-def _strip_date_quotes(yml_data: str)->str:
-    """
-    This is a Hack because of the current yml library for python can't seem to accept the required date format
-    without adding quotes around it
+
+def strip_date_quotes(func):
+    """ Remove quotes added around dates
+
+    This is a hack, that's required right now because ruamel.yaml seems to inconsistent about it's date formatting.
+
     Args:
-        yml_data:
+        func:
 
-    Returns: Cleaned up yml_data
+    Returns: YAML formatted string
 
     """
-    cleaned_data = yml_data
-    cleaned_lines = []
-    for line in yml_data.splitlines(keepends=True):
-        # print(line, end="")
-        if "capture_date" in line:
-            # print(line)
-            key, value = line.split(": ")
-            # print(key)
-            # print(value)
-            new_value = value.strip("\n").strip("'")
-            new_line = "{}: {}\n".format(key, new_value)
-            print(new_line)
-            cleaned_lines.append(new_line)
-        else:
-            cleaned_lines.append(line)
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        yml_data = func(*args, **kwargs)
+        cleaned_lines = []
+        for line in yml_data.splitlines(keepends=True):
+            if "capture_date" in line:
+                key, value = line.split(": ")
+                new_value = value.strip("\n").strip("'")
+                new_line = "{}: {}\n".format(key, new_value)
+                cleaned_lines.append(new_line)
+            else:
+                cleaned_lines.append(line)
 
-    return "".join(cleaned_lines)
+        return "".join(cleaned_lines)
+
+    return wrapper
+
+
 class HathiYmlBuilder(AbsYmlBuilder):
-
     def boilerplate(self) -> typing.Dict[str, str]:
         return {
             "capture_agent": "IU",
@@ -78,8 +80,7 @@ class HathiYmlBuilder(AbsYmlBuilder):
             capture_date = date
         self.data["capture_date"] = capture_date.isoformat(timespec="seconds")
 
-
-
+    @strip_date_quotes
     def build(self):
         ordered = [
             "capture_date",
