@@ -5,6 +5,7 @@ import typing
 from datetime import datetime
 import ruamel.yaml  # type: ignore
 import tzlocal  # type: ignore
+import functools
 
 
 class AbsYmlBuilder(metaclass=abc.ABCMeta):
@@ -12,7 +13,7 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
         self.data = dict()
         self._page_data = dict()
         for k, v in self.boilerplate().items():
-            self.data[k] = v
+            self.data[k] = str(v)
 
     def add_pagedata(self, filename, **attributes) -> None:
         if filename in self._page_data:
@@ -32,8 +33,36 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
         pass
 
 
-class HathiYmlBuilder(AbsYmlBuilder):
+def strip_date_quotes(func):
+    """ Remove quotes added around dates
 
+    This is a hack, that's required right now because ruamel.yaml seems to inconsistent about it's date formatting.
+
+    Args:
+        func:
+
+    Returns: YAML formatted string
+
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        yml_data = func(*args, **kwargs)
+        cleaned_lines = []
+        for line in yml_data.splitlines(keepends=True):
+            if "capture_date" in line:
+                key, value = line.split(": ")
+                new_value = value.strip("\n").strip("'")
+                new_line = "{}: {}\n".format(key, new_value)
+                cleaned_lines.append(new_line)
+            else:
+                cleaned_lines.append(line)
+
+        return "".join(cleaned_lines)
+
+    return wrapper
+
+
+class HathiYmlBuilder(AbsYmlBuilder):
     def boilerplate(self) -> typing.Dict[str, str]:
         return {
             "capture_agent": "IU",
@@ -49,8 +78,9 @@ class HathiYmlBuilder(AbsYmlBuilder):
             capture_date = tz.localize(date)
         else:
             capture_date = date
-        self.data["capture_date"] = capture_date.isoformat(timespec="minutes")
+        self.data["capture_date"] = capture_date.isoformat(timespec="seconds")
 
+    @strip_date_quotes
     def build(self):
         ordered = [
             "capture_date",
@@ -82,6 +112,7 @@ class HathiYmlBuilder(AbsYmlBuilder):
             yml.dump(data, yml_string_writer)
             yml_string_writer.seek(0)
             yml_str = yml_string_writer.read()
+
         return yml_str
 
 

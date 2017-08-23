@@ -5,7 +5,7 @@ import pytest
 from pyhathiprep.hathiyml import HathiYmlBuilder
 from datetime import datetime, timezone
 import ruamel.yaml
-
+import difflib
 files = ["00000001.jp2", "00000002.jp2", "00000003.jp2", "00000004.jp2",
          "00000005.jp2", "00000006.jp2", "00000007.jp2", "00000008.jp2",
          "00000009.jp2", "00000010.jp2", "00000011.jp2", "00000012.jp2",
@@ -35,12 +35,11 @@ class TestMakeYAML:
 
     def test_make_yml(self, dummy_fixture):
         tz = pytz.timezone("America/Chicago")
-        test_date = tz.localize(datetime(year=2017, month=7, day=3, hour=14, minute=22))
+        test_date = tz.localize(datetime(year=2017, month=7, day=3, hour=14, minute=22, second=0))
         yml = pyhathiprep.make_yml(dummy_fixture, capture_date=test_date, scanner_user="Henry")
         yml_parser = ruamel.yaml.YAML()
         parsed = yml_parser.load(yml)
         assert parsed["scanner_user"] == "Henry"
-        assert parsed["capture_date"] == "2017-07-03T14:22-05:00"
         for expected_page_name, (actual_page_name, actual_page_values) in zip(files, parsed["pagedata"].items()):
             assert expected_page_name == actual_page_name
 
@@ -53,7 +52,6 @@ class TestMakeYAML:
         yml_parser = ruamel.yaml.YAML()
         parsed = yml_parser.load(yml)
         assert parsed["scanner_user"] == "Henry"
-        assert parsed["capture_date"] == "2017-07-03T14:22-05:00"
         for expected_page_name, (actual_page_name, actual_page_values) in zip(files, parsed["pagedata"].items()):
             assert expected_page_name == actual_page_name
             if actual_page_name == "00000033.jp2":
@@ -61,7 +59,7 @@ class TestMakeYAML:
 
 
 def test_hathi_yml_builder():
-    expected_yml = """capture_date: 2017-07-03T14:22-05:00
+    expected_yml = """capture_date: 2017-07-03T14:22:00-05:00
 capture_agent: IU
 scanner_user: University of Illinois Digitization Services
 pagedata:
@@ -82,9 +80,17 @@ pagedata:
     tz = pytz.timezone("America/Chicago")
     builder.set_capture_date(
 
-        tz.localize(datetime(year=2017, month=7, day=3, hour=14, minute=22))
+        tz.localize(datetime(year=2017, month=7, day=3, hour=14, minute=22, second=0))
     )
     yml = builder.build()
-    for i, (got, expected) in enumerate(zip(yml.split("\n"), expected_yml.split("\n"))):
-        assert got == expected, "Error on Line {}".format(i + 1)
-    assert yml == expected_yml
+
+    diff = difflib.unified_diff(yml.splitlines(keepends=True), expected_yml.splitlines(keepends=True))
+    errors = []
+    for error in diff:
+        if not error.startswith(" "):
+            errors.append(error)
+            # print(x)
+        # else:
+    if errors:
+        pytest.fail("".join(errors))
+
