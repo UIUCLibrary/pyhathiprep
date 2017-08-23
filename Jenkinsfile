@@ -101,37 +101,8 @@ pipeline {
 
                             }
                         }
-//                        "Documentation": {
-//                          node(label: "!Windows"){
-//                            deleteDir()
-//                            unstash "Source"
-//                            sh "${env.TOX} -e docs"
-//                            dir('.tox/dist/') {
-//                              stash includes: 'html/**', name: "HTML Documentation", useDefaultExcludes: false
-//                            }
-//                          }
-//
-//                        },
-//                        // MyPy doesn't currently work correctly within tox for some reason
-//                         "MyPy": {
-//                           node(label: "!Windows"){
-//                             deleteDir()
-//                             unstash "Source"
-//                             sh "${env.TOX} -e mypy"
-//                             junit 'mypy.xml'
-//                           }
-//
-//                         }
                 )
             }
-//            post {
-//              success {
-//                deleteDir()
-//                unstash "HTML Documentation"
-//                sh 'tar -czvf sphinx_html_docs.tar.gz -C html .'
-//                archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
-//              }
-//            }
         }
 
         stage("Packaging") {
@@ -189,9 +160,6 @@ pipeline {
 
             steps {
                 deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-//                deleteDir()
-//                unstash "msi"
-//                sh "rsync -rv ./ \"${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/\""
                 input("Deploy to production?")
             }
         }
@@ -204,9 +172,6 @@ pipeline {
 
             steps {
                 deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-//                deleteDir()
-//                unstash "msi"
-//                sh "rsync -rv ./ ${env.SCCM_UPLOAD_FOLDER}/"
             }
 
             post {
@@ -218,16 +183,6 @@ pipeline {
                         writeFile file: "deployment_request.txt", text: deployment_request
                         archiveArtifacts artifacts: "deployment_request.txt"
                     }
-//                    unstash "Deployment"
-//                    sh """${env.PYTHON3} -m venv .env
-//                          . .env/bin/activate
-//                          pip install --upgrade pip setuptools
-//                          pip install https://github.com/UIUCLibrary/sccm_deploy_message_generator/releases/download/v0.1.0/deploy_message-0.1.0-py3-none-any.whl
-//
-//                          deploymessage deployment.yml --save=deployment_request.txt
-//                      """
-//                    archiveArtifacts artifacts: "deployment_request.txt"
-//                    echo(readFile('deployment_request.txt'))
                 }
             }
         }
