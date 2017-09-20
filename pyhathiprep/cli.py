@@ -30,8 +30,9 @@ def get_parser() -> argparse.ArgumentParser:
         help="Path to the source directory of files that need to be prepped"
     )
     parser.add_argument(
-        "dest",
+        "--dest",
         type=destination_path,
+        default=None,
         help="Path to save new hathi prep."
     )
 
