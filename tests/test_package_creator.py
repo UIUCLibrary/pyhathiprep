@@ -3,6 +3,7 @@ import pytest
 import pyhathiprep.package_creater
 
 PACKAGE_NAME = "7213857"
+SECOND_PACKAGE_NAME = "7213858"
 SOURCE_FILES = [
     "00000001.jp2", "00000001.txt",
     "00000002.jp2", "00000002.txt",
@@ -55,5 +56,56 @@ class TestCreatePackage:
         assert os.path.exists(yml_file)
 
         checksum = os.path.join(new_created_package, "checksum.md5")
+        print("Checking for {}".format(checksum))
+        assert os.path.exists(checksum)
+
+    def test_create_package_class(self, package_source_fixture, tmpdir):
+        destination = tmpdir.mkdir("test_dest2")
+        new_created_package = os.path.join(str(destination), PACKAGE_NAME)
+        package_creator = pyhathiprep.package_creater.NewPackage(str(package_source_fixture))
+        package_creator.generate_package(destination)
+        print("Checking to see if {} exists".format(new_created_package))
+        assert os.path.exists(new_created_package)
+        for original_file in SOURCE_FILES:
+            expected_copied_file = os.path.join(new_created_package, original_file)
+            print("Checking for {}".format(expected_copied_file))
+            assert os.path.exists(expected_copied_file)
+
+        yml_file = os.path.join(new_created_package, "meta.yml")
+        print("Checking for {}".format(yml_file))
+        assert os.path.exists(yml_file)
+
+        checksum = os.path.join(new_created_package, "checksum.md5")
+        print("Checking for {}".format(checksum))
+        assert os.path.exists(checksum)
+
+
+class TestCreatePackageInplace:
+    @pytest.fixture(scope="session")
+    def package_source_fixture(self, tmpdir_factory):
+        new_package = tmpdir_factory.mktemp(SECOND_PACKAGE_NAME, numbered=False)
+        for file in SOURCE_FILES:
+            new_file = new_package.join(file)
+            print("Creating test file {}".format(new_file))
+            with open(new_file, "w") as w:
+                pass
+        return new_package
+
+    def test_create_package_class(self, package_source_fixture):
+        package_creator = pyhathiprep.package_creater.InplacePackage(str(package_source_fixture))
+        package_creator.generate_package()
+        package_root = os.path.join(str(package_source_fixture))
+        print("Checking to see if {} exists".format(package_root))
+        assert os.path.exists(package_root)
+        for original_file in SOURCE_FILES:
+            expected_copied_file = os.path.join(package_root, original_file)
+            print("Checking for {}".format(expected_copied_file))
+            assert os.path.exists(expected_copied_file)
+
+        yml_file = os.path.join(package_root, "meta.yml")
+        print("Checking for {}".format(yml_file))
+        assert os.path.exists(yml_file)
+
+        checksum = os.path.join(package_root, "checksum.md5")
         print("Checking for {}".format(checksum))
         assert os.path.exists(checksum)

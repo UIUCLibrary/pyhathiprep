@@ -1,21 +1,29 @@
 This is a command line script so you will need a terminal window open to use it.
 
-Prep HathiTrust packages
-------------------------
-To prep package for submitting to HathiTrust, type "pyhathiprep" followed by two directories.
+Create new a HathiTrust package inplace
+---------------------------------------
 
-1. The first path contains all the directory that need to be prepped.
+To generate all the files required for Hathi, type "pyhathiprep" followed by source directory.
 
-2. The second path is the destination the script should save the packages prepped for HathiTrust.
+For example: :command:`pyhathiprep T:\\lab_production`
 
-For example: :command:`pyhathiprep T:\\lab_production C:\\Users\\hborcher\\NewHathiPackages`
+
+Create new a HathiTrust packages without changing the original
+--------------------------------------------------------------
+
+.. image:: _static/screenshot.png
+
+To create a package for submitting to HathiTrust without modifying the orginal packages, you can create a new package
+in the process of prep by typing "pyhathiprep" followed by source directory and the --dest argument followed by a new path.
+
+For example: :command:`pyhathiprep T:\\lab_production --dest=C:\\Users\\hborcher\\NewHathiPackages`
 
 
 .. Note::
     If the path has spaces in it, you must surround the path by quotes.
 
 
-    :command:`pyhathiprep "T:\\lab packages" "C:\\Users\\hborcher\\Hathi Packages"`
+    :command:`pyhathiprep "T:\\lab packages" --dest="C:\\Users\\hborcher\\Hathi Packages"`
 
 
 
@@ -28,29 +36,26 @@ additional the options.
 
 .. code-block:: console
 
-    C:\Users\hborcher> pyhathiprep --help
-
-    usage: __main__.py [-h] [--version] [-o] [--debug] [--log-debug LOG_DEBUG]
-                       source dest
+    usage: pyhathiprep [-h] [--version] [--dest DEST] [-o] [--debug]
+                   [--log-debug LOG_DEBUG]
+                   source
 
     Replacement for HathiPrep script
 
     positional arguments:
       source                Path to the source directory of files that need to be
                             prepped
-      dest                  Path to save new hathi prep.
 
     optional arguments:
       -h, --help            show this help message and exit
       --version             show program's version number and exit
+      --dest DEST           Path to save new hathi prep.
       -o, --overwrite       Overwrite any existing files and folders
 
     Debug:
       --debug               Run script in debug mode
       --log-debug LOG_DEBUG
                             Save debug information to a file
-
-
 
 
 
