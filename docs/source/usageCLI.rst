@@ -1,24 +1,29 @@
 This is a command line script so you will need a terminal window open to use it.
 
-Prep HathiTrust packages
-------------------------
+Create new a HathiTrust package inplace
+---------------------------------------
+
+To generate all the files required for Hathi, type "pyhathiprep" followed by source directory.
+
+For example: :command:`pyhathiprep T:\\lab_production`
+
+
+Create new a HathiTrust packages without changing the original
+--------------------------------------------------------------
 
 .. image:: _static/screenshot.png
 
-To prep package for submitting to HathiTrust, type "pyhathiprep" followed by two directories.
+To create a package for submitting to HathiTrust without modifying the orginal packages, you can create a new package
+in the process of prep by typing "pyhathiprep" followed by source directory and the --dest argument followed by a new path.
 
-1. The first path contains all the directory that need to be prepped.
-
-2. The second path is the destination the script should save the packages prepped for HathiTrust.
-
-For example: :command:`pyhathiprep T:\\lab_production C:\\Users\\hborcher\\NewHathiPackages`
+For example: :command:`pyhathiprep T:\\lab_production --dest=C:\\Users\\hborcher\\NewHathiPackages`
 
 
 .. Note::
     If the path has spaces in it, you must surround the path by quotes.
 
 
-    :command:`pyhathiprep "T:\\lab packages" "C:\\Users\\hborcher\\Hathi Packages"`
+    :command:`pyhathiprep "T:\\lab packages" --dest="C:\\Users\\hborcher\\Hathi Packages"`
 
 
 
