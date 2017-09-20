@@ -9,9 +9,11 @@ from pyhathiprep.utils import derive_package_prefix
 from pyhathiprep.checksum import create_checksum_report
 import warnings
 
+
 class AbsPackageCreator(metaclass=abc.ABCMeta):
-    def __init__(self, source: str):
+    def __init__(self, source: str) -> None:
         self._source = source
+        self._prefix = derive_package_prefix(source)
 
     @abc.abstractmethod
     def create_checksum_report(self, build_path):
@@ -37,11 +39,6 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
 
 
 class InplacePackage(AbsPackageCreator):
-
-    def __init__(self, source: str):
-        super().__init__(source)
-        self._prefix = derive_package_prefix(source)
-
     def make_yaml(self, build_path):
         logger = logging.getLogger(__name__)
         logger.debug("Making YAML for {}".format(build_path))
@@ -67,12 +64,7 @@ class InplacePackage(AbsPackageCreator):
             shutil.move(item.path, save_dest)
 
 
-
 class NewPackage(AbsPackageCreator):
-    def __init__(self, source: str):
-        super().__init__(source)
-        self._prefix = derive_package_prefix(source)
-
     def make_yaml(self, build_path):
         logger = logging.getLogger(__name__)
         logger.debug("Making YAML for {}".format(build_path))
@@ -126,10 +118,10 @@ def create_package(source: str, destination=None, prefix=None, overwrite=False) 
     """
     if destination:
         new_creator = NewPackage(source)
-        # new_creator.generate_package()
+        new_creator.generate_package(destination, overwrite=overwrite)
     else:
-        new_creator = InplacePackage(source)
-    new_creator.generate_package(destination, overwrite=overwrite)
+        inplace_creator = InplacePackage(source)
+        inplace_creator.generate_package(overwrite=overwrite)
 
 
 def create_new_package(source, destination, prefix=None, overwrite=False):
