@@ -173,36 +173,6 @@ pipeline {
             steps {
                 deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
             }
-            stage("Deploying to Devpi") {
-                agent {
-                    node {
-                        label 'Windows'
-                    }
-                }
-                when {
-                    expression { params.DEPLOY_DEVPI == true }
-                }
-                steps {
-                    deleteDir()
-                    unstash "Source"
-                    bat "devpi use http://devpy.library.illinois.edu"
-                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}"
-                        script {
-                            try{
-                                bat "devpi upload --with-docs"
-
-                            } catch (exc) {
-                                echo "Unable to upload to devpi with docs. Trying without"
-                                bat "devpi upload"
-                            }
-                        }
-                        bat "devpi test pyhathiprep"
-                    }
-
-                }
-            }
             post {
                 success {
                     script{
@@ -213,6 +183,36 @@ pipeline {
                         archiveArtifacts artifacts: "deployment_request.txt"
                     }
                 }
+            }
+        }
+        stage("Deploying to Devpi") {
+            agent {
+                node {
+                    label 'Windows'
+                }
+            }
+            when {
+                expression { params.DEPLOY_DEVPI == true }
+            }
+            steps {
+                deleteDir()
+                unstash "Source"
+                bat "devpi use http://devpy.library.illinois.edu"
+                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                    bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                    bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}"
+                    script {
+                        try{
+                            bat "devpi upload --with-docs"
+
+                        } catch (exc) {
+                            echo "Unable to upload to devpi with docs. Trying without"
+                            bat "devpi upload"
+                        }
+                    }
+                    bat "devpi test pyhathiprep"
+                }
+
             }
         }
 
