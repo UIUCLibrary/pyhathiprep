@@ -30,10 +30,10 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
     def deploy(self, build_path, destination, overwrite=False):
         pass
 
-    def generate_package(self, destination=None, overwrite=False):
+    def generate_package(self, destination=None, overwrite=False, title_page=None):
         with tempfile.TemporaryDirectory() as temp:
             self.copy_source(build_path=temp)
-            self.make_yaml(build_path=temp)
+            self.make_yaml(build_path=temp, title_page=title_page)
             self.create_checksum_report(build_path=temp)
             self.deploy(build_path=temp, destination=destination, overwrite=overwrite)
 
