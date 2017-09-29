@@ -20,7 +20,7 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def make_yaml(self, build_path):
+    def make_yaml(self, build_path, title_page = None):
         pass
 
     def copy_source(self, build_path):
@@ -39,7 +39,7 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
 
 
 class InplacePackage(AbsPackageCreator):
-    def make_yaml(self, build_path):
+    def make_yaml(self, build_path, title_page = None):
         logger = logging.getLogger(__name__)
         logger.debug("Making YAML for {}".format(build_path))
         yml = make_yml(self._source, capture_date=datetime.now())
@@ -65,10 +65,10 @@ class InplacePackage(AbsPackageCreator):
 
 
 class NewPackage(AbsPackageCreator):
-    def make_yaml(self, build_path):
+    def make_yaml(self, build_path, title_page = None):
         logger = logging.getLogger(__name__)
         logger.debug("Making YAML for {}".format(build_path))
-        yml = make_yml(build_path, capture_date=datetime.now())
+        yml = make_yml(build_path, capture_date=datetime.now(), title_page=title_page)
         with open(os.path.join(build_path, "meta.yml"), "w") as w:
             w.write(yml)
 
@@ -124,7 +124,7 @@ def create_package(source: str, destination=None, prefix=None, overwrite=False) 
         inplace_creator.generate_package(overwrite=overwrite)
 
 
-def create_new_package(source, destination, prefix=None, overwrite=False):
+def create_new_package(source, destination, prefix=None, overwrite=False, title_page=None):
     warnings.warn("Use NewPackage class instead", DeprecationWarning)
     logger = logging.getLogger(__name__)
     if not prefix:
@@ -146,7 +146,7 @@ def create_new_package(source, destination, prefix=None, overwrite=False):
 
         # make YML
         logger.debug("Making YAML for {}".format(temp))
-        yml = make_yml(temp, capture_date=datetime.now())
+        yml = make_yml(temp, capture_date=datetime.now(), title_page=title_page)
         with open(os.path.join(temp, "meta.yml"), "w") as w:
             w.write(yml)
 
