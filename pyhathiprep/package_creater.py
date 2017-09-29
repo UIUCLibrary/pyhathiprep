@@ -42,7 +42,7 @@ class InplacePackage(AbsPackageCreator):
     def make_yaml(self, build_path, title_page = None):
         logger = logging.getLogger(__name__)
         logger.debug("Making YAML for {}".format(build_path))
-        yml = make_yml(self._source, capture_date=datetime.now())
+        yml = make_yml(self._source, capture_date=datetime.now(), title_page=title_page)
         with open(os.path.join(build_path, "meta.yml"), "w") as w:
             w.write(yml)
 
