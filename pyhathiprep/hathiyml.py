@@ -65,7 +65,7 @@ def strip_date_quotes(func):
 class HathiYmlBuilder(AbsYmlBuilder):
     def boilerplate(self) -> typing.Dict[str, str]:
         return {
-            "capture_agent": "IU",
+            "capture_agent": "illinois",
             "scanner_user": "University of Illinois Digitization Services"
         }
 
