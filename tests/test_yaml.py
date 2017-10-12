@@ -60,7 +60,7 @@ class TestMakeYAML:
 
 def test_hathi_yml_builder():
     expected_yml = """capture_date: 2017-07-03T14:22:00-05:00
-capture_agent: IU
+capture_agent: illinois
 scanner_user: University of Illinois Digitization Services
 pagedata:
     00000001.jp2: {}
