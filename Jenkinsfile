@@ -198,8 +198,10 @@ pipeline {
             steps {
                 deleteDir()
                 unstash "Source"
+                echo "PIP_TRUSTED_HOST = ${env.PIP_TRUSTED_HOST}"
                 bat "devpi use http://devpy.library.illinois.edu"
                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+
                     bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                     bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}"
                     script {
