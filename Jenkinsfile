@@ -78,7 +78,7 @@ pipeline {
                                 runner.env = "docs"
                                 runner.windows = false
                                 runner.stash = "Source"
-                                runner.label = "!Windows"
+                                runner.label = "Linux"
                                 runner.post = {
                                     dir('.tox/dist/html/') {
                                         stash includes: '**', name: "HTML Documentation", useDefaultExcludes: false
@@ -94,7 +94,7 @@ pipeline {
                                 runner.env = "mypy"
                                 runner.windows = false
                                 runner.stash = "Source"
-                                runner.label = "!Windows"
+                                runner.label = "Linux"
                                 runner.post = {
                                     junit 'mypy.xml'
                                 }
@@ -120,7 +120,7 @@ pipeline {
                             node(label: "Windows") {
                                 deleteDir()
                                 unstash "Source"
-                                bat "${env.PYTHON3} setup.py bdist_wheel --universal"
+                                bat "${tool 'Python3.6.3_Win64'} setup.py bdist_wheel --universal"
                                 archiveArtifacts artifacts: "dist/**", fingerprint: true
                             }
                         },
@@ -128,7 +128,7 @@ pipeline {
                             node(label: "Windows") {
                                 deleteDir()
                                 unstash "Source"
-                                bat """${env.PYTHON3} -m venv .env
+                                bat """${tool 'Python3.6.3_Win64'} -m venv .env
                                        call .env/Scripts/activate.bat
                                        pip install -r requirements.txt
                                        pip install ruamel.base
@@ -154,7 +154,9 @@ pipeline {
         }
 
         stage("Deploy - Staging") {
-            agent any
+            agent {
+                label 'Linux'
+            }
             when {
                 expression { params.DEPLOY_SCCM == true }
             }
@@ -166,7 +168,9 @@ pipeline {
         }
 
         stage("Deploy - SCCM upload") {
-            agent any
+            agent {
+                label 'Linux'
+            }
             when {
                 expression { params.DEPLOY_SCCM == true }
             }
@@ -189,7 +193,7 @@ pipeline {
         stage("Deploying to Devpi") {
             agent {
                 node {
-                    label 'Windows'
+                    label 'Windows&&DevPi'
                 }
             }
             when {
@@ -200,6 +204,7 @@ pipeline {
                 unstash "Source"
                 bat "devpi use http://devpy.library.illinois.edu"
                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+
                     bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                     bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}"
                     script {
@@ -218,7 +223,10 @@ pipeline {
         }
 
         stage("Update online documentation") {
-            agent any
+            agent {
+                label 'Linux'
+
+            }
             when {
               expression {params.UPDATE_DOCS == true }
             }
