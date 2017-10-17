@@ -154,7 +154,9 @@ pipeline {
         }
 
         stage("Deploy - Staging") {
-            agent any
+            agent {
+                label 'Linux'
+            }
             when {
                 expression { params.DEPLOY_SCCM == true }
             }
@@ -166,7 +168,9 @@ pipeline {
         }
 
         stage("Deploy - SCCM upload") {
-            agent any
+            agent {
+                label 'Linux'
+            }
             when {
                 expression { params.DEPLOY_SCCM == true }
             }
