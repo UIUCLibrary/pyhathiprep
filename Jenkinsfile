@@ -120,7 +120,7 @@ pipeline {
                             node(label: "Windows") {
                                 deleteDir()
                                 unstash "Source"
-                                bat "${env.PYTHON3} setup.py bdist_wheel --universal"
+                                bat "${tool 'Python3.6.3_Win64'} setup.py bdist_wheel --universal"
                                 archiveArtifacts artifacts: "dist/**", fingerprint: true
                             }
                         },
@@ -128,7 +128,7 @@ pipeline {
                             node(label: "Windows") {
                                 deleteDir()
                                 unstash "Source"
-                                bat """${env.PYTHON3} -m venv .env
+                                bat """${tool 'Python3.6.3_Win64'} -m venv .env
                                        call .env/Scripts/activate.bat
                                        pip install -r requirements.txt
                                        pip install ruamel.base
@@ -198,7 +198,6 @@ pipeline {
             steps {
                 deleteDir()
                 unstash "Source"
-                echo "PIP_TRUSTED_HOST = ${env.PIP_TRUSTED_HOST}"
                 bat "devpi use http://devpy.library.illinois.edu"
                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
 
