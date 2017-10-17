@@ -221,7 +221,7 @@ pipeline {
         stage("Update online documentation") {
             agent {
                 label 'Linux'
-            }
+
             }
             when {
               expression {params.UPDATE_DOCS == true }
