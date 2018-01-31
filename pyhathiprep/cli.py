@@ -17,7 +17,7 @@ def destination_path(path):
 
 
 def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=pyhathiprep.__description__)
+    parser = argparse.ArgumentParser(description="Replacement for HathiPrep script")
 
     parser.add_argument(
         '--version',
