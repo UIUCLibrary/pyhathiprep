@@ -226,7 +226,7 @@ junit_filename                  = ${junit_filename}
                     steps {
                         tee("logs/build.log") {
                             dir("source"){
-                                bat "venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build -j ${NUMBER_OF_PROCESSORS}"
+                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build"
                             }
 
                         }
