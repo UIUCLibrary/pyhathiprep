@@ -226,7 +226,7 @@ junit_filename                  = ${junit_filename}
                     steps {
                         tee("logs/build.log") {
                             dir("source"){
-                                bat "pipenv run python setup.py build -b ${WORKSPACE}\\build -j ${NUMBER_OF_PROCESSORS}"
+                                bat "venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build -j ${NUMBER_OF_PROCESSORS}"
                             }
 
                         }
@@ -268,7 +268,7 @@ junit_filename                  = ${junit_filename}
                         echo "Building docs on ${env.NODE_NAME}"
                         tee("logs/build_sphinx.log") {
                             dir("build/lib"){
-                                bat "pipenv run sphinx-build -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
+                                bat "venv\\Scripts\\sphinx-build.exe -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
                             }
                         }
                     }
