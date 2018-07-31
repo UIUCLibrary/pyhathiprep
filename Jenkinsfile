@@ -415,53 +415,100 @@ pipeline {
         //     }
         // }
 
+//        stage("Packaging") {
+//            when {
+//                expression { params.PACKAGE == true || params.DEPLOY_SCCM == true }
+//            }
+//
+//            steps {
+//                parallel(
+//                        "Source Release": {
+//                            createSourceRelease(env.PYTHON3, "Source")
+//                        },
+//                        "Windows Wheel": {
+//                            node(label: "Windows") {
+//                                deleteDir()
+//                                unstash "Source"
+//                                bat "${tool 'Python3.6.3_Win64'} setup.py bdist_wheel --universal"
+//                                archiveArtifacts artifacts: "dist/**", fingerprint: true
+//                            }
+//                        },
+//                        "Windows CX_Freeze MSI": {
+//                            node(label: "Windows") {
+//                                deleteDir()
+//                                unstash "Source"
+//                                bat """${tool 'Python3.6.3_Win64'} -m venv .env
+//                                       call .env/Scripts/activate.bat
+//                                       pip install -r requirements.txt
+//                                       pip install ruamel.base
+//                                       python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi
+//                                       call .env/Scripts/deactivate.bat
+//                                    """
+//                                bat "build\\msi\\pyhathiprep.exe --pytest"
+//                                dir("dist") {
+//                                    stash includes: "*.msi", name: "msi"
+//                                }
+//
+//                            }
+//                            node(label: "Windows") {
+//                                deleteDir()
+//                                git url: 'https://github.com/UIUCLibrary/ValidateMSI.git'
+//                                unstash "msi"
+//                                bat "call validate.bat -i"
+//                                archiveArtifacts artifacts: "*.msi", fingerprint: true
+//                            }
+//                        },
+//                )
+//            }
+//        }
         stage("Packaging") {
             when {
-                expression { params.PACKAGE == true || params.DEPLOY_SCCM == true }
+                expression { params.DEPLOY_DEVPI == true || params.RELEASE != "None"}
             }
+            parallel {
+                stage("Source and Wheel formats"){
+                    steps{
+                        dir("source"){
+                            bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                        }
 
-            steps {
-                parallel(
-                        "Source Release": {
-                            createSourceRelease(env.PYTHON3, "Source")
-                        },
-                        "Windows Wheel": {
-                            node(label: "Windows") {
-                                deleteDir()
-                                unstash "Source"
-                                bat "${tool 'Python3.6.3_Win64'} setup.py bdist_wheel --universal"
-                                archiveArtifacts artifacts: "dist/**", fingerprint: true
+                    }
+                    post{
+                        success{
+                            dir("dist"){
+                                archiveArtifacts artifacts: "*.whl", fingerprint: true
+                                archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
                             }
-                        },
-                        "Windows CX_Freeze MSI": {
-                            node(label: "Windows") {
-                                deleteDir()
-                                unstash "Source"
-                                bat """${tool 'Python3.6.3_Win64'} -m venv .env
-                                       call .env/Scripts/activate.bat
-                                       pip install -r requirements.txt
-                                       pip install ruamel.base
-                                       python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi
-                                       call .env/Scripts/deactivate.bat
-                                    """
-                                bat "build\\msi\\pyhathiprep.exe --pytest"
-                                dir("dist") {
-                                    stash includes: "*.msi", name: "msi"
-                                }
+                        }
+                    }
+                }
+                stage("Windows CX_Freeze MSI"){
+                    steps{
+                        dir("source"){
+//                            bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt"
+                            bat "${WORKSPACE}\\venv\\Scripts\\python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi --dist-dir ${WORKSPACE}/dist"
+                        }
+                        bat "build\\msi\\hathivalidate.exe --pytest"
+                        // bat "make freeze"
 
-                            }
-                            node(label: "Windows") {
-                                deleteDir()
-                                git url: 'https://github.com/UIUCLibrary/ValidateMSI.git'
-                                unstash "msi"
-                                bat "call validate.bat -i"
+
+                    }
+                    post{
+                        success{
+                            dir("dist") {
+                                stash includes: "*.msi", name: "msi"
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
-                        },
-                )
+                        }
+                        cleanup{
+                            dir("build/msi") {
+                                deleteDir()
+                            }
+                        }
+                    }
+                }
             }
         }
-
         stage("Deploy - Staging") {
             agent {
                 label 'Linux'
