@@ -29,7 +29,8 @@ def get_project_metadata():
 metadata = get_project_metadata()
 
 cwd = os.getcwd()
-project_root = os.path.join(os.path.dirname(cwd), "../..")
+# project_root = os.path.join(os.path.dirname(cwd), "../..")
+project_root = os.path.join(os.path.join(os.path.dirname(__file__), "../.."))
 
 sys.path.insert(0, project_root )
 
