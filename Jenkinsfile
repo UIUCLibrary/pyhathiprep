@@ -281,7 +281,7 @@ junit_filename                  = ${junit_filename}
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             dir("${WORKSPACE}/dist"){
-                            zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
+                                zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
                             }
                         }
                     }
@@ -682,7 +682,7 @@ junit_filename                  = ${junit_filename}
                 }
                 stage("Documentation"){
                     when{
-                        equals expected: true, actual: params.ADDITIONAL_TESTS
+                        equals expected: true, actual: params.TEST_RUN_DOCTEST
                     }
                     steps{
                         dir("source"){
@@ -693,7 +693,7 @@ junit_filename                  = ${junit_filename}
                 }
                 stage("MyPy"){
                     when{
-                        equals expected: true, actual: params.ADDITIONAL_TESTS
+                        equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
                         dir("source") {
