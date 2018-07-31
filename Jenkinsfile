@@ -216,9 +216,6 @@ junit_filename                  = ${junit_filename}
         stage("Building") {
             stages{
                 stage("Building Python Package"){
-                    environment {
-                        PATH = "${tool 'CMake_3.11.4'}\\;$PATH"
-                    }
                     steps {
                         tee("logs/build.log") {
                             dir("source"){
@@ -244,9 +241,6 @@ junit_filename                  = ${junit_filename}
                 stage("Building Sphinx Documentation"){
                     when {
                         equals expected: true, actual: params.BUILD_DOCS
-                    }
-                    environment {
-                        PATH = "${tool 'CMake_3.11.4'}\\;$PATH"
                     }
                     steps {
                         dir("build/docs/html"){
