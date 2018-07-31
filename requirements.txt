@@ -1,13 +1,4 @@
-mypy
-cx_Freeze
-wheel
-sphinx
-pytest
-pytest-runner
-tox
-six
-appdirs
-packaging
 ruamel.yaml
 pytz
 tzlocal
+setuptools>=30.3.0

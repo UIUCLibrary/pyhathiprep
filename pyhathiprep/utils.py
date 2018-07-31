@@ -27,8 +27,14 @@ def derive_package_prefix(path):
 
     Examples:
 
+    .. testsetup::
+
+        from pyhathiprep.utils import derive_package_prefix
+
+    .. doctest::
+
         >>> derive_package_prefix("hborcher/temp/DSHTPrep_Test/7213857")
-        "7213857"
+        '7213857'
 
     """
     return os.path.normpath(path).split(os.path.sep)[-1]

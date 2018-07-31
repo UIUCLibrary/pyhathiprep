@@ -1,14 +1,16 @@
 import os
 import sys
+from setuptools.config import read_configuration
 import cx_Freeze
 import pytest
 import platform
 
-about = {}
-metadata_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pyhathiprep', '__version__.py')
 
-with open(metadata_file, 'r', encoding='utf-8') as f:
-    exec(f.read(), about)
+def get_project_metadata():
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), "setup.cfg"))
+    return read_configuration(path)["metadata"]
+
+metadata = get_project_metadata()
 
 
 def create_msi_tablename(python_name, fullname):
@@ -34,6 +36,7 @@ def get_tests():
 
 INCLUDE_FILES = [
     "documentation.url",
+    "setup.cfg"
 ] + get_tests()
 
 directory_table = [
@@ -45,14 +48,14 @@ directory_table = [
     (
         "PMenu",  # Directory
         "ProgramMenuFolder",  # Directory_parent
-        create_msi_tablename(about["__title__"], about["FULL_TITLE"])
+        create_msi_tablename(metadata["name"], "PyHathiPrep")
     ),
 ]
 shortcut_table = [
     (
         "startmenuShortcutDoc",  # Shortcut
         "PMenu",  # Directory_
-        "{} Documentation".format(create_msi_tablename(about["__title__"], about["FULL_TITLE"])),
+        "{} Documentation".format(create_msi_tablename(metadata["name"], "PyHathiPrep")),
         "TARGETDIR",  # Component_
         "[TARGETDIR]documentation.url",  # Target
         None,  # Arguments
@@ -80,6 +83,7 @@ build_exe_options = {
         "pytz",
         "tzlocal",
         "pyhathiprep",
+        "setuptools",
     ],
     "namespace_packages": ["ruamel.yaml"],
     "excludes": ["tkinter"],
@@ -89,12 +93,12 @@ build_exe_options = {
 
 target_name = 'pyhathiprep.exe' if platform.system() == "Windows" else 'pyhathiprep'
 cx_Freeze.setup(
-    name=about["FULL_TITLE"],
-    description=about["__description__"],
+    name="PyHathiPrep",
+    description=metadata["description"],
     license="University of Illinois/NCSA Open Source License",
-    version=about["__version__"],
-    author=about["__author__"],
-    author_email=about["__author_email__"],
+    version=metadata["version"],
+    author=metadata["author"],
+    author_email=metadata["author_email"],
     options={
         "build_exe": build_exe_options,
         "bdist_msi": {
