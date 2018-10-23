@@ -282,12 +282,12 @@ junit_filename                  = ${junit_filename}
                     }
                     steps{
                         dir("source") {
-                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy_html"
+                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy_html"
                         }
                     }
                     post{
                         always {
-                            junit "junit-${env.NODE_NAME}-mypy.xml"
+                            junit "reports/junit-${env.NODE_NAME}-mypy.xml"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
                         }
                     }
