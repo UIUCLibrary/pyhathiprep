@@ -665,6 +665,15 @@ junit_filename                  = ${junit_filename}
                     echo "Devpi remove exited with code ${devpi_remove_return_code}."
                 }
             }
+            dir("build"){
+                deleteDir()
+            }
+            dir("logs"){
+                deleteDir()
+            }
+            dir("reports"){
+                deleteDir()
+            }
 //            bat "dir /s / B"
         }
     }
