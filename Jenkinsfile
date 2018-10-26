@@ -66,6 +66,7 @@ pipeline {
                 stage("Cleanup"){
                     steps {
                         tool name: 'CPython-3.6', type: 'jenkins.plugins.shiningpanda.tools.PythonInstallation'
+                        tool name: 'CPython-3.7', type: 'jenkins.plugins.shiningpanda.tools.PythonInstallation'
                         echo "${env.path}"
                         bat "where python"
 
