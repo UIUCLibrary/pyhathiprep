@@ -322,7 +322,7 @@ junit_filename                  = ${junit_filename}
         }
         stage("Packaging") {
             when {
-                expression { params.DEPLOY_DEVPI == true || params.RELEASE != "None"}
+                expression { params.DEPLOY_DEVPI == true}
             }
             parallel {
                 stage("Source and Wheel formats"){
