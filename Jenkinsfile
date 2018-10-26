@@ -250,17 +250,18 @@ junit_filename                  = ${junit_filename}
                     }
                     post {
                         always{
-                            dir("reports"){
-                                script{
-                                    def report_files = findFiles glob: '**/*.pytest.xml'
-                                    report_files.each { report_file ->
-                                        echo "Found ${report_file}"
-                                        // archiveArtifacts artifacts: "${log_file}"
-                                        junit "${report_file}"
-                                        bat "del ${report_file}"
-                                    }
-                                }
-                            }
+//                            dir("reports"){
+                                junit "reports/**/*.pytest.xml"
+//                                script{
+//                                    def report_files = findFiles glob: '**/*.pytest.xml'
+//                                    report_files.each { report_file ->
+//                                        echo "Found ${report_file}"
+//                                        // archiveArtifacts artifacts: "${log_file}"
+//                                        junit "${report_file}"
+//                                        bat "del ${report_file}"
+//                                    }
+//                                }
+//                            }
                             // junit "reports/junit-${env.NODE_NAME}-pytest.xml"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                         }
