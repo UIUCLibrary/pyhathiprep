@@ -251,7 +251,7 @@ junit_filename                  = ${junit_filename}
                     post {
                         always{
 //                            dir("reports"){
-                                junit "reports/**/*.pytest.xml"
+                                junit "reports/*.pytest.xml"
 //                                script{
 //                                    def report_files = findFiles glob: '**/*.pytest.xml'
 //                                    report_files.each { report_file ->
