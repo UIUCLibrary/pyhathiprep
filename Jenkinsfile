@@ -490,7 +490,8 @@ junit_filename                  = ${junit_filename}
                                 index: "${env.BRANCH_NAME}_staging",
                                 pkgName: "${PKG_NAME}",
                                 pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "tar.gz"
+                                pkgRegex: "tar.gz",
+                                detox: true
                             )
 //                        echo "Testing Source tar.gz package in devpi"
 //                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -522,7 +523,8 @@ junit_filename                  = ${junit_filename}
                                 index: "${env.BRANCH_NAME}_staging",
                                 pkgName: "${PKG_NAME}",
                                 pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "zip"
+                                pkgRegex: "zip",
+                                detox: true
                             )
 //                        echo "Testing Source zip package in devpi"
 //                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
