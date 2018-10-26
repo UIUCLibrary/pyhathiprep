@@ -564,7 +564,8 @@ junit_filename                  = ${junit_filename}
                                 index: "${env.BRANCH_NAME}_staging",
                                 pkgName: "${PKG_NAME}",
                                 pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "whl"
+                                pkgRegex: "whl",
+                                detox: true
                             )
 //                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
 //                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
