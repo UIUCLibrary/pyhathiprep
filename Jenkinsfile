@@ -257,20 +257,6 @@ junit_filename                  = ${junit_filename}
                         }
 
                     }
-                    post {
-                        always{
-                            junit "reports/pytest/junit-${NODE_NAME}-pytest.xml"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            publishCoverage adapters: [
-                                    coberturaAdapter('reports/pytest/junit-${env.NODE_NAME}-pytest.xml')
-                                ],
-                                tag: 'coverage'
-                         sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                        }
-                        cleanup{
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'reports/pytest', type: 'INCLUDE'], [pattern: 'reports/coverage', type: 'INCLUDE']]
-                        }
-                    }
                 }
                 stage("Run Tox test") {
                     when{
