@@ -135,7 +135,7 @@ pipeline {
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
 //                        TODO: when detox is fixed, just use the most recent version
                         bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install detox==0.15, tox==2.9.1
+                        bat "venv\\Scripts\\pip.exe install detox==0.15 tox==2.9.1
                     }
                     post{
                         success{
