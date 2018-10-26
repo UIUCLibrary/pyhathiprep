@@ -416,7 +416,7 @@ junit_filename                  = ${junit_filename}
                 }
             }
         }
-        stage("Deploying to Devpi") {
+        stage("Deploying to DevPi") {
             when {
                 allOf{
                     equals expected: true, actual: params.DEPLOY_DEVPI
@@ -527,7 +527,7 @@ junit_filename                  = ${junit_filename}
                         skipDefaultCheckout()
                     }
                     steps {
-                        echo "Testing Whl package in devpi"
+                        echo "Testing Whl package in DevPi"
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         bat "venv\\Scripts\\pip.exe install tox devpi-client"
                         devpiTest(
