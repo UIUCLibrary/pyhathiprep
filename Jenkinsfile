@@ -132,7 +132,9 @@ pipeline {
                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
                             }
                         }
-                        bat "venv\\Scripts\\pip.exe install -U setuptools detox tox"
+                        bat "venv\\Scripts\\pip.exe install -U setuptools"
+//                        TODO: when detox is fixed, just use the most recent version
+                        bat "venv\\Scripts\\pip.exe install detox==0.15, tox==3.5.2"
                         bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
                     }
                     post{
