@@ -65,6 +65,7 @@ pipeline {
                 }
                 stage("Cleanup"){
                     steps {
+                        echo "${env.path}"
 
 
                         dir("logs"){
@@ -529,7 +530,7 @@ junit_filename                  = ${junit_filename}
                     steps {
                         echo "Testing Whl package in DevPi"
                         bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install tox devpi-client"
+                        bat "venv\\Scripts\\pip.exe install tox detox devpi-client"
                         devpiTest(
                                 devpiExecutable: "venv\\Scripts\\devpi.exe",
                                 url: "https://devpi.library.illinois.edu",
