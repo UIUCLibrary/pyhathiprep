@@ -265,6 +265,23 @@ junit_filename                  = ${junit_filename}
                         }
                     }
                 }
+                stage("Run Tox test") {
+                    when{
+                        equals expected: true, actual: params.TEST_RUN_TOX
+                    }
+                    steps {
+                        dir("source"){
+                            script{
+                                try{
+                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox"
+                                } catch (exc) {
+                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox --recreate"
+                                }
+                            }
+
+                        }
+                    }
+                }
                 stage("Documentation"){
                     when{
                         equals expected: true, actual: params.TEST_RUN_DOCTEST
@@ -323,23 +340,7 @@ junit_filename                  = ${junit_filename}
                         }
                     }
                 }
-                stage("Run Tox test") {
-                    when{
-                        equals expected: true, actual: params.TEST_RUN_TOX
-                    }
-                    steps {
-                        dir("source"){
-                            script{
-                                try{
-                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox"
-                                } catch (exc) {
-                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox --recreate"
-                                }
-                            }
 
-                        }
-                    }
-                }
                 stage("Windows CX_Freeze MSI"){
                     agent{
                         node {
