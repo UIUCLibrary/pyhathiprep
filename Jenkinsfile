@@ -311,6 +311,9 @@ junit_filename                  = ${junit_filename}
                             archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
                             stash includes: 'dist/*.*', name: "dist"
                         }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', type: 'INCLUDE']]
+                        }
                     }
                 }
                 stage("Windows CX_Freeze MSI"){
@@ -346,9 +349,7 @@ junit_filename                  = ${junit_filename}
                             archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
                         }
                         cleanup{
-                            bat "dir"
-                            deleteDir()
-                            bat "dir"
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.msi', type: 'INCLUDE']]
                         }
                     }
                 }
