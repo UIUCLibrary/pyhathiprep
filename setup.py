@@ -1,6 +1,7 @@
 from setuptools import setup
 
 setup(
+    name="pyhathiprep",
     packages=['pyhathiprep'],
     install_requires=[
         "ruamel.yaml",
