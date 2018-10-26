@@ -493,7 +493,9 @@ junit_filename                  = ${junit_filename}
                     steps {
                         echo "Testing Whl package in DevPi"
                         bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat "venv\\Scripts\\python.exe -m pip install -U pip"
                         bat "venv\\Scripts\\pip.exe install detox==0.13 tox==3.2.1 devpi-client"
+                        bat "venv\\Scripts\\pip.exe install -U setuptools"
                         devpiTest(
                                 devpiExecutable: "venv\\Scripts\\devpi.exe",
                                 url: "https://devpi.library.illinois.edu",
