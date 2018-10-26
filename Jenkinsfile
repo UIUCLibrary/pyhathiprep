@@ -67,6 +67,7 @@ pipeline {
                     steps {
                         tool name: 'CPython-3.6', type: 'jenkins.plugins.shiningpanda.tools.PythonInstallation'
                         echo "${env.path}"
+                        bat "where python"
 
 
                         dir("logs"){
