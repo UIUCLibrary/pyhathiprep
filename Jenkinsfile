@@ -331,9 +331,9 @@ junit_filename                  = ${junit_filename}
                         dir("source"){
                             script{
                                 try{
-                                    bat "venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox"
+                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox"
                                 } catch (exc) {
-                                    bat "venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox --recreate"
+                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox --recreate"
                                 }
                             }
 
