@@ -261,6 +261,11 @@ junit_filename                  = ${junit_filename}
                         always{
                             junit "reports/pytest/junit-${NODE_NAME}-pytest.xml"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                            publishCoverage adapters: [
+                                    coberturaAdapter('reports/pytest/junit-${env.NODE_NAME}-pytest.xml')
+                                ],
+                                tag: 'coverage'
+                         sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                         }
                         cleanup{
                             cleanWs deleteDirs: true, patterns: [[pattern: 'reports/pytest', type: 'INCLUDE'], [pattern: 'reports/coverage', type: 'INCLUDE']]
@@ -380,31 +385,6 @@ junit_filename                  = ${junit_filename}
                         }
                     }
                 }
-//                stage("Windows CX_Freeze MSI"){
-//                    steps{
-//                        dir("source"){
-////                            bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt"
-//                            bat "${WORKSPACE}\\venv\\Scripts\\python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi --dist-dir ${WORKSPACE}/dist"
-//                        }
-//                        bat "build\\msi\\hathivalidate.exe --pytest"
-//                        // bat "make freeze"
-//
-//
-//                    }
-//                    post{
-//                        success{
-//                            dir("dist") {
-//                                stash includes: "*.msi", name: "msi"
-//                                archiveArtifacts artifacts: "*.msi", fingerprint: true
-//                            }
-//                        }
-//                        cleanup{
-//                            dir("build/msi") {
-//                                deleteDir()
-//                            }
-//                        }
-//                    }
-//                }
             }
         }
         stage("Deploy - Staging") {
@@ -493,20 +473,6 @@ junit_filename                  = ${junit_filename}
                                 pkgRegex: "tar.gz",
                                 detox: true
                             )
-//                        echo "Testing Source tar.gz package in devpi"
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//
-//                        }
-//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-//
-//                        script {
-//                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz  --verbose"
-//                            if(devpi_test_return_code != 0){
-//                                error "Devpi exit code for tar.gz was ${devpi_test_return_code}"
-//                            }
-//                        }
-//                        echo "Finished testing Source Distribution: .tar.gz"
                     }
                     post {
                         failure {
@@ -537,17 +503,6 @@ junit_filename                  = ${junit_filename}
                                 pkgRegex: "whl",
                                 detox: true
                             )
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//                        }
-//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-//                        script{
-//                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl  --verbose"
-//                            if(devpi_test_return_code != 0){
-//                                error "Devpi exit code for whl was ${devpi_test_return_code}"
-//                            }
-//                        }
-//                        echo "Finished testing Built Distribution: .whl"
                     }
                     post {
                         failure {
