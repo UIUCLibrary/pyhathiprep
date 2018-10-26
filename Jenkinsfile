@@ -244,28 +244,17 @@ junit_filename                  = ${junit_filename}
                     }
                     steps{
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=pyhathiprep" //  --basetemp={envtmpdir}"
+                            bat "${WORKSPACE}\\venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=pyhathiprep" //  --basetemp={envtmpdir}"
                         }
 
                     }
                     post {
                         always{
-                            dir("reports"){
-                                bat "dir"
-                            }
-                                junit "reports/junit-${NODE_NAME}-pytest.xml"
-//                                script{
-//                                    def report_files = findFiles glob: '**/*.pytest.xml'
-//                                    report_files.each { report_file ->
-//                                        echo "Found ${report_file}"
-//                                        // archiveArtifacts artifacts: "${log_file}"
-//                                        junit "${report_file}"
-//                                        bat "del ${report_file}"
-//                                    }
-//                                }
-//                            }
-                            // junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                            junit "reports/pytest/junit-${NODE_NAME}-pytest.xml"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                        }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'reports/pytest', type: 'INCLUDE'], [pattern: 'reports/coverage', type: 'INCLUDE']]
                         }
                     }
                 }
