@@ -253,7 +253,7 @@ junit_filename                  = ${junit_filename}
                             dir("reports"){
                                 bat "dir"
                             }
-                                junit "reports/*.pytest.xml"
+                                junit "reports/*.xml"
 //                                script{
 //                                    def report_files = findFiles glob: '**/*.pytest.xml'
 //                                    report_files.each { report_file ->
