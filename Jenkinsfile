@@ -24,7 +24,9 @@ pipeline {
     triggers {
         cron('@daily')
     }
-
+    environment {
+        PATH = "${tool 'CPython-3.6'}\\..\\;${tool 'CPython-3.7'}\\..\\;$PATH"
+    }
     // environment {
         //mypy_args = "--junit-xml=mypy.xml"
         //pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
@@ -65,6 +67,10 @@ pipeline {
                 }
                 stage("Cleanup"){
                     steps {
+//                        tool name: 'CPython-3.6', type: 'jenkins.plugins.shiningpanda.tools.PythonInstallation'
+//                        tool name: 'CPython-3.7', type: 'jenkins.plugins.shiningpanda.tools.PythonInstallation'
+                        echo "${env.path}"
+                        bat "where python"
 
 
                         dir("logs"){
@@ -126,7 +132,10 @@ pipeline {
                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
                             }
                         }
+                        bat "venv\\Scripts\\pip.exe install -U setuptools"
+//                        TODO: when detox is fixed, just use the most recent version
                         bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install detox==0.13 tox==3.2.1"
                     }
                     post{
                         success{
@@ -244,25 +253,25 @@ junit_filename                  = ${junit_filename}
                     }
                     steps{
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=pyhathiprep" //  --basetemp={envtmpdir}"
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage.exe run --parallel-mode --source=pyhathiprep -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}"
                         }
 
                     }
-                    post {
-                        always{
-                            dir("reports"){
-                                script{
-                                    def report_files = findFiles glob: '**/*.pytest.xml'
-                                    report_files.each { report_file ->
-                                        echo "Found ${report_file}"
-                                        // archiveArtifacts artifacts: "${log_file}"
-                                        junit "${report_file}"
-                                        bat "del ${report_file}"
-                                    }
+                }
+                stage("Run Tox test") {
+                    when{
+                        equals expected: true, actual: params.TEST_RUN_TOX
+                    }
+                    steps {
+                        dir("source"){
+                            script{
+                                try{
+                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox"
+                                } catch (exc) {
+                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox --recreate"
                                 }
                             }
-                            // junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+
                         }
                     }
                 }
@@ -272,7 +281,7 @@ junit_filename                  = ${junit_filename}
                     }
                     steps{
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v"
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage.exe run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=${WORKSPACE}\\build\\docs --builder=doctest"
                         }
                     }
 
@@ -282,22 +291,49 @@ junit_filename                  = ${junit_filename}
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
+                        dir("reports/mypy"){
+                            bat "dir > nul"
+                        }
                         dir("source") {
-                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy_html"
+
+                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/mypy/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy/mypy_html"
                         }
                     }
                     post{
                         always {
-                            junit "reports/junit-${env.NODE_NAME}-mypy.xml"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                            junit "reports/mypy/junit-${env.NODE_NAME}-mypy.xml"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                        }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'reports/mypy', type: 'INCLUDE']]
                         }
                     }
+                }
+            }
+            post{
+                always{
+                    dir("source"){
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage.exe combine"
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage.exe xml -o ${WORKSPACE}\\reports\\coverage.xml"
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage.exe html -d ${WORKSPACE}\\reports\\coverage"
+
+                    }
+                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                    publishCoverage adapters: [
+                                    coberturaAdapter('reports/coverage.xml')
+                                    ],
+                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                }
+                cleanup{
+                    cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
+                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
+                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
                 }
             }
         }
         stage("Packaging") {
             when {
-                expression { params.DEPLOY_DEVPI == true || params.RELEASE != "None"}
+                expression { params.DEPLOY_DEVPI == true}
             }
             parallel {
                 stage("Source and Wheel formats"){
@@ -309,11 +345,15 @@ junit_filename                  = ${junit_filename}
                     }
                     post{
                         success{
-                            archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
+                            archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz", fingerprint: true
                             stash includes: 'dist/*.*', name: "dist"
+                        }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz', type: 'INCLUDE']]
                         }
                     }
                 }
+
                 stage("Windows CX_Freeze MSI"){
                     agent{
                         node {
@@ -347,37 +387,10 @@ junit_filename                  = ${junit_filename}
                             archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
                         }
                         cleanup{
-                            bat "dir"
-                            deleteDir()
-                            bat "dir"
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.msi', type: 'INCLUDE']]
                         }
                     }
                 }
-//                stage("Windows CX_Freeze MSI"){
-//                    steps{
-//                        dir("source"){
-////                            bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt"
-//                            bat "${WORKSPACE}\\venv\\Scripts\\python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi --dist-dir ${WORKSPACE}/dist"
-//                        }
-//                        bat "build\\msi\\hathivalidate.exe --pytest"
-//                        // bat "make freeze"
-//
-//
-//                    }
-//                    post{
-//                        success{
-//                            dir("dist") {
-//                                stash includes: "*.msi", name: "msi"
-//                                archiveArtifacts artifacts: "*.msi", fingerprint: true
-//                            }
-//                        }
-//                        cleanup{
-//                            dir("build/msi") {
-//                                deleteDir()
-//                            }
-//                        }
-//                    }
-//                }
             }
         }
         stage("Deploy - Staging") {
@@ -415,7 +428,7 @@ junit_filename                  = ${junit_filename}
                 }
             }
         }
-        stage("Deploying to Devpi") {
+        stage("Deploying to DevPi") {
             when {
                 allOf{
                     equals expected: true, actual: params.DEPLOY_DEVPI
@@ -463,22 +476,9 @@ junit_filename                  = ${junit_filename}
                                 index: "${env.BRANCH_NAME}_staging",
                                 pkgName: "${PKG_NAME}",
                                 pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "tar.gz"
+                                pkgRegex: "tar.gz",
+                                detox: true
                             )
-//                        echo "Testing Source tar.gz package in devpi"
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//
-//                        }
-//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-//
-//                        script {
-//                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz  --verbose"
-//                            if(devpi_test_return_code != 0){
-//                                error "Devpi exit code for tar.gz was ${devpi_test_return_code}"
-//                            }
-//                        }
-//                        echo "Finished testing Source Distribution: .tar.gz"
                     }
                     post {
                         failure {
@@ -486,35 +486,6 @@ junit_filename                  = ${junit_filename}
                         }
                     }
 
-                }
-                stage("Source Distribution: .zip") {
-                    steps {
-                        devpiTest(
-                                devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                url: "https://devpi.library.illinois.edu",
-                                index: "${env.BRANCH_NAME}_staging",
-                                pkgName: "${PKG_NAME}",
-                                pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "zip"
-                            )
-//                        echo "Testing Source zip package in devpi"
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//                        }
-//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-//                        script {
-//                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip --verbose"
-//                            if(devpi_test_return_code != 0){
-//                                error "Devpi exit code for zip was ${devpi_test_return_code}"
-//                            }
-//                        }
-//                        echo "Finished testing Source Distribution: .zip"
-                    }
-                    post {
-                        failure {
-                            echo "Tests for .zip source on DevPi failed."
-                        }
-                    }
                 }
                 stage("Built Distribution: .whl") {
                     agent {
@@ -526,28 +497,20 @@ junit_filename                  = ${junit_filename}
                         skipDefaultCheckout()
                     }
                     steps {
-                        echo "Testing Whl package in devpi"
+                        echo "Testing Whl package in DevPi"
                         bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install tox devpi-client"
+                        bat "venv\\Scripts\\python.exe -m pip install -U pip"
+                        bat "venv\\Scripts\\pip.exe install detox==0.13 tox==3.2.1 devpi-client"
+                        bat "venv\\Scripts\\pip.exe install -U setuptools"
                         devpiTest(
                                 devpiExecutable: "venv\\Scripts\\devpi.exe",
                                 url: "https://devpi.library.illinois.edu",
                                 index: "${env.BRANCH_NAME}_staging",
                                 pkgName: "${PKG_NAME}",
                                 pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "whl"
+                                pkgRegex: "whl",
+                                detox: true
                             )
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//                        }
-//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-//                        script{
-//                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl  --verbose"
-//                            if(devpi_test_return_code != 0){
-//                                error "Devpi exit code for whl was ${devpi_test_return_code}"
-//                            }
-//                        }
-//                        echo "Finished testing Built Distribution: .whl"
                     }
                     post {
                         failure {
