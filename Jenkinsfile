@@ -25,7 +25,7 @@ pipeline {
         cron('@daily')
     }
     environment {
-        PATH = "${tool 'CPython-3.6'}\\..\\;${tool 'CPython-3.7'}\\;$PATH"
+        PATH = "${tool 'CPython-3.6'}\\..\\;${tool 'CPython-3.7'};$PATH"
     }
     // environment {
         //mypy_args = "--junit-xml=mypy.xml"
