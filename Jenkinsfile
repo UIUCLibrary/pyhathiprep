@@ -25,7 +25,7 @@ pipeline {
         cron('@daily')
     }
     environment {
-        PATH = "${tool 'CPython-3.6'}\\..\\;${tool 'CPython-3.7'}\\..\\;$PATH"
+        PATH = "${tool 'CPython-3.6'}\\..\\;${tool 'CPython-3.7'};$PATH"
     }
     // environment {
         //mypy_args = "--junit-xml=mypy.xml"
@@ -560,8 +560,11 @@ junit_filename                  = ${junit_filename}
         }
         stage("Release to DevPi production") {
             when {
-                expression { params.RELEASE != "None" && env.BRANCH_NAME == "master" }
+            allOf{
+              equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+              branch "master"
             }
+          }
             steps {
                 script {
                     try{
