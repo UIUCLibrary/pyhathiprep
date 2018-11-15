@@ -560,8 +560,11 @@ junit_filename                  = ${junit_filename}
         }
         stage("Release to DevPi production") {
             when {
-                expression { params.RELEASE != "None" && env.BRANCH_NAME == "master" }
+            allOf{
+              equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+              branch "master"
             }
+          }
             steps {
                 script {
                     try{
