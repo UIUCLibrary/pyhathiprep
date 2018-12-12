@@ -25,7 +25,7 @@ pipeline {
         cron('@daily')
     }
     environment {
-        PATH = "${tool 'CPython-3.6'}\\..\\;${tool 'CPython-3.7'};$PATH"
+        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
     }
     // environment {
         //mypy_args = "--junit-xml=mypy.xml"
@@ -105,13 +105,13 @@ pipeline {
                 stage("Installing required system level dependencies"){
                     steps{
                         lock("system_python_${NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'} -m pip install --upgrade pip --quiet"
+                            bat "${tool 'CPython-3.6'}\\python -m pip install --upgrade pip --quiet"
                         }
                     }
                     post{
                         always{
                             lock("system_python_${NODE_NAME}"){
-                                bat "${tool 'CPython-3.6'} -m pip list > logs\\pippackages_system_${NODE_NAME}.log"
+                                bat "${tool 'CPython-3.6'}\\python -m pip list > logs\\pippackages_system_${NODE_NAME}.log"
                             }
                             archiveArtifacts artifacts: "logs/pippackages_system_${NODE_NAME}.log"
                         }
@@ -122,13 +122,13 @@ pipeline {
                 }
                 stage("Creating virtualenv for building"){
                     steps{
-                        bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
                         script {
                             try {
                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip"
                             }
                             catch (exc) {
-                                bat "${tool 'CPython-3.6'} -m venv venv"
+                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
                             }
                         }
@@ -151,8 +151,8 @@ pipeline {
                             // Set up the reports directory variable
                             REPORT_DIR = "${WORKSPACE}\\reports"
                             dir("source"){
-                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
-                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
+                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
                             }
                         }
 
@@ -369,7 +369,7 @@ junit_filename                  = ${junit_filename}
                         bat "dir"
                         checkout scm
                         bat "dir /s / B"
-                        bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
                         bat "venv\\Scripts\\python.exe -m pip install -U pip>=18.0"
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
                         bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt"
@@ -498,7 +498,7 @@ junit_filename                  = ${junit_filename}
                     }
                     steps {
                         echo "Testing Whl package in DevPi"
-                        bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
                         bat "venv\\Scripts\\python.exe -m pip install -U pip"
                         bat "venv\\Scripts\\pip.exe install detox==0.13 tox==3.2.1 devpi-client"
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
