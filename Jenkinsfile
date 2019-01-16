@@ -518,7 +518,7 @@ junit_filename                  = ${junit_filename}
                                 }
                             }
                             environment {
-                                PATH = "${WORKSPACE}\\venv\\37\\Scripts;${WORKSPACE}\\venv\\36\\Scripts;$PATH"
+                                PATH = "${WORKSPACE}\\venv\\36\\Scripts;${WORKSPACE}\\venv\\37\\Scripts;$PATH"
                             }
                             options {
                                 skipDefaultCheckout(true)
