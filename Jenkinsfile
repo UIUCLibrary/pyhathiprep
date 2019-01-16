@@ -514,7 +514,7 @@ junit_filename                  = ${junit_filename}
                         stage("Built Distribution: .whl") {
                             agent {
                                 node {
-                                    label "Windows && Python3"
+                                    label "Windows && Python3 && Docker"
                                 }
                             }
                             environment {
