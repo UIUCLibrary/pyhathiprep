@@ -36,6 +36,7 @@ pipeline {
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
 //        booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
+        booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 Tests")
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run unit tests with PyTest")
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
@@ -65,43 +66,32 @@ pipeline {
                         }
                     }
                 }
-                stage("Cleanup"){
-                    steps {
-//                        tool name: 'CPython-3.6', type: 'jenkins.plugins.shiningpanda.tools.PythonInstallation'
-//                        tool name: 'CPython-3.7', type: 'jenkins.plugins.shiningpanda.tools.PythonInstallation'
-                        echo "${env.path}"
-                        bat "where python"
-
-
-                        dir("logs"){
-                            deleteDir()
-                            echo "Cleaned out logs directory"
-                            bat "dir"
-                        }
-
-                        dir("build"){
-                            deleteDir()
-                            echo "Cleaned out build directory"
-                            bat "dir"
-                        }
-                        dir("dist"){
-                            deleteDir()
-                            echo "Cleaned out dist directory"
-                            bat "dir"
-                        }
-
-                        dir("reports"){
-                            deleteDir()
-                            echo "Cleaned out reports directory"
-                            bat "dir"
-                        }
-                    }
-                    post{
-                        failure {
-                            deleteDir()
-                        }
-                    }
-                }
+//                stage("Cleanup"){
+//                    steps {
+//
+//                        dir("build"){
+//                            deleteDir()
+//                            echo "Cleaned out build directory"
+//                            bat "dir"
+//                        }
+//                        dir("dist"){
+//                            deleteDir()
+//                            echo "Cleaned out dist directory"
+//                            bat "dir"
+//                        }
+//
+//                        dir("reports"){
+//                            deleteDir()
+//                            echo "Cleaned out reports directory"
+//                            bat "dir"
+//                        }
+//                    }
+//                    post{
+//                        failure {
+//                            deleteDir()
+//                        }
+//                    }
+//                }
                 stage("Installing required system level dependencies"){
                     steps{
                         lock("system_python_${NODE_NAME}"){
@@ -110,6 +100,7 @@ pipeline {
                     }
                     post{
                         always{
+                            bat "if not exist logs mkdir logs"
                             lock("system_python_${NODE_NAME}"){
                                 bat "${tool 'CPython-3.6'}\\python -m pip list > logs\\pippackages_system_${NODE_NAME}.log"
                             }
@@ -213,7 +204,11 @@ junit_filename                  = ${junit_filename}
                     }
                     post{
                         always{
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
+                             recordIssues(tools: [
+                                    pyLint(name: 'Setuptools Build: PyLint', pattern: 'logs/build.log'),
+                                ]
+                            )
+//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
                             archiveArtifacts artifacts: "logs/build.log"
                         }
                         failure{
@@ -230,13 +225,14 @@ junit_filename                  = ${junit_filename}
                     }
                     post{
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
+                            recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
+//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                            stash includes: 'build/docs/html/**', name: 'docs'
+                            stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
                         }
                         failure{
                             echo "Failed to build Python package"
@@ -291,21 +287,45 @@ junit_filename                  = ${junit_filename}
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
-                        dir("reports/mypy"){
-                            bat "dir > nul"
-                        }
+                        bat "if not exist reports\\mypy mkdir reports\\mypy"
                         dir("source") {
 
-                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/mypy/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy/mypy_html"
+                            bat returnStatus: true, script: "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/mypy/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy/mypy_html > ${WORKSPACE}\\logs\\mypy.log"
                         }
                     }
                     post{
                         always {
                             junit "reports/mypy/junit-${env.NODE_NAME}-mypy.xml"
+                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
                         }
                         cleanup{
                             cleanWs deleteDirs: true, patterns: [[pattern: 'reports/mypy', type: 'INCLUDE']]
+                        }
+                    }
+                }
+                stage("Run Flake8 Static Analysis") {
+                    when {
+                        equals expected: true, actual: params.TEST_RUN_FLAKE8
+                    }
+                    steps{
+                        script{
+                            bat "venv\\Scripts\\pip.exe install flake8"
+                            try{
+                                dir("source"){
+                                    bat "${WORKSPACE}\\venv\\Scripts\\flake8.exe pyhathiprep --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                }
+                            } catch (exc) {
+                                echo "flake8 found some warnings"
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
                         }
                     }
                 }
@@ -325,16 +345,16 @@ junit_filename                  = ${junit_filename}
                                 sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                 }
                 cleanup{
-                    cleanWs(patterns: [[pattern: 'reports/coverage.xml', type: 'INCLUDE']])
-                    cleanWs(patterns: [[pattern: 'reports/coverage', type: 'INCLUDE']])
-                    cleanWs(patterns: [[pattern: 'source/.coverage', type: 'INCLUDE']])
+                    cleanWs(patterns: [
+                            [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
+                            [pattern: 'reports/coverage', type: 'INCLUDE'],
+                            [pattern: 'source/.coverage', type: 'INCLUDE']
+                        ]
+                    )
                 }
             }
         }
         stage("Packaging") {
-            when {
-                expression { params.DEPLOY_DEVPI == true}
-            }
             parallel {
                 stage("Source and Wheel formats"){
                     steps{
@@ -346,7 +366,7 @@ junit_filename                  = ${junit_filename}
                     post{
                         success{
                             archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz", fingerprint: true
-                            stash includes: 'dist/*.*', name: "dist"
+                            stash includes: 'dist/*.whl,dist/*.tar.gz', name: "DIST"
                         }
                         cleanup{
                             cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz', type: 'INCLUDE']]
@@ -355,26 +375,13 @@ junit_filename                  = ${junit_filename}
                 }
 
                 stage("Windows CX_Freeze MSI"){
-                    agent{
-                        node {
-                            label "Windows"
-                        }
-                    }
-                    options {
-                        skipDefaultCheckout true
-                    }
+//                    }
                     steps{
-                        bat "dir"
-                        deleteDir()
-                        bat "dir"
-                        checkout scm
-                        bat "dir /s / B"
-                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
-                        bat "venv\\Scripts\\python.exe -m pip install -U pip>=18.0"
-                        bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt"
-                        bat "venv\\Scripts\\python.exe cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi"
-                        // bat "make freeze"
+                        bat "if not exist dist mkdir dist"
+                        bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
+                        dir("source"){
+                            bat "${WORKSPACE}\\venv\\Scripts\\python.exe cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d ${WORKSPACE}/dist"
+                        }
 
 
                     }
@@ -382,7 +389,6 @@ junit_filename                  = ${junit_filename}
                         success{
                             dir("dist") {
                                 stash includes: "*.msi", name: "msi"
-//                                archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
                             archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
                         }
@@ -393,133 +399,297 @@ junit_filename                  = ${junit_filename}
                 }
             }
         }
-        stage("Deploy - Staging") {
-            agent any
-            when {
-                expression { params.DEPLOY_SCCM == true && params.PACKAGE == true }
-            }
-
-            steps {
-                deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-                input("Deploy to production?")
-            }
-        }
-
-        stage("Deploy - SCCM upload") {
-            agent any
-            when {
-                expression { params.DEPLOY_SCCM == true && params.PACKAGE == true }
-            }
-
-            steps {
-                deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-            }
-
-            post {
-                success {
-                    script{
-                        unstash "Source"
-                        def  deployment_request = requestDeploy this, "deployment.yml"
-                        echo deployment_request
-                        writeFile file: "deployment_request.txt", text: deployment_request
-                        archiveArtifacts artifacts: "deployment_request.txt"
-                    }
-
-                }
-            }
-        }
-        stage("Deploying to DevPi") {
+         stage("Deploy to DevPi") {
             when {
                 allOf{
-                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    anyOf{
+                        equals expected: true, actual: params.DEPLOY_DEVPI
+                        triggeredBy "TimerTriggerCause"
+                    }
                     anyOf {
                         equals expected: "master", actual: env.BRANCH_NAME
                         equals expected: "dev", actual: env.BRANCH_NAME
                     }
                 }
             }
-            steps {
-                bat "venv\\Scripts\\devpi.exe use http://devpy.library.illinois.edu"
-                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                    bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                    script {
-                        bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
-                        try {
-//                            bat "venv\\Scripts\\devpi.exe upload --only-docs"
-                            bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
-                        } catch (exc) {
-                            echo "Unable to upload to devpi with docs."
+            options{
+                timestamps()
+            }
+            stages{
+                stage("Upload to DevPi Staging"){
+                    steps {
+                        unstash "DIST"
+                        unstash "DOCS_ARCHIVE"
+                        bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
+                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+
+                        }
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+                        script {
+                                bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
+                                try {
+                                    bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+                                } catch (exc) {
+                                    echo "Unable to upload to devpi with docs."
+                                }
+                            }
+
+                    }
+                }
+                stage("Test DevPi packages") {
+
+                    parallel {
+                        stage("Testing Submitted Source Distribution") {
+                            environment {
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+                            }
+                            agent {
+                                node {
+                                    label "Windows && Python3"
+                                }
+                            }
+                            options {
+                                skipDefaultCheckout(true)
+
+                            }
+                            stages{
+                                stage("Creating venv to test sdist"){
+                                    steps {
+                                        lock("system_python_${NODE_NAME}"){
+                                            bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                        }
+                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
+                                    }
+
+                                }
+                                stage("Testing DevPi tar.gz Package"){
+                                    steps {
+                                        echo "Testing Source tar.gz package in devpi"
+                                        bat "where python"
+                                        timeout(20){
+                                            devpiTest(
+                                                devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                                url: "https://devpi.library.illinois.edu",
+                                                index: "${env.BRANCH_NAME}_staging",
+                                                pkgName: "${PKG_NAME}",
+                                                pkgVersion: "${PKG_VERSION}",
+                                                pkgRegex: "tar.gz",
+                                                detox: false
+                                            )
+                                        }
+                                        echo "Finished testing Source Distribution: .tar.gz"
+                                    }
+
+                                }
+                            }
+                            post {
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                            [pattern: '*tmp', type: 'INCLUDE'],
+                                            [pattern: 'certs', type: 'INCLUDE']
+                                            ]
+                                    )
+                                }
+                            }
+
+                        }
+                        stage("Built Distribution: .whl") {
+                            agent {
+                                node {
+                                    label "Windows && Python3"
+                                }
+                            }
+                            environment {
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+                            }
+                            options {
+                                skipDefaultCheckout(true)
+                            }
+                            stages{
+                                stage("Creating venv to test sdist"){
+                                    steps {
+                                        lock("system_python_${NODE_NAME}"){
+                                            bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                        }
+                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
+                                        bat "venv\\Scripts\\pip.exe install devpi --upgrade"
+                                    }
+
+                                }
+                                stage("Testing DevPi .whl Package"){
+
+                                    steps {
+                                        echo "Testing Whl package in devpi"
+                                        bat "where python"
+                                        devpiTest(
+                                                devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                                url: "https://devpi.library.illinois.edu",
+                                                index: "${env.BRANCH_NAME}_staging",
+                                                pkgName: "${PKG_NAME}",
+                                                pkgVersion: "${PKG_VERSION}",
+                                                pkgRegex: "whl",
+                                                detox: false
+                                            )
+
+                                        echo "Finished testing Built Distribution: .whl"
+                                    }
+                                }
+
+                            }
+                            post {
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                            [pattern: '*tmp', type: 'INCLUDE'],
+                                            [pattern: 'certs', type: 'INCLUDE']
+                                            ]
+                                    )
+                                }
+                            }
                         }
                     }
                 }
 
-            }
         }
-        stage("Test Devpi packages") {
-            when {
-                allOf{
-                    equals expected: true, actual: params.DEPLOY_DEVPI
-                    anyOf {
-                        equals expected: "master", actual: env.BRANCH_NAME
-                        equals expected: "dev", actual: env.BRANCH_NAME
-                    }
-                }
-            }
-//            steps {
-            parallel {
-                stage("Source Distribution: .tar.gz") {
-                    steps {
-                        devpiTest(
-                                devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                url: "https://devpi.library.illinois.edu",
-                                index: "${env.BRANCH_NAME}_staging",
-                                pkgName: "${PKG_NAME}",
-                                pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "tar.gz",
-                                detox: true
-                            )
-                    }
-                    post {
-                        failure {
-                            echo "Tests for .tar.gz source on DevPi failed."
-                        }
-                    }
-
-                }
-                stage("Built Distribution: .whl") {
-                    agent {
-                        node {
-                            label "Windows && Python3"
-                        }
-                    }
-                    options {
-                        skipDefaultCheckout()
-                    }
-                    steps {
-                        echo "Testing Whl package in DevPi"
-                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
-                        bat "venv\\Scripts\\python.exe -m pip install -U pip"
-                        bat "venv\\Scripts\\pip.exe install detox==0.13 tox==3.2.1 devpi-client"
-                        bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        devpiTest(
-                                devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                url: "https://devpi.library.illinois.edu",
-                                index: "${env.BRANCH_NAME}_staging",
-                                pkgName: "${PKG_NAME}",
-                                pkgVersion: "${PKG_VERSION}",
-                                pkgRegex: "whl",
-                                detox: true
-                            )
-                    }
-                    post {
-                        failure {
-                            echo "Tests for whl on DevPi failed."
-                        }
-                    }
-                }
-            }
-
+//        stage("Test DevPi packages") {
+//            when {
+//                allOf{
+//                    anyOf{
+//                        equals expected: true, actual: params.DEPLOY_DEVPI
+//                        triggeredBy "TimerTriggerCause"
+//                    }
+//                    anyOf {
+//                        equals expected: "master", actual: env.BRANCH_NAME
+//                        equals expected: "dev", actual: env.BRANCH_NAME
+//                    }
+//                }
+//            }
+//
+//            parallel {
+//                stage("Testing Submitted Source Distribution") {
+//                    environment {
+//                        PATH = "${tool 'cmake3.12'};${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+//                    }
+//                    steps {
+//                        echo "Testing Source tar.gz package in devpi"
+//
+//                        timeout(20){
+//                            devpiTest(
+//                                devpiExecutable: "venv36\\Scripts\\devpi.exe",
+//                                url: "https://devpi.library.illinois.edu",
+//                                index: "${env.BRANCH_NAME}_staging",
+//                                pkgName: "${PKG_NAME}",
+//                                pkgVersion: "${PKG_VERSION}",
+//                                pkgRegex: "tar.gz",
+//                                detox: false
+//                            )
+//                        }
+//                        echo "Finished testing Source Distribution: .tar.gz"
+//                    }
+//                    post {
+//                        failure {
+//                            echo "Tests for .tar.gz source on DevPi failed."
+//                        }
+//                    }
+//
+//                }
+//                stage("Built Distribution: py36 .whl") {
+//                    agent {
+//                        node {
+//                            label "Windows && Python3"
+//                        }
+//                    }
+//                    environment {
+//                        PATH = "${tool 'CPython-3.6'};$PATH"
+//                    }
+//                    options {
+//                        skipDefaultCheckout(true)
+//                    }
+//
+//                    steps {
+//                        bat "${tool 'CPython-3.6'}\\python -m venv venv36"
+//                        bat "venv36\\Scripts\\python.exe -m pip install pip --upgrade"
+//                        bat "venv36\\Scripts\\pip.exe install devpi --upgrade"
+//                        echo "Testing Whl package in devpi"
+//                        devpiTest(
+//                                devpiExecutable: "venv36\\Scripts\\devpi.exe",
+//                                url: "https://devpi.library.illinois.edu",
+//                                index: "${env.BRANCH_NAME}_staging",
+//                                pkgName: "${PKG_NAME}",
+//                                pkgVersion: "${PKG_VERSION}",
+//                                pkgRegex: "36.*whl",
+//                                detox: false,
+//                                toxEnvironment: "py36"
+//                            )
+//
+//                        echo "Finished testing Built Distribution: .whl"
+//                    }
+//                    post {
+//                        failure {
+//                            archiveArtifacts allowEmptyArchive: true, artifacts: "**/MSBuild_*.failure.txt"
+//                        }
+//                        cleanup{
+//                            cleanWs(
+//                                deleteDirs: true,
+//                                disableDeferredWipeout: true,
+//                                patterns: [
+//                                    [pattern: 'certs', type: 'INCLUDE']
+//                                    ]
+//                            )
+//                        }
+//                    }
+//                }
+//                stage("Built Distribution: py37 .whl") {
+//                    agent {
+//                        node {
+//                            label "Windows && Python3"
+//                        }}
+//                    environment {
+//                        PATH = "${tool 'CPython-3.7'};$PATH"
+//                    }
+//                    options {
+//                        skipDefaultCheckout(true)
+//                    }
+//
+//                    steps {
+//                        echo "Testing Whl package in devpi"
+//                        bat "\"${tool 'CPython-3.7'}\\python.exe\" -m venv venv37"
+//                        bat "venv37\\Scripts\\python.exe -m pip install pip --upgrade"
+//                        bat "venv37\\Scripts\\pip.exe install devpi --upgrade"
+//                        devpiTest(
+//                                devpiExecutable: "venv37\\Scripts\\devpi.exe",
+//                                url: "https://devpi.library.illinois.edu",
+//                                index: "${env.BRANCH_NAME}_staging",
+//                                pkgName: "${PKG_NAME}",
+//                                pkgVersion: "${PKG_VERSION}",
+//                                pkgRegex: "37.*whl",
+//                                detox: false,
+//                                toxEnvironment: "py37"
+//                            )
+//                        echo "Finished testing Built Distribution: .whl"
+//                    }
+//                    post {
+//                        failure {
+//                            archiveArtifacts allowEmptyArchive: true, artifacts: "**/MSBuild_*.failure.txt"
+//                        }
+//                        cleanup{
+//                            cleanWs(
+//                                deleteDirs: true,
+//                                disableDeferredWipeout: true,
+//                                patterns: [
+//                                    [pattern: 'certs', type: 'INCLUDE']
+//                                    ]
+//                            )
+//                        }
+//                    }
+//                }
+//            }
             post {
                 success {
                     echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
@@ -529,60 +699,103 @@ junit_filename                  = ${junit_filename}
                             bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
                             bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
                         }
+
                     }
+                }
+                failure {
+                    echo "At least one package format on DevPi failed."
                 }
             }
         }
-         stage("Deploy to SCCM") {
-            when {
-                expression { params.RELEASE == "Release_to_devpi_and_sccm"}
-            }
-
-            steps {
-                node("Linux"){
-                    unstash "msi"
-                    deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-                    input("Push a SCCM release?")
-                    deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+        stage("Deploy - SCCM"){
+            agent any
+            when{
+                allOf{
+                    equals expected: true, actual: params.DEPLOY_SCCM
+                    branch "master"
                 }
-
             }
-            post {
-                success {
-                    script{
-                        def  deployment_request = requestDeploy this, "deployment.yml"
-                        echo deployment_request
-                        writeFile file: "deployment_request.txt", text: deployment_request
-                        archiveArtifacts artifacts: "deployment_request.txt"
+            stages{
+                 stage("Deploy - Staging") {
+
+                    steps {
+                        deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
+                        input("Deploy to production?")
                     }
                 }
-            }
-        }
-        stage("Release to DevPi production") {
-            when {
-            allOf{
-              equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-              branch "master"
-            }
-          }
-            steps {
-                script {
-                    try{
-                        timeout(30) {
-                            input "Release ${PKG_NAME} ${PKG_VERSION} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${PKG_NAME}/${PKG_VERSION}) to DevPi Production? "
+
+                stage("Deploy - SCCM upload") {
+                    steps {
+                        deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                    }
+
+                    post {
+                        success {
+                            script{
+                                unstash "Source"
+                                def  deployment_request = requestDeploy this, "deployment.yml"
+                                echo deployment_request
+                                writeFile file: "deployment_request.txt", text: deployment_request
+                                archiveArtifacts artifacts: "deployment_request.txt"
+                            }
+
                         }
-                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        }
-
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                        bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
-                    } catch(err){
-                        echo "User response timed out. Packages not deployed to DevPi Production."
                     }
                 }
+
+
             }
         }
+//         stage("Deploy to SCCM") {
+//            when {
+//                expression { params.RELEASE == "Release_to_devpi_and_sccm"}
+//            }
+//
+//            steps {
+//                node("Linux"){
+//                    unstash "msi"
+//                    deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
+//                    input("Push a SCCM release?")
+//                    deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+//                }
+//
+//            }
+//            post {
+//                success {
+//                    script{
+//                        def  deployment_request = requestDeploy this, "deployment.yml"
+//                        echo deployment_request
+//                        writeFile file: "deployment_request.txt", text: deployment_request
+//                        archiveArtifacts artifacts: "deployment_request.txt"
+//                    }
+//                }
+//            }
+//        }
+//        stage("Release to DevPi production") {
+//            when {
+//            allOf{
+//              equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+//              branch "master"
+//            }
+//          }
+//            steps {
+//                script {
+//                    try{
+//                        timeout(30) {
+//                            input "Release ${PKG_NAME} ${PKG_VERSION} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${PKG_NAME}/${PKG_VERSION}) to DevPi Production? "
+//                        }
+//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+//                        }
+//
+//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+//                        bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
+//                    } catch(err){
+//                        echo "User response timed out. Packages not deployed to DevPi Production."
+//                    }
+//                }
+//            }
+//        }
         stage("Update online documentation") {
             agent any
             when {
@@ -656,99 +869,17 @@ junit_filename                  = ${junit_filename}
                     echo "Devpi remove exited with code ${devpi_remove_return_code}."
                 }
             }
-            dir("build"){
-                deleteDir()
-            }
-            dir("logs"){
-                deleteDir()
-            }
-            dir("reports"){
-                deleteDir()
-            }
-//            bat "dir /s / B"
+            cleanWs(
+                deleteDirs: true,
+                patterns: [
+                    [pattern: 'dist', type: 'INCLUDE'],
+                    [pattern: 'build', type: 'INCLUDE'],
+                    [pattern: 'reports', type: 'INCLUDE'],
+                    [pattern: 'logs', type: 'INCLUDE'],
+                    [pattern: 'certs', type: 'INCLUDE'],
+                    [pattern: '*tmp', type: 'INCLUDE'],
+                    ]
+                )
         }
     }
-//        stage("Deploy - Staging") {
-//            agent {
-//                label 'Linux'
-//            }
-//            when {
-//                expression { params.DEPLOY_SCCM == true }
-//            }
-//
-//            steps {
-//                deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-//                input("Deploy to production?")
-//            }
-//        }
-//
-//        stage("Deploy - SCCM upload") {
-//            agent {
-//                label 'Linux'
-//            }
-//            when {
-//                expression { params.DEPLOY_SCCM == true }
-//            }
-//
-//            steps {
-//                deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-//            }
-//            post {
-//                success {
-//                    script{
-//                        unstash "Source"
-//                        def  deployment_request = requestDeploy this, "deployment.yml"
-//                        echo deployment_request
-//                        writeFile file: "deployment_request.txt", text: deployment_request
-//                        archiveArtifacts artifacts: "deployment_request.txt"
-//                    }
-//                }
-//            }
-//        }
-//        stage("Deploying to Devpi") {
-//            agent {
-//                node {
-//                    label 'Windows&&DevPi'
-//                }
-//            }
-//            when {
-//                expression { params.DEPLOY_DEVPI == true }
-//            }
-//            steps {
-//                deleteDir()
-//                unstash "Source"
-//                bat "devpi use http://devpy.library.illinois.edu"
-//                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//
-//                    bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//                    bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}"
-//                    script {
-//                        try{
-//                            bat "devpi upload --with-docs"
-//
-//                        } catch (exc) {
-//                            echo "Unable to upload to devpi with docs. Trying without"
-//                            bat "devpi upload"
-//                        }
-//                    }
-//                    bat "devpi test pyhathiprep"
-//                }
-//
-//            }
-//        }
-//
-//        stage("Update online documentation") {
-//            agent {
-//                label 'Linux'
-//
-//            }
-//            when {
-//              expression {params.UPDATE_DOCS == true }
-//            }
-//
-//            steps {
-//                updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
-//            }
-//        }
-//    }
 }
