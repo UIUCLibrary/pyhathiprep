@@ -529,9 +529,9 @@ junit_filename                  = ${junit_filename}
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
                                             bat "if not exist venv\\36 mkdir venv\\36"
-                                            bat "${tool 'CPython-3.6'}\\python -m venv venv\\36"
+                                            bat "\"${tool 'CPython-3.6'}\\python.exe\" -m venv venv\\36"
                                             bat "if not exist venv\\37 mkdir venv\\37"
-                                            bat "${tool 'CPython-3.7'}\\python -m venv venv\\37"
+                                            bat "\"${tool 'CPython-3.7'}\\python.exe\" -m venv venv\\37"
                                         }
                                         bat "python -m pip install pip --upgrade && pip install setuptools --upgrade && pip install \"tox<3.7\" detox devpi-client"
                                         bat "pip install devpi --upgrade"
