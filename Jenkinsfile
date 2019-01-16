@@ -465,7 +465,7 @@ junit_filename                  = ${junit_filename}
                                 stage("Testing DevPi tar.gz Package"){
                                     steps {
                                         echo "Testing Source tar.gz package in devpi"
-
+                                        bat "where python"
                                         timeout(20){
                                             devpiTest(
                                                 devpiExecutable: "venv\\Scripts\\devpi.exe",
@@ -515,16 +515,15 @@ junit_filename                  = ${junit_filename}
                                             bat "${tool 'CPython-3.6'}\\python -m venv venv"
                                         }
                                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
+                                        bat "venv\\Scripts\\pip.exe install devpi --upgrade"
                                     }
 
                                 }
                                 stage("Testing DevPi .whl Package"){
 
                                     steps {
-                                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
-                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade"
-                                        bat "venv\\Scripts\\pip.exe install devpi --upgrade"
                                         echo "Testing Whl package in devpi"
+                                        bat "where python"
                                         devpiTest(
                                                 devpiExecutable: "venv\\Scripts\\devpi.exe",
                                                 url: "https://devpi.library.illinois.edu",
