@@ -577,17 +577,17 @@ junit_filename                  = ${junit_filename}
 
                         }
                         stage("Built Distribution: .whl") {
-                            agent {
-                                node {
-                                    label "Windows && Python3"
-                                }
-                            }
+//                            agent {
+//                                node {
+//                                    label "Windows && Python3"
+//                                }
+//                            }
                             environment {
                                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
                             }
-                            options {
-                                skipDefaultCheckout(true)
-                            }
+//                            options {
+//                                skipDefaultCheckout(true)
+//                            }
 
                             steps {
                                 bat "${tool 'CPython-3.6'}\\python -m venv venv"
