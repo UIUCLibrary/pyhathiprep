@@ -466,7 +466,7 @@ junit_filename                  = ${junit_filename}
                                 stage("Creating venv to test sdist"){
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
-                                            bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                            bat "python -m venv venv"
                                         }
                                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
                                     }
@@ -475,8 +475,8 @@ junit_filename                  = ${junit_filename}
                                 stage("Testing DevPi tar.gz Package"){
                                     steps {
                                         echo "Testing Source tar.gz package in devpi"
-                                        bat "where python"
                                         timeout(20){
+                                            bat "where python"
                                             devpiTest(
                                                 devpiExecutable: "venv\\Scripts\\devpi.exe",
                                                 url: "https://devpi.library.illinois.edu",
@@ -522,7 +522,7 @@ junit_filename                  = ${junit_filename}
                                 stage("Creating venv to test sdist"){
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
-                                            bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                            bat "python -m venv venv"
                                         }
                                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
                                         bat "venv\\Scripts\\pip.exe install devpi --upgrade"
