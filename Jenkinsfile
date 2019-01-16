@@ -542,6 +542,7 @@ junit_filename                  = ${junit_filename}
                                     steps {
                                         echo "Testing Whl package in devpi"
                                         bat "where python"
+                                        bat "where devpi"
                                         devpiTest(
                                                 devpiExecutable: "venv\\36\\Scripts\\devpi.exe",
                                                 url: "https://devpi.library.illinois.edu",
