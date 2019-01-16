@@ -373,7 +373,7 @@ junit_filename                  = ${junit_filename}
 //                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
 //                        bat "venv\\Scripts\\python.exe -m pip install -U pip>=18.0"
 //                        bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        bat "venv\\Scripts\\pip.exe install -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt"
+                        bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
                         dir("source"){
                             bat "${WORKSPACE}\\venv\\Scripts\\python.exe cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d ${WORKSPACE}/dist"
                         }
