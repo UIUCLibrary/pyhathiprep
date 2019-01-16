@@ -558,18 +558,18 @@ junit_filename                  = ${junit_filename}
                                 }
 
                             }
-                            post {
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        disableDeferredWipeout: true,
-                                        patterns: [
-                                            [pattern: '*tmp', type: 'INCLUDE'],
-                                            [pattern: 'certs', type: 'INCLUDE']
-                                            ]
-                                    )
-                                }
-                            }
+//                            post {
+//                                cleanup{
+//                                    cleanWs(
+//                                        deleteDirs: true,
+//                                        disableDeferredWipeout: true,
+//                                        patterns: [
+//                                            [pattern: '*tmp', type: 'INCLUDE'],
+//                                            [pattern: 'certs', type: 'INCLUDE']
+//                                            ]
+//                                    )
+//                                }
+//                            }
                         }
                     }
                 }
