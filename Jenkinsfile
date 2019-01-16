@@ -335,9 +335,6 @@ junit_filename                  = ${junit_filename}
             }
         }
         stage("Packaging") {
-            when {
-                expression { params.DEPLOY_DEVPI == true}
-            }
             parallel {
                 stage("Source and Wheel formats"){
                     steps{
@@ -426,58 +423,102 @@ junit_filename                  = ${junit_filename}
                             environment {
                                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
                             }
-                            steps {
-                                echo "Testing Source tar.gz package in devpi"
-
-                                timeout(20){
-                                    devpiTest(
-                                        devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                        url: "https://devpi.library.illinois.edu",
-                                        index: "${env.BRANCH_NAME}_staging",
-                                        pkgName: "${PKG_NAME}",
-                                        pkgVersion: "${PKG_VERSION}",
-                                        pkgRegex: "tar.gz",
-                                        detox: false
-                                    )
+                            agent {
+                                node {
+                                    label "Windows && Python3"
                                 }
-                                echo "Finished testing Source Distribution: .tar.gz"
+                            }
+                            options {
+                                skipDefaultCheckout(true)
+
+                            }
+                            stages{
+                                stage("Creating venv to test sdist"){
+                                    steps {
+                                        lock("system_python_${NODE_NAME}"){
+                                            bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                        }
+                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
+                                    }
+
+                                }
+                                stage("Testing DevPi tar.gz Package"){
+                                    steps {
+                                        echo "Testing Source tar.gz package in devpi"
+
+                                        timeout(20){
+                                            devpiTest(
+                                                devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                                url: "https://devpi.library.illinois.edu",
+                                                index: "${env.BRANCH_NAME}_staging",
+                                                pkgName: "${PKG_NAME}",
+                                                pkgVersion: "${PKG_VERSION}",
+                                                pkgRegex: "tar.gz",
+                                                detox: false
+                                            )
+                                        }
+                                        echo "Finished testing Source Distribution: .tar.gz"
+                                    }
+
+                                }
                             }
                             post {
-                                failure {
-                                    echo "Tests for .tar.gz source on DevPi failed."
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                            [pattern: '*tmp', type: 'INCLUDE'],
+                                            [pattern: 'certs', type: 'INCLUDE']
+                                            ]
+                                    )
                                 }
                             }
 
                         }
                         stage("Built Distribution: .whl") {
-//                            agent {
-//                                node {
-//                                    label "Windows && Python3"
-//                                }
-//                            }
+                            agent {
+                                node {
+                                    label "Windows && Python3"
+                                }
+                            }
                             environment {
                                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
                             }
-//                            options {
-//                                skipDefaultCheckout(true)
-//                            }
+                            options {
+                                skipDefaultCheckout(true)
+                            }
+                            stages{
+                                stage("Creating venv to test sdist"){
+                                    steps {
+                                        lock("system_python_${NODE_NAME}"){
+                                            bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                        }
+                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
+                                    }
 
-                            steps {
-                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
-                                bat "venv\\Scripts\\python.exe -m pip install pip --upgrade"
-                                bat "venv\\Scripts\\pip.exe install devpi --upgrade"
-                                echo "Testing Whl package in devpi"
-                                devpiTest(
-                                        devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                        url: "https://devpi.library.illinois.edu",
-                                        index: "${env.BRANCH_NAME}_staging",
-                                        pkgName: "${PKG_NAME}",
-                                        pkgVersion: "${PKG_VERSION}",
-                                        pkgRegex: "whl",
-                                        detox: false
-                                    )
+                                }
+                                stage("Testing DevPi .whl Package"){
 
-                                echo "Finished testing Built Distribution: .whl"
+                                    steps {
+                                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade"
+                                        bat "venv\\Scripts\\pip.exe install devpi --upgrade"
+                                        echo "Testing Whl package in devpi"
+                                        devpiTest(
+                                                devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                                url: "https://devpi.library.illinois.edu",
+                                                index: "${env.BRANCH_NAME}_staging",
+                                                pkgName: "${PKG_NAME}",
+                                                pkgVersion: "${PKG_VERSION}",
+                                                pkgRegex: "whl",
+                                                detox: false
+                                            )
+
+                                        echo "Finished testing Built Distribution: .whl"
+                                    }
+                                }
+
                             }
                             post {
                                 cleanup{
