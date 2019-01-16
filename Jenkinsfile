@@ -336,7 +336,7 @@ junit_filename                  = ${junit_filename}
                     post {
                         always {
                             dir("source"){
-                                recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                recordIssues(tools: [flake8(name: 'Flake8', pattern: '../logs/flake8.log')])
                             }
                         }
                         cleanup{
