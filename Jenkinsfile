@@ -99,6 +99,7 @@ pipeline {
                     }
                     post{
                         always{
+                            bat "if not exist logs mkdir logs"
                             lock("system_python_${NODE_NAME}"){
                                 bat "${tool 'CPython-3.6'}\\python -m pip list > logs\\pippackages_system_${NODE_NAME}.log"
                             }
