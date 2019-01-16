@@ -330,7 +330,9 @@ junit_filename                  = ${junit_filename}
                     }
                     post {
                         always {
-                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                            dir("source"){
+                                recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                            }
                         }
                         cleanup{
                             cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
