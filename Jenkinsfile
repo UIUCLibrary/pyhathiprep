@@ -442,7 +442,7 @@ junit_filename                  = ${junit_filename}
                     parallel {
                         stage("Testing Submitted Source Distribution") {
                             environment {
-                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+                                PATH = "${tool 'CPython-3.7'};${tool 'CPython-3.6'};$PATH"
                             }
                             agent {
                                 node {
@@ -504,7 +504,7 @@ junit_filename                  = ${junit_filename}
                                 }
                             }
                             environment {
-                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+                                PATH = "${tool 'CPython-3.7'};${tool 'CPython-3.6'};$PATH"
                             }
                             options {
                                 skipDefaultCheckout(true)
