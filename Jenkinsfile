@@ -543,7 +543,7 @@ junit_filename                  = ${junit_filename}
                                         echo "Testing Whl package in devpi"
 //                                        echo "Found devpi at ${powershell(script: '(Get-Command devpi).path', returnStdout: true)} "
                                         devpiTest(
-                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true)}",
+                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${PKG_NAME}",
