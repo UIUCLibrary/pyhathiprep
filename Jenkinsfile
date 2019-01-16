@@ -310,9 +310,10 @@ junit_filename                  = ${junit_filename}
                     }
                     steps{
                         script{
+                            bat "venv\\Scripts\\pip.exe install flake8"
                             try{
                                 dir("source"){
-                                    bat "${WORKSPACE}\\venv36\\Scripts\\flake8.exe pyhathiprep --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    bat "${WORKSPACE}\\venv\\Scripts\\flake8.exe pyhathiprep --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
                             } catch (exc) {
                                 echo "flake8 found some warnings"
