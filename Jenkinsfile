@@ -525,16 +525,16 @@ junit_filename                  = ${junit_filename}
                 stage("Upload to DevPi Staging"){
                     steps {
                         unstash "DOCS_ARCHIVE"
-                        bat "venv36\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
+                        bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "venv36\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
 
                         }
-                        bat "venv36\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                         script {
-                                bat "venv36\\Scripts\\devpi.exe upload --from-dir dist"
+                                bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
                                 try {
-                                    bat "venv36\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+                                    bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
                                 } catch (exc) {
                                     echo "Unable to upload to devpi with docs."
                                 }
@@ -554,7 +554,7 @@ junit_filename                  = ${junit_filename}
 
                                 timeout(20){
                                     devpiTest(
-                                        devpiExecutable: "venv36\\Scripts\\devpi.exe",
+                                        devpiExecutable: "venv\\Scripts\\devpi.exe",
                                         url: "https://devpi.library.illinois.edu",
                                         index: "${env.BRANCH_NAME}_staging",
                                         pkgName: "${PKG_NAME}",
@@ -587,8 +587,8 @@ junit_filename                  = ${junit_filename}
 
                             steps {
                                 bat "${tool 'CPython-3.6'}\\python -m venv venv"
-                                bat "venv36\\Scripts\\python.exe -m pip install pip --upgrade"
-                                bat "venv36\\Scripts\\pip.exe install devpi --upgrade"
+                                bat "venv\\Scripts\\python.exe -m pip install pip --upgrade"
+                                bat "venv\\Scripts\\pip.exe install devpi --upgrade"
                                 echo "Testing Whl package in devpi"
                                 devpiTest(
                                         devpiExecutable: "venv\\Scripts\\devpi.exe",
