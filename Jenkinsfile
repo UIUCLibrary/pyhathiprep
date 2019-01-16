@@ -532,7 +532,7 @@ junit_filename                  = ${junit_filename}
                                             bat "if not exist venv\\37 mkdir venv\\37"
                                             bat "\"${tool 'CPython-3.7'}\\python.exe\" -m venv venv\\37"
                                         }
-                                        bat "python -m pip install pip --upgrade && pip install setuptools --upgrade && pip install \"tox<3.7\" detox devpi-client"
+                                        bat "python -m pip install pip --upgrade && pip install setuptools --upgrade && pip install \"tox<3.7\" devpi-client"
                                         bat "pip install devpi --upgrade"
                                     }
 
@@ -543,8 +543,8 @@ junit_filename                  = ${junit_filename}
                                         echo "Testing Whl package in devpi"
                                         bat "where python"
                                         bat "where devpi"
-                                        powershell script: 'Get-Command devpi'
-                                        echo "Found devpi at ${bat returnStdout: true, script: 'where devpi'} "
+
+                                        echo "Found devpi at ${powershell(script: '(Get-Command devpi).path', returnStdout: true)} "
                                         devpiTest(
                                                 devpiExecutable: "venv\\37\\Scripts\\devpi.exe",
                                                 url: "https://devpi.library.illinois.edu",
