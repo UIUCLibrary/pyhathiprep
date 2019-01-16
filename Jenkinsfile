@@ -544,7 +544,7 @@ junit_filename                  = ${junit_filename}
                                         bat "where python"
                                         bat "where devpi"
                                         powershell script: 'Get-Command devpi'
-//                                        echo "Found devpi at ${} "
+                                        echo "Found devpi at ${bat returnStdout: true, script: 'where devpi'} "
                                         devpiTest(
                                                 devpiExecutable: "venv\\37\\Scripts\\devpi.exe",
                                                 url: "https://devpi.library.illinois.edu",
