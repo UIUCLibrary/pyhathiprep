@@ -541,12 +541,9 @@ junit_filename                  = ${junit_filename}
 
                                     steps {
                                         echo "Testing Whl package in devpi"
-                                        bat "where python"
-                                        bat "where devpi"
-
-                                        echo "Found devpi at ${powershell(script: '(Get-Command devpi).path', returnStdout: true)} "
+//                                        echo "Found devpi at ${powershell(script: '(Get-Command devpi).path', returnStdout: true)} "
                                         devpiTest(
-                                                devpiExecutable: "venv\\37\\Scripts\\devpi.exe",
+                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true)}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${PKG_NAME}",
