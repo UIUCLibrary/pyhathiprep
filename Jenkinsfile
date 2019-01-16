@@ -250,6 +250,9 @@ junit_filename                  = ${junit_filename}
             }
         }
         stage("Tests") {
+            environment {
+                PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
+            }
             parallel {
                 stage("PyTest"){
                     when {
@@ -266,13 +269,15 @@ junit_filename                  = ${junit_filename}
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
+
                     steps {
                         dir("source"){
+
                             script{
                                 try{
-                                    bat "${WORKSPACE}\\venv\\Scripts\\tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox"
+                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox"
                                 } catch (exc) {
-                                    bat "${WORKSPACE}\\venv\\Scripts\\tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate"
+                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate"
                                 }
                             }
 
