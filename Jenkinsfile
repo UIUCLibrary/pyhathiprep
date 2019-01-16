@@ -469,6 +469,9 @@ junit_filename                  = ${junit_filename}
 //            steps {
             parallel {
                 stage("Source Distribution: .tar.gz") {
+                    environment {
+                        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+                    }
                     steps {
                         devpiTest(
                                 devpiExecutable: "venv\\Scripts\\devpi.exe",
@@ -495,6 +498,9 @@ junit_filename                  = ${junit_filename}
                     }
                     options {
                         skipDefaultCheckout()
+                    }
+                    environment {
+                        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
                     }
                     steps {
                         echo "Testing Whl package in DevPi"
