@@ -518,7 +518,7 @@ junit_filename                  = ${junit_filename}
                                 }
                             }
                             environment {
-                                PATH = "${WORKSPACE}\\venv\\36\\Scripts;${WORKSPACE}\\venv\\37\\Scripts;$PATH"
+                                PATH = "${WORKSPACE}\\venv\\37\\Scripts;${WORKSPACE}\\venv\\36\\Scripts;$PATH"
                             }
                             options {
                                 skipDefaultCheckout(true)
@@ -543,8 +543,10 @@ junit_filename                  = ${junit_filename}
                                         echo "Testing Whl package in devpi"
                                         bat "where python"
                                         bat "where devpi"
+                                        powershell script: 'Get-Command devpi'
+//                                        echo "Found devpi at ${} "
                                         devpiTest(
-                                                devpiExecutable: "venv\\36\\Scripts\\devpi.exe",
+                                                devpiExecutable: "venv\\37\\Scripts\\devpi.exe",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${PKG_NAME}",
