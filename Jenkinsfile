@@ -533,7 +533,6 @@ junit_filename                  = ${junit_filename}
                                             bat "\"${tool 'CPython-3.7'}\\python.exe\" -m venv venv\\37"
                                         }
                                         bat "python -m pip install pip --upgrade && pip install setuptools --upgrade && pip install \"tox<3.7\" devpi-client"
-                                        bat "pip install devpi --upgrade"
                                     }
 
                                 }
