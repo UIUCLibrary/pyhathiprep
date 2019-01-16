@@ -550,7 +550,7 @@ junit_filename                  = ${junit_filename}
                                                 pkgName: "${PKG_NAME}",
                                                 pkgVersion: "${PKG_VERSION}",
                                                 pkgRegex: "whl",
-                                                detox: true
+                                                detox: false
                                             )
 
                                         echo "Finished testing Built Distribution: .whl"
