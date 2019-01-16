@@ -270,9 +270,9 @@ junit_filename                  = ${junit_filename}
                         dir("source"){
                             script{
                                 try{
-                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox"
+                                    bat "${WORKSPACE}\\venv\\Scripts\\tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox"
                                 } catch (exc) {
-                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate"
+                                    bat "${WORKSPACE}\\venv\\Scripts\\tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate"
                                 }
                             }
 
