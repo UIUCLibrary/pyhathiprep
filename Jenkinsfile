@@ -519,7 +519,7 @@ junit_filename                  = ${junit_filename}
                                 }
                             }
                             environment {
-                                PATH = "${tool 'CPython-3.7'};${tool 'CPython-3.6'};$PATH"
+                                PATH = "${WORKSPACE}\\venv\\36\\Scripts;${WORKSPACE}\\venv\\37\\Scripts;$PATH"
                             }
                             options {
                                 skipDefaultCheckout(true)
@@ -528,10 +528,13 @@ junit_filename                  = ${junit_filename}
                                 stage("Creating venv to test sdist"){
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
-                                            bat "python -m venv venv"
+                                            bat "if not exist venv\\36 mkdir venv\\36"
+                                            bat "${tool 'CPython-3.6'}\\python -m venv venv\\36"
+                                            bat "if not exist venv\\37 mkdir venv\\37"
+                                            bat "${tool 'CPython-3.7'}\\python -m venv venv\\37"
                                         }
-                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
-                                        bat "venv\\Scripts\\pip.exe install devpi --upgrade"
+                                        bat "python -m pip install pip --upgrade && pip install setuptools --upgrade && pip install \"tox<3.7\" detox devpi-client"
+                                        bat "pip install devpi --upgrade"
                                     }
 
                                 }
@@ -541,7 +544,7 @@ junit_filename                  = ${junit_filename}
                                         echo "Testing Whl package in devpi"
                                         bat "where python"
                                         devpiTest(
-                                                devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                                devpiExecutable: "venv\\37\\Scripts\\devpi.exe",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${PKG_NAME}",
