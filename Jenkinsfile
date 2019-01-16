@@ -303,6 +303,30 @@ junit_filename                  = ${junit_filename}
                         }
                     }
                 }
+                stage("Run Flake8 Static Analysis") {
+                    when {
+                        equals expected: true, actual: params.TEST_RUN_FLAKE8
+                    }
+                    steps{
+                        script{
+                            try{
+                                dir("source"){
+                                    bat "${WORKSPACE}\\venv36\\Scripts\\flake8.exe pyhathiprep --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                }
+                            } catch (exc) {
+                                echo "flake8 found some warnings"
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                        }
+                        cleanup{
+                            cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
+                        }
+                    }
+                }
             }
             post{
                 always{
