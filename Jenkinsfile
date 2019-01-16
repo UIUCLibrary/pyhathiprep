@@ -237,6 +237,15 @@ junit_filename                  = ${junit_filename}
                         failure{
                             echo "Failed to build Python package"
                         }
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: "dist/${DOC_ZIP_FILENAME}", type: 'INCLUDE'],
+                                    [pattern: 'build/docs/html/**"', type: 'INCLUDE']
+                                    ]
+                            )
+                        }
                     }
                 }
             }
