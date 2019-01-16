@@ -124,9 +124,8 @@ pipeline {
                             }
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
-//                        TODO: when detox is fixed, just use the most recent version
                         bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install detox==0.13 tox==3.2.1"
+                        bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
                     }
                     post{
                         success{
@@ -271,9 +270,9 @@ junit_filename                  = ${junit_filename}
                         dir("source"){
                             script{
                                 try{
-                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox"
+                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox"
                                 } catch (exc) {
-                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox --recreate"
+                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate"
                                 }
                             }
 
