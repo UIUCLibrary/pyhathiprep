@@ -203,7 +203,11 @@ junit_filename                  = ${junit_filename}
                     }
                     post{
                         always{
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
+                             recordIssues(tools: [
+                                    pyLint(name: 'Setuptools Build: PyLint', pattern: 'logs/build.log'),
+                                ]
+                            )
+//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
                             archiveArtifacts artifacts: "logs/build.log"
                         }
                         failure{
@@ -220,7 +224,8 @@ junit_filename                  = ${junit_filename}
                     }
                     post{
                         always {
-                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
+                            recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
+//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
@@ -281,17 +286,16 @@ junit_filename                  = ${junit_filename}
                         equals expected: true, actual: params.TEST_RUN_MYPY
                     }
                     steps{
-                        dir("reports/mypy"){
-                            bat "dir > nul"
-                        }
+                        bat "if not exist reports\\mypy mkdir reports\\mypy"
                         dir("source") {
 
-                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/mypy/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy/mypy_html"
+                            bat returnStatus: true, script: "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/mypy/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy/mypy_html > ${WORKSPACE}\\logs\\mypy.log"
                         }
                     }
                     post{
                         always {
                             junit "reports/mypy/junit-${env.NODE_NAME}-mypy.xml"
+                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
                         }
                         cleanup{
