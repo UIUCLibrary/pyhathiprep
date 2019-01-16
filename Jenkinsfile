@@ -525,7 +525,7 @@ junit_filename                  = ${junit_filename}
                                 skipDefaultCheckout(true)
                             }
                             stages{
-                                stage("Creating venv to test sdist"){
+                                stage("Creating venv to Test Whl"){
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
                                             bat "if not exist venv\\36 mkdir venv\\36"
