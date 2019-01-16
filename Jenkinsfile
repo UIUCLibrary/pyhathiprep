@@ -65,43 +65,32 @@ pipeline {
                         }
                     }
                 }
-                stage("Cleanup"){
-                    steps {
-//                        tool name: 'CPython-3.6', type: 'jenkins.plugins.shiningpanda.tools.PythonInstallation'
-//                        tool name: 'CPython-3.7', type: 'jenkins.plugins.shiningpanda.tools.PythonInstallation'
-                        echo "${env.path}"
-                        bat "where python"
-
-
-                        dir("logs"){
-                            deleteDir()
-                            echo "Cleaned out logs directory"
-                            bat "dir"
-                        }
-
-                        dir("build"){
-                            deleteDir()
-                            echo "Cleaned out build directory"
-                            bat "dir"
-                        }
-                        dir("dist"){
-                            deleteDir()
-                            echo "Cleaned out dist directory"
-                            bat "dir"
-                        }
-
-                        dir("reports"){
-                            deleteDir()
-                            echo "Cleaned out reports directory"
-                            bat "dir"
-                        }
-                    }
-                    post{
-                        failure {
-                            deleteDir()
-                        }
-                    }
-                }
+//                stage("Cleanup"){
+//                    steps {
+//
+//                        dir("build"){
+//                            deleteDir()
+//                            echo "Cleaned out build directory"
+//                            bat "dir"
+//                        }
+//                        dir("dist"){
+//                            deleteDir()
+//                            echo "Cleaned out dist directory"
+//                            bat "dir"
+//                        }
+//
+//                        dir("reports"){
+//                            deleteDir()
+//                            echo "Cleaned out reports directory"
+//                            bat "dir"
+//                        }
+//                    }
+//                    post{
+//                        failure {
+//                            deleteDir()
+//                        }
+//                    }
+//                }
                 stage("Installing required system level dependencies"){
                     steps{
                         lock("system_python_${NODE_NAME}"){
@@ -346,7 +335,7 @@ junit_filename                  = ${junit_filename}
                     post{
                         success{
                             archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz", fingerprint: true
-                            stash includes: 'dist/*.*', name: "dist"
+                            stash includes: 'dist/*.whl,dist/*.tar.gz', name: "DIST"
                         }
                         cleanup{
                             cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz', type: 'INCLUDE']]
@@ -379,7 +368,7 @@ junit_filename                  = ${junit_filename}
                 }
             }
         }
-         stage("Deploy to DevPi Staging") {
+         stage("Deploy to DevPi") {
             when {
                 allOf{
                     anyOf{
@@ -398,6 +387,7 @@ junit_filename                  = ${junit_filename}
             stages{
                 stage("Upload to DevPi Staging"){
                     steps {
+                        unstash "DIST"
                         unstash "DOCS_ARCHIVE"
                         bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
