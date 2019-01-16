@@ -124,7 +124,7 @@ pipeline {
                             }
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov coverage lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
                         bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
                     }
                     post{
@@ -348,9 +348,9 @@ junit_filename                  = ${junit_filename}
             post{
                 always{
                     dir("source"){
-                            bat "coverage combine"
-                            bat "coverage xml -o ${WORKSPACE}\\reports\\coverage.xml"
-                            bat "coverage html -d ${WORKSPACE}\\reports\\coverage"
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage combine"
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage xml -o ${WORKSPACE}\\reports\\coverage.xml"
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage html -d ${WORKSPACE}\\reports\\coverage"
 
                     }
                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
