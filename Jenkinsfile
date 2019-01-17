@@ -11,8 +11,11 @@ def junit_filename = "junit.xml"
 def get_python_command(searchPath){
 
     script{
-        withEnv(["PATH=${searchPath};$PATH"]){
+        withEnv(["Path=${searchPath};$PATH"]){
             def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
+            if(!python_command){
+                error 'Unable to locate python'
+            }
             return python_command
         }
     }
