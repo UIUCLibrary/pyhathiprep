@@ -165,13 +165,13 @@ pipeline {
                 stage("Setting variables used by the rest of the build"){
                     steps{
 
-                        script {
-                            // Set up the reports directory variable
-                            dir("source"){
-                                PKG_NAME = bat(returnStdout: true, script: "@python  setup.py --name").trim()
-                                PKG_VERSION = bat(returnStdout: true, script: "@python setup.py --version").trim()
-                            }
-                        }
+//                        script {
+//                            // Set up the reports directory variable
+//                            dir("source"){
+//                                PKG_NAME = bat(returnStdout: true, script: "@python  setup.py --name").trim()
+//                                PKG_VERSION = bat(returnStdout: true, script: "@python setup.py --version").trim()
+//                            }
+//                        }
 
                         script{
                             DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
