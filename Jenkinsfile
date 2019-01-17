@@ -521,11 +521,11 @@ junit_filename                  = ${junit_filename}
                         stage("Built Distribution: .whl") {
                             agent {
                                 node {
-                                    label "Windows && Python3 && Docker"
+                                    label "Windows && Python3"
                                 }
                             }
                             environment {
-                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};${tool 'CPython-3.7'}\\Scripts;;$PATH"
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};$PATH"
                             }
                             options {
                                 skipDefaultCheckout(true)
@@ -547,7 +547,6 @@ junit_filename                  = ${junit_filename}
 
                                     steps {
                                         echo "Testing Whl package in devpi"
-//                                        echo "Found devpi at ${powershell(script: '(Get-Command devpi).path', returnStdout: true)} "
                                         devpiTest(
                                                 devpiExecutable: "venv\\36\\Scripts\\devpi.exe",
 //                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
@@ -564,18 +563,18 @@ junit_filename                  = ${junit_filename}
                                 }
 
                             }
-//                            post {
-//                                cleanup{
-//                                    cleanWs(
-//                                        deleteDirs: true,
-//                                        disableDeferredWipeout: true,
-//                                        patterns: [
-//                                            [pattern: '*tmp', type: 'INCLUDE'],
-//                                            [pattern: 'certs', type: 'INCLUDE']
-//                                            ]
-//                                    )
-//                                }
-//                            }
+                            post {
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                            [pattern: '*tmp', type: 'INCLUDE'],
+                                            [pattern: 'certs', type: 'INCLUDE']
+                                            ]
+                                    )
+                                }
+                            }
                         }
                     }
                 }
