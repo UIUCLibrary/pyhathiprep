@@ -8,21 +8,24 @@ def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
-def get_python_command(searchPath):
+def get_python_command(searchPath){
+
     script{
         withEnv(["PATH=${searchPath};$PATH"]){
             def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
             return python_command
         }
+    }
+}
 
 def get_pkg_name(pythonHomePath){
     node("Python3"){
         checkout scm
         script{
-                deleteDir()
-                def pkg_name = bat(returnStdout: true, script: "@\"${get_python_command(${pythonHomePath})}}\" setup.py --name").trim()
-                return pkg_name
-            }
+            deleteDir()
+            def pkg_name = bat(returnStdout: true, script: "@\"${get_python_command(${pythonHomePath})}}\" setup.py --name").trim()
+            return pkg_name
+//            }
         }
     }
 }
