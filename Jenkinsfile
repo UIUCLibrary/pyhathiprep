@@ -97,7 +97,8 @@ pipeline {
     }
     environment {
         PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
-        PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
+        PKG_NAME = "pyhathiprep"
+//        PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
         PKG_VERSION = get_pkg_version("${tool 'CPython-3.6'}")
     }
     // environment {
