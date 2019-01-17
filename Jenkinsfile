@@ -495,7 +495,7 @@ junit_filename                  = ${junit_filename}
                                 }
                             }
                             environment {
-                                PATH = "${WORKSPACE}\\venv\\36\\Scripts;${WORKSPACE}\\venv\\37\\Scripts;$PATH"
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
                             }
                             options {
                                 skipDefaultCheckout(true)
@@ -509,7 +509,7 @@ junit_filename                  = ${junit_filename}
                                             bat "if not exist venv\\37 mkdir venv\\37"
                                             bat "\"${tool 'CPython-3.7'}\\python.exe\" -m venv venv\\37"
                                         }
-                                        bat "python -m pip install pip --upgrade && pip install setuptools --upgrade && pip install \"tox<3.7\" devpi-client"
+                                        bat "venv\\36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\36\\Scripts\\pip.exe install setuptools --upgrade && venv\\36\\Scripts\\pip.exe install \"tox<3.7\" devpi-client"
                                     }
 
                                 }
@@ -519,7 +519,8 @@ junit_filename                  = ${junit_filename}
                                         echo "Testing Whl package in devpi"
 //                                        echo "Found devpi at ${powershell(script: '(Get-Command devpi).path', returnStdout: true)} "
                                         devpiTest(
-                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+                                                devpiExecutable: "venv\\36\\Scripts\\devpi.exe",
+//                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${PKG_NAME}",
