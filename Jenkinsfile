@@ -12,6 +12,7 @@ class PythonPackageMetadata{
     String command
 
     PythonPackageMetadata(searchPath){
+        echo "constructing"
         this.command = this.get_python_command(searchPath)
     }
     def get_python_command(searchPath){
@@ -70,6 +71,7 @@ def get_pkg_version(pythonHomePath){
     node("Python3"){
         checkout scm
         script{
+            echo "creating searcher node"
             def searcher = new PythonPackageMetadata("${pythonHomePath}")
 //            withEnv(["Path=${pythonHomePath};$PATH"]){
 //                bat "set"
