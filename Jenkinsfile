@@ -170,7 +170,7 @@ pipeline {
                         }
 
                         script{
-                            DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
+                            DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
                             junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
                         }
 
@@ -184,8 +184,9 @@ pipeline {
             }
             post{
                 always{
-                    echo """Name                            = ${PKG_NAME}
-Version                         = ${PKG_VERSION}
+                    echo """
+//                    Name                            = ${env.PKG_NAME}
+//Version                         = ${env.PKG_VERSION}
 documentation zip file          = ${DOC_ZIP_FILENAME}
 junit_filename                  = ${junit_filename}
 """
@@ -492,8 +493,8 @@ junit_filename                  = ${junit_filename}
                                                 devpiExecutable: "venv\\Scripts\\devpi.exe",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${PKG_NAME}",
-                                                pkgVersion: "${PKG_VERSION}",
+                                                pkgName: "${env.PKG_NAME}",
+                                                pkgVersion: "${env.PKG_VERSION}",
                                                 pkgRegex: "tar.gz",
                                                 detox: false
                                             )
@@ -552,8 +553,8 @@ junit_filename                  = ${junit_filename}
 //                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${PKG_NAME}",
-                                                pkgVersion: "${PKG_VERSION}",
+                                                pkgName: "${env.PKG_NAME}",
+                                                pkgVersion: "${env.PKG_VERSION}",
                                                 pkgRegex: "whl",
                                                 detox: false
                                             )
@@ -720,7 +721,7 @@ junit_filename                  = ${junit_filename}
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
+                            bat "venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
                         }
 
                     }
@@ -888,7 +889,7 @@ junit_filename                  = ${junit_filename}
                         bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                     }
 
-                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${PKG_NAME}==${PKG_VERSION}"
+                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
                     echo "Devpi remove exited with code ${devpi_remove_return_code}."
                 }
             }
