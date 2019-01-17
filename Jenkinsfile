@@ -14,7 +14,7 @@ class PythonPackageMetadata{
     PythonPackageMetadata(searchPath){
         this.command = this.get_python_command(searchPath)
     }
-    String get_python_command(searchPath){
+    def get_python_command(searchPath){
         script{
             withEnv(["Path=${searchPath};$PATH"]){
                 def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
@@ -22,6 +22,17 @@ class PythonPackageMetadata{
                     error 'Unable to locate python'
                 }
                 return python_command
+            }
+        }
+    }
+
+    def get_pkg_name(){
+        node("Python3"){
+            checkout scm
+            script{
+                def pkg_name = bat(returnStdout: true, script: "@\"${this.command}\" setup.py --name").trim()
+                deleteDir()
+                return pkg_name
             }
         }
     }
@@ -45,10 +56,11 @@ def get_pkg_name(pythonHomePath){
         checkout scm
         script{
             def searcher = new PythonPackageMetadata("${pythonHomePath}")
-            def python_command = get_python_command("${pythonHomePath}")
-            def pkg_name = bat(returnStdout: true, script: "@\"${python_command}\" setup.py --name").trim()
-            deleteDir()
-            return pkg_name
+            return searcher.get_pkg_name()
+//            def python_command = get_python_command("${pythonHomePath}")
+//            def pkg_name = bat(returnStdout: true, script: "@\"${python_command}\" setup.py --name").trim()
+//            deleteDir()
+//            return pkg_name
         }
     }
 }
@@ -56,6 +68,7 @@ def get_pkg_version(pythonHomePath){
     node("Python3"){
         checkout scm
         script{
+            def searcher = new PythonPackageMetadata("${pythonHomePath}")
 //            withEnv(["Path=${pythonHomePath};$PATH"]){
 //                bat "set"
 //                def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
