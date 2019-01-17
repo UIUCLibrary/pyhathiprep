@@ -8,37 +8,6 @@ def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
-class PythonPackageMetadata{
-    String command
-
-    PythonPackageMetadata(searchPath){
-        echo "constructing"
-        this.command = this.get_python_command(searchPath)
-    }
-    def get_python_command(searchPath){
-        script{
-            withEnv(["Path=${searchPath};$PATH"]){
-                def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
-                if(!python_command){
-                    error 'Unable to locate python'
-                }
-                return python_command
-            }
-        }
-    }
-
-    def get_pkg_name(){
-        node("Python3"){
-            checkout scm
-            script{
-                def pkg_name = bat(returnStdout: true, script: "@\"${this.command}\" setup.py --name").trim()
-                deleteDir()
-                return pkg_name
-            }
-        }
-    }
-}
-
 def get_python_command(searchPath){
 
     script{
@@ -54,25 +23,21 @@ def get_python_command(searchPath){
 
 def get_pkg_name(pythonHomePath){
     node("Python3"){
-        echo "creating node for name"
         checkout scm
         script{
-            def searcher = new PythonPackageMetadata("${pythonHomePath}")
-            return searcher.get_pkg_name()
-//            def python_command = get_python_command("${pythonHomePath}")
-//            def pkg_name = bat(returnStdout: true, script: "@\"${python_command}\" setup.py --name").trim()
-//            deleteDir()
-//            return pkg_name
+            def python_command = get_python_command("${pythonHomePath}")
+            def pkg_name = bat(returnStdout: true, script: "@\"${python_command}\" setup.py --name").trim()
+            deleteDir()
+            return pkg_name
+//            }
         }
     }
 }
 def get_pkg_version(pythonHomePath){
-    echo "CREATING NODE"
     node("Python3"){
         checkout scm
+//        bat "dir"
         script{
-            echo "creating searcher node"
-            def searcher = new PythonPackageMetadata("${pythonHomePath}")
 //            withEnv(["Path=${pythonHomePath};$PATH"]){
 //                bat "set"
 //                def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
@@ -100,8 +65,7 @@ pipeline {
     }
     environment {
         PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
-        PKG_NAME = "pyhathiprep"
-//        PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
+        PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
         PKG_VERSION = get_pkg_version("${tool 'CPython-3.6'}")
     }
     // environment {
