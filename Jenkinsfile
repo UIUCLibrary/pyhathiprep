@@ -20,7 +20,7 @@ def get_pkg_name(pythonHomePath){
 //    }
 }
 def get_pkg_version(pythonHomePath){
-    return return pythonPackageName(pythonHomePath)
+    return pythonPackageName(pythonHomePath)
 //    node("Python3"){
 //        checkout scm
 //        script{
