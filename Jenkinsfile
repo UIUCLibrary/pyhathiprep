@@ -29,7 +29,6 @@ def get_pkg_name(pythonHomePath){
             def pkg_name = bat(returnStdout: true, script: "@\"${python_command}\" setup.py --name").trim()
             deleteDir()
             return pkg_name
-//            }
         }
     }
 }
