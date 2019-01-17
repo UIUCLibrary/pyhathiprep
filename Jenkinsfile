@@ -13,12 +13,12 @@ def get_pkg_name(pythonHomePath){
         checkout scm
         powershell
         script{
-            withEnv(["Path=${pythonHomePath};$PATH"]){
+            withEnv(["PATH=${pythonHomePath};$PATH"]){
 //                bat "set"
 //                def python_command = powershell(returnStdout: true, script: "Get-Command python".trim())
                 def python_command = powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()
                 echo "python_command  = ${python_command}"
-                def pkg_name = bat(returnStdout: true, script: "@python setup.py --name").trim()
+                def pkg_name = bat(returnStdout: true, script: "@${python_command} setup.py --name").trim()
                 deleteDir()
                 return pkg_name
             }
@@ -30,9 +30,11 @@ def get_pkg_version(pythonHomePath){
         checkout scm
         bat "dir"
         script{
-            withEnv(["PATH=${pythonHomePath};$PATH"]){
+            withEnv(["Path=${pythonHomePath};$PATH"]){
                 bat "set"
-                def pkg_version = bat(returnStdout: true, script: "@python setup.py --version").trim()
+                def python_command = powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()
+                echo "python_command  = ${python_command}"
+                def pkg_version = bat(returnStdout: true, script: "@${python_command} setup.py --version").trim()
                 deleteDir()
                 return pkg_version
             }
