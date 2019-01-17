@@ -252,6 +252,7 @@ junit_filename                  = ${junit_filename}
 
                     steps {
                         dir("source"){
+                            powershell "Get-Command python -All"
 
                             script{
                                 try{
