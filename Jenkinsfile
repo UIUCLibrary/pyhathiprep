@@ -12,6 +12,7 @@ def get_python_command(searchPath){
 
     script{
         withEnv(["Path=${searchPath};$PATH"]){
+            bat "set"
             def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
             if(!python_command){
                 error 'Unable to locate python'
