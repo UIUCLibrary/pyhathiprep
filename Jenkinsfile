@@ -23,7 +23,7 @@ def get_pkg_name(pythonHomePath){
         checkout scm
         script{
             deleteDir()
-            def pkg_name = bat(returnStdout: true, script: "@\"${get_python_command(${pythonHomePath})}}\" setup.py --name").trim()
+            def pkg_name = bat(returnStdout: true, script: "@\"${get_python_command(${pythonHomePath})}\" setup.py --name").trim()
             return pkg_name
 //            }
         }
@@ -38,7 +38,7 @@ def get_pkg_version(pythonHomePath){
 //                bat "set"
 //                def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
 //                echo "python_command  = ${python_command}"
-                def pkg_version = bat(returnStdout: true, script: "@\"${get_python_command(${pythonHomePath})}}\" setup.py --version").trim()
+                def pkg_version = bat(returnStdout: true, script: "@\"${get_python_command(${pythonHomePath})}\" setup.py --version").trim()
                 deleteDir()
                 return pkg_version
 //            }
