@@ -66,6 +66,7 @@ def get_pkg_name(pythonHomePath){
     }
 }
 def get_pkg_version(pythonHomePath){
+    echo "CREATING NODE"
     node("Python3"){
         checkout scm
         script{
