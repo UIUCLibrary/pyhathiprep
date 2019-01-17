@@ -14,7 +14,8 @@ def get_pkg_name(pythonHomePath){
         bat "dir"
         script{
             withEnv(["PATH=${pythonHomePath};$PATH"]){
-                def pkg_name = bat(returnStdout: true, script: "@python  setup.py --name").trim()
+                bat "set"
+                def pkg_name = bat(returnStdout: true, script: "@python setup.py --name").trim()
                 deleteDir()
                 return pkg_name
             }
@@ -27,7 +28,8 @@ def get_pkg_version(pythonHomePath){
         bat "dir"
         script{
             withEnv(["PATH=${pythonHomePath};$PATH"]){
-                def pkg_version = bat(returnStdout: true, script: "@python  setup.py --version").trim()
+                bat "set"
+                def pkg_version = bat(returnStdout: true, script: "@python setup.py --version").trim()
                 deleteDir()
                 return pkg_version
             }
