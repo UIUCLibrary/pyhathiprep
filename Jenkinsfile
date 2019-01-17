@@ -147,7 +147,7 @@ pipeline {
                     echo """
 //                    Name                            = ${env.PKG_NAME}
 //Version                         = ${env.PKG_VERSION}
-documentation zip file          = ${DOC_ZIP_FILENAME}
+documentation zip file          = ${env.DOC_ZIP_FILENAME}
 junit_filename                  = ${junit_filename}
 """
 
