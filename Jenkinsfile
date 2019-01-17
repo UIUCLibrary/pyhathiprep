@@ -8,20 +8,6 @@ def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
-//def get_python_command(searchPath){
-//
-//    script{
-//        withEnv(["Path=${searchPath};$PATH"]){
-//            bat "set"
-//            def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
-//            if(!python_command){
-//                error 'Unable to locate python'
-//            }
-//            return python_command
-//        }
-//    }
-//}
-
 def get_pkg_name(pythonHomePath){
     node("Python3"){
         checkout scm
@@ -29,19 +15,16 @@ def get_pkg_name(pythonHomePath){
             def pkg_name = bat(returnStdout: true, script: "@\"${pythonHomePath}\\python.exe\" setup.py --name").trim()
             deleteDir()
             return pkg_name
-//            }
         }
     }
 }
 def get_pkg_version(pythonHomePath){
     node("Python3"){
         checkout scm
-//        bat "dir"
         script{
                 def pkg_version = bat(returnStdout: true, script: "@\"${pythonHomePath}\\python.exe\" setup.py --version").trim()
                 deleteDir()
                 return pkg_version
-//            }
         }
     }
 }
@@ -62,16 +45,12 @@ pipeline {
         PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
         PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
         PKG_VERSION = get_pkg_version("${tool 'CPython-3.6'}")
+        DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
     }
-    // environment {
-        //mypy_args = "--junit-xml=mypy.xml"
-        //pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
-    // }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
-//        booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
         booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 Tests")
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run unit tests with PyTest")
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
@@ -79,7 +58,6 @@ pipeline {
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
-        // choice(choices: 'None\nrelease', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
         string(name: 'URL_SUBFOLDER', defaultValue: "pyhathiprep", description: 'The directory that the docs should be saved under')
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
     }
@@ -105,32 +83,6 @@ pipeline {
                         }
                     }
                 }
-//                stage("Cleanup"){
-//                    steps {
-//
-//                        dir("build"){
-//                            deleteDir()
-//                            echo "Cleaned out build directory"
-//                            bat "dir"
-//                        }
-//                        dir("dist"){
-//                            deleteDir()
-//                            echo "Cleaned out dist directory"
-//                            bat "dir"
-//                        }
-//
-//                        dir("reports"){
-//                            deleteDir()
-//                            echo "Cleaned out reports directory"
-//                            bat "dir"
-//                        }
-//                    }
-//                    post{
-//                        failure {
-//                            deleteDir()
-//                        }
-//                    }
-//                }
                 stage("Installing required system level dependencies"){
                     steps{
                         lock("system_python_${NODE_NAME}"){
@@ -176,13 +128,6 @@ pipeline {
                 stage("Setting variables used by the rest of the build"){
                     steps{
 
-//                        script {
-//                            // Set up the reports directory variable
-//                            dir("source"){
-//                                PKG_NAME = bat(returnStdout: true, script: "@python  setup.py --name").trim()
-//                                PKG_VERSION = bat(returnStdout: true, script: "@python setup.py --version").trim()
-//                            }
-//                        }
 
                         script{
                             DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
