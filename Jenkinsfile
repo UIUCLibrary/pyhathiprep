@@ -8,33 +8,6 @@ def PKG_VERSION = "unknown"
 //def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
-def get_pkg_name(pythonHomePath){
-    node("Python3"){
-        return pythonPackageName(pythonPath: pythonHomePath)
-    }
-//    node("Python3"){
-//        checkout scm
-//        script{
-//            def pkg_name = bat(returnStdout: true, script: "@\"${pythonHomePath}\\python.exe\" setup.py --name").trim()
-//            deleteDir()
-//            return pkg_name
-//        }
-//    }
-}
-def get_pkg_version(pythonHomePath){
-    node("Python3"){
-        return pythonPackageName(pythonPath: pythonHomePath)
-    }
-//    node("Python3"){
-//        checkout scm
-//        script{
-//                def pkg_version = bat(returnStdout: true, script: "@\"${pythonHomePath}\\python.exe\" setup.py --version").trim()
-//                deleteDir()
-//                return pkg_version
-//        }
-//    }
-}
-
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames"
@@ -50,7 +23,7 @@ pipeline {
     environment {
         PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
         PKG_NAME = pythonPackageName(pythonPath: "${tool 'CPython-3.6'}")
-        PKG_VERSION = get_pkg_version("${tool 'CPython-3.6'}")
+        PKG_VERSION = pythonPackageVersion(pythonPath: "${tool 'CPython-3.6'}")
         DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
     }
     parameters {
