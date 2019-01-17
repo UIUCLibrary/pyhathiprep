@@ -1,20 +1,16 @@
 #!groovy
 @Library("ds-utils@v0.1.0") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
-@Library("devpi") _
+@Library(["devpi", "PythonHelpers"]) _
 
 def PKG_NAME = "unknown"
 def PKG_VERSION = "unknown"
-def DOC_ZIP_FILENAME = "doc.zip"
+//def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
-def REPORT_DIR = ""
-def VENV_ROOT = ""
-def VENV_PYTHON = ""
-def VENV_PIP = ""
 
 pipeline {
     agent {
-        label "Windows && VS2015 && Python3 && longfilenames"
+        label "Windows && Python3 && longfilenames"
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
@@ -26,16 +22,14 @@ pipeline {
     }
     environment {
         PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+        PKG_NAME = pythonPackageName(pythonPath: "${tool 'CPython-3.6'}")
+        PKG_VERSION = pythonPackageVersion(pythonPath: "${tool 'CPython-3.6'}")
+        DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
     }
-    // environment {
-        //mypy_args = "--junit-xml=mypy.xml"
-        //pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
-    // }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
-//        booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 static analysis")
         booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 Tests")
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run unit tests with PyTest")
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
@@ -43,12 +37,14 @@ pipeline {
 
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
-        // choice(choices: 'None\nrelease', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
         string(name: 'URL_SUBFOLDER', defaultValue: "pyhathiprep", description: 'The directory that the docs should be saved under')
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
     }
     stages {
         stage("Configure") {
+            environment {
+                PATH = "${tool 'CPython-3.6'};$PATH"
+            }
             stages{
                 stage("Purge all existing data in workspace"){
                     when{
@@ -66,43 +62,17 @@ pipeline {
                         }
                     }
                 }
-//                stage("Cleanup"){
-//                    steps {
-//
-//                        dir("build"){
-//                            deleteDir()
-//                            echo "Cleaned out build directory"
-//                            bat "dir"
-//                        }
-//                        dir("dist"){
-//                            deleteDir()
-//                            echo "Cleaned out dist directory"
-//                            bat "dir"
-//                        }
-//
-//                        dir("reports"){
-//                            deleteDir()
-//                            echo "Cleaned out reports directory"
-//                            bat "dir"
-//                        }
-//                    }
-//                    post{
-//                        failure {
-//                            deleteDir()
-//                        }
-//                    }
-//                }
                 stage("Installing required system level dependencies"){
                     steps{
                         lock("system_python_${NODE_NAME}"){
-                            bat "${tool 'CPython-3.6'}\\python -m pip install --upgrade pip --quiet"
+                            bat "python -m pip install --upgrade pip --quiet"
                         }
                     }
                     post{
                         always{
                             bat "if not exist logs mkdir logs"
                             lock("system_python_${NODE_NAME}"){
-                                bat "${tool 'CPython-3.6'}\\python -m pip list > logs\\pippackages_system_${NODE_NAME}.log"
+                                bat "python -m pip list > logs\\pippackages_system_${NODE_NAME}.log"
                             }
                             archiveArtifacts artifacts: "logs/pippackages_system_${NODE_NAME}.log"
                         }
@@ -113,20 +83,19 @@ pipeline {
                 }
                 stage("Creating virtualenv for building"){
                     steps{
-                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                        bat "python -m venv venv"
                         script {
                             try {
                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip"
                             }
                             catch (exc) {
-                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                bat "python -m venv venv"
                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
                             }
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
-//                        TODO: when detox is fixed, just use the most recent version
-                        bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install detox==0.13 tox==3.2.1"
+                        bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov coverage lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
                     }
                     post{
                         success{
@@ -138,33 +107,11 @@ pipeline {
                 stage("Setting variables used by the rest of the build"){
                     steps{
 
-                        script {
-                            // Set up the reports directory variable
-                            REPORT_DIR = "${WORKSPACE}\\reports"
-                            dir("source"){
-                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
-                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
-                            }
-                        }
 
                         script{
-                            DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
+//                            DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
                             junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
                         }
-
-
-
-
-                        script{
-                            VENV_ROOT = "${WORKSPACE}\\venv\\"
-
-                            VENV_PYTHON = "${WORKSPACE}\\venv\\Scripts\\python.exe"
-                            bat "${VENV_PYTHON} --version"
-
-                            VENV_PIP = "${WORKSPACE}\\venv\\Scripts\\pip.exe"
-                            bat "${VENV_PIP} --version"
-                        }
-
 
                         bat "venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -176,13 +123,10 @@ pipeline {
             }
             post{
                 always{
-                    echo """Name                            = ${PKG_NAME}
-Version                         = ${PKG_VERSION}
-Report Directory                = ${REPORT_DIR}
-documentation zip file          = ${DOC_ZIP_FILENAME}
-Python virtual environment path = ${VENV_ROOT}
-VirtualEnv Python executable    = ${VENV_PYTHON}
-VirtualEnv Pip executable       = ${VENV_PIP}
+                    echo """
+//                    Name                            = ${env.PKG_NAME}
+//Version                         = ${env.PKG_VERSION}
+documentation zip file          = ${env.DOC_ZIP_FILENAME}
 junit_filename                  = ${junit_filename}
 """
 
@@ -193,7 +137,7 @@ junit_filename                  = ${junit_filename}
         }
         stage("Building") {
             stages{
-            stage("Building Python Package"){
+                stage("Building Python Package"){
                     steps {
 
 
@@ -231,17 +175,29 @@ junit_filename                  = ${junit_filename}
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                            stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                            zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
+                            stash includes: "dist/${env.DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
                         }
                         failure{
                             echo "Failed to build Python package"
+                        }
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: "dist/${env.DOC_ZIP_FILENAME}", type: 'INCLUDE'],
+                                    [pattern: 'build/docs/html/**"', type: 'INCLUDE']
+                                    ]
+                            )
                         }
                     }
                 }
             }
         }
         stage("Tests") {
+            environment {
+                PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
+            }
             parallel {
                 stage("PyTest"){
                     when {
@@ -249,7 +205,7 @@ junit_filename                  = ${junit_filename}
                     }
                     steps{
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\coverage.exe run --parallel-mode --source=pyhathiprep -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}"
+                            bat "coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}"
                         }
 
                     }
@@ -258,13 +214,15 @@ junit_filename                  = ${junit_filename}
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
+
                     steps {
                         dir("source"){
+                            bat "tox --version"
                             script{
                                 try{
-                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox"
+                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox"
                                 } catch (exc) {
-                                    bat "${WORKSPACE}\\venv\\Scripts\\detox --workdir ${WORKSPACE}\\.tox --recreate"
+                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate"
                                 }
                             }
 
@@ -277,7 +235,7 @@ junit_filename                  = ${junit_filename}
                     }
                     steps{
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\coverage.exe run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=${WORKSPACE}\\build\\docs --builder=doctest"
+                            bat "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=${WORKSPACE}\\build\\docs --builder=doctest"
                         }
                     }
 
@@ -290,7 +248,7 @@ junit_filename                  = ${junit_filename}
                         bat "if not exist reports\\mypy mkdir reports\\mypy"
                         dir("source") {
 
-                            bat returnStatus: true, script: "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/mypy/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy/mypy_html > ${WORKSPACE}\\logs\\mypy.log"
+                            bat returnStatus: true, script: "mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/mypy/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy/mypy_html > ${WORKSPACE}\\logs\\mypy.log"
                         }
                     }
                     post{
@@ -310,10 +268,10 @@ junit_filename                  = ${junit_filename}
                     }
                     steps{
                         script{
-                            bat "venv\\Scripts\\pip.exe install flake8"
+                            bat "pip install flake8"
                             try{
                                 dir("source"){
-                                    bat "${WORKSPACE}\\venv\\Scripts\\flake8.exe pyhathiprep --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    bat "flake8 pyhathiprep --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
                                 }
                             } catch (exc) {
                                 echo "flake8 found some warnings"
@@ -322,6 +280,7 @@ junit_filename                  = ${junit_filename}
                     }
                     post {
                         always {
+
                             recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
                         }
                         cleanup{
@@ -333,9 +292,9 @@ junit_filename                  = ${junit_filename}
             post{
                 always{
                     dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\coverage.exe combine"
-                            bat "${WORKSPACE}\\venv\\Scripts\\coverage.exe xml -o ${WORKSPACE}\\reports\\coverage.xml"
-                            bat "${WORKSPACE}\\venv\\Scripts\\coverage.exe html -d ${WORKSPACE}\\reports\\coverage"
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage combine"
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage xml -o ${WORKSPACE}\\reports\\coverage.xml"
+                            bat "${WORKSPACE}\\venv\\Scripts\\coverage html -d ${WORKSPACE}\\reports\\coverage"
 
                     }
                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
@@ -429,7 +388,7 @@ junit_filename                  = ${junit_filename}
                         script {
                                 bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
                                 try {
-                                    bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+                                    bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${env.DOC_ZIP_FILENAME}"
                                 } catch (exc) {
                                     echo "Unable to upload to devpi with docs."
                                 }
@@ -442,7 +401,7 @@ junit_filename                  = ${junit_filename}
                     parallel {
                         stage("Testing Submitted Source Distribution") {
                             environment {
-                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+                                PATH = "${tool 'CPython-3.7'};${tool 'CPython-3.6'};$PATH"
                             }
                             agent {
                                 node {
@@ -457,7 +416,7 @@ junit_filename                  = ${junit_filename}
                                 stage("Creating venv to test sdist"){
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
-                                            bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                            bat "python -m venv venv"
                                         }
                                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
                                     }
@@ -466,14 +425,14 @@ junit_filename                  = ${junit_filename}
                                 stage("Testing DevPi tar.gz Package"){
                                     steps {
                                         echo "Testing Source tar.gz package in devpi"
-                                        bat "where python"
                                         timeout(20){
+                                            bat "where python"
                                             devpiTest(
                                                 devpiExecutable: "venv\\Scripts\\devpi.exe",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${PKG_NAME}",
-                                                pkgVersion: "${PKG_VERSION}",
+                                                pkgName: "${env.PKG_NAME}",
+                                                pkgVersion: "${env.PKG_VERSION}",
                                                 pkgRegex: "tar.gz",
                                                 detox: false
                                             )
@@ -504,19 +463,21 @@ junit_filename                  = ${junit_filename}
                                 }
                             }
                             environment {
-                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};$PATH"
                             }
                             options {
                                 skipDefaultCheckout(true)
                             }
                             stages{
-                                stage("Creating venv to test sdist"){
+                                stage("Creating venv to Test Whl"){
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
-                                            bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                                            bat "if not exist venv\\36 mkdir venv\\36"
+                                            bat "\"${tool 'CPython-3.6'}\\python.exe\" -m venv venv\\36"
+                                            bat "if not exist venv\\37 mkdir venv\\37"
+                                            bat "\"${tool 'CPython-3.7'}\\python.exe\" -m venv venv\\37"
                                         }
-                                        bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
-                                        bat "venv\\Scripts\\pip.exe install devpi --upgrade"
+                                        bat "venv\\36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\36\\Scripts\\pip.exe install setuptools --upgrade && venv\\36\\Scripts\\pip.exe install \"tox<3.7\" devpi-client"
                                     }
 
                                 }
@@ -524,13 +485,13 @@ junit_filename                  = ${junit_filename}
 
                                     steps {
                                         echo "Testing Whl package in devpi"
-                                        bat "where python"
                                         devpiTest(
-                                                devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                                devpiExecutable: "venv\\36\\Scripts\\devpi.exe",
+//                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${PKG_NAME}",
-                                                pkgVersion: "${PKG_VERSION}",
+                                                pkgName: "${env.PKG_NAME}",
+                                                pkgVersion: "${env.PKG_VERSION}",
                                                 pkgRegex: "whl",
                                                 detox: false
                                             )
@@ -697,7 +658,7 @@ junit_filename                  = ${junit_filename}
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
+                            bat "venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
                         }
 
                     }
@@ -865,7 +826,7 @@ junit_filename                  = ${junit_filename}
                         bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                     }
 
-                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${PKG_NAME}==${PKG_VERSION}"
+                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
                     echo "Devpi remove exited with code ${devpi_remove_return_code}."
                 }
             }
