@@ -9,6 +9,11 @@ def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
 class PythonPackageMetadata{
+    String command
+
+    PythonPackageMetadata(searchPath){
+        this.command = this.get_python_command(searchPath)
+    }
     String get_python_command(searchPath){
         script{
             withEnv(["Path=${searchPath};$PATH"]){
@@ -39,7 +44,7 @@ def get_pkg_name(pythonHomePath){
     node("Python3"){
         checkout scm
         script{
-            def searcher = PythonPackageMetadata()
+            def searcher = PythonPackageMetadata("${pythonHomePath}")
             def python_command = get_python_command("${pythonHomePath}")
             def pkg_name = bat(returnStdout: true, script: "@\"${python_command}\" setup.py --name").trim()
             deleteDir()
