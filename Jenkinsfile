@@ -8,26 +8,25 @@ def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
-def get_python_command(searchPath){
-
-    script{
-        withEnv(["Path=${searchPath};$PATH"]){
-            bat "set"
-            def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
-            if(!python_command){
-                error 'Unable to locate python'
-            }
-            return python_command
-        }
-    }
-}
+//def get_python_command(searchPath){
+//
+//    script{
+//        withEnv(["Path=${searchPath};$PATH"]){
+//            bat "set"
+//            def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
+//            if(!python_command){
+//                error 'Unable to locate python'
+//            }
+//            return python_command
+//        }
+//    }
+//}
 
 def get_pkg_name(pythonHomePath){
     node("Python3"){
         checkout scm
         script{
-            def python_command = get_python_command("${pythonHomePath}")
-            def pkg_name = bat(returnStdout: true, script: "@\"${python_command}\" setup.py --name").trim()
+            def pkg_name = bat(returnStdout: true, script: "@\"${pythonHomePath}\\python.exe\" setup.py --name").trim()
             deleteDir()
             return pkg_name
 //            }
@@ -39,12 +38,7 @@ def get_pkg_version(pythonHomePath){
         checkout scm
 //        bat "dir"
         script{
-//            withEnv(["Path=${pythonHomePath};$PATH"]){
-//                bat "set"
-//                def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
-//                echo "python_command  = ${python_command}"
-                def python_command = get_python_command("${pythonHomePath}")
-                def pkg_version = bat(returnStdout: true, script: "@\"${python_command}\" setup.py --version").trim()
+                def pkg_version = bat(returnStdout: true, script: "@\"${pythonHomePath}\\python.exe\" setup.py --version").trim()
                 deleteDir()
                 return pkg_version
 //            }
