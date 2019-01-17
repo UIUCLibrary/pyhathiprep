@@ -8,6 +8,18 @@ def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
+def get_pkg_name(pythonHomePath){
+    node("Python3"){
+        checkout scm
+        bat "dir"
+        script{
+            def pkg_name = bat(returnStdout: true, script: "@${pythonHomePath}\\python  setup.py --name").trim()
+            deleteDir()
+            return pkg_name
+        }
+    }
+}
+
 pipeline {
     agent {
         label "Windows && Python3 && longfilenames"
@@ -22,6 +34,7 @@ pipeline {
     }
     environment {
         PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+        PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
     }
     // environment {
         //mypy_args = "--junit-xml=mypy.xml"
