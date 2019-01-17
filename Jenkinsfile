@@ -1,7 +1,7 @@
 #!groovy
 @Library("ds-utils@v0.1.0") // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
 import org.ds.*
-@Library(["devpi", "PythonHelpers]") _
+@Library(["devpi", "PythonHelpers"]) _
 
 def PKG_NAME = "unknown"
 def PKG_VERSION = "unknown"
