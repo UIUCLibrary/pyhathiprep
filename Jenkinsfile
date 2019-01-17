@@ -11,10 +11,12 @@ def junit_filename = "junit.xml"
 def get_pkg_name(pythonHomePath){
     node("Python3"){
         checkout scm
-        bat "dir"
+        powershell
         script{
-            withEnv(["PATH=${pythonHomePath};$PATH"]){
+            withEnv(["Path=${pythonHomePath};$PATH"]){
                 bat "set"
+                def python_command = powershell(returnStdout: true, script: "Get-Command python".trim())
+                echo "python_command  = ${python_command}"
                 def pkg_name = bat(returnStdout: true, script: "@python setup.py --name").trim()
                 deleteDir()
                 return pkg_name
