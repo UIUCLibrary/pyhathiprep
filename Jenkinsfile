@@ -19,6 +19,17 @@ def get_pkg_name(pythonHomePath){
         }
     }
 }
+def get_pkg_version(pythonHomePath){
+    node("Python3"){
+        checkout scm
+        bat "dir"
+        script{
+            def pkg_version = bat(returnStdout: true, script: "@${pythonHomePath}\\python  setup.py --version").trim()
+            deleteDir()
+            return pkg_version
+        }
+    }
+}
 
 pipeline {
     agent {
@@ -35,6 +46,7 @@ pipeline {
     environment {
         PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
         PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
+        PKG_VERSION = get_pkg_version("${tool 'CPython-3.6'}")
     }
     // environment {
         //mypy_args = "--junit-xml=mypy.xml"
