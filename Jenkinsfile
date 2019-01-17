@@ -44,7 +44,7 @@ def get_pkg_name(pythonHomePath){
     node("Python3"){
         checkout scm
         script{
-            def searcher = PythonPackageMetadata("${pythonHomePath}")
+            def searcher = new PythonPackageMetadata("${pythonHomePath}")
             def python_command = get_python_command("${pythonHomePath}")
             def pkg_name = bat(returnStdout: true, script: "@\"${python_command}\" setup.py --name").trim()
             deleteDir()
