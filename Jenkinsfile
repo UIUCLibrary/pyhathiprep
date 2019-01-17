@@ -49,7 +49,7 @@ pipeline {
     }
     environment {
         PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
-        PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
+        PKG_NAME = pythonPackageName(pythonPath: pythonHomePath)
         PKG_VERSION = get_pkg_version("${tool 'CPython-3.6'}")
         DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
     }
