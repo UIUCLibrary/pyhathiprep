@@ -7,6 +7,19 @@ def PKG_NAME = "unknown"
 def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
+class PythonPackageMetadata{
+    String get_python_command(searchPath){
+        script{
+            withEnv(["Path=${searchPath};$PATH"]){
+                def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
+                if(!python_command){
+                    error 'Unable to locate python'
+                }
+                return python_command
+            }
+        }
+    }
+}
 
 def get_python_command(searchPath){
 
@@ -35,7 +48,6 @@ def get_pkg_name(pythonHomePath){
 def get_pkg_version(pythonHomePath){
     node("Python3"){
         checkout scm
-//        bat "dir"
         script{
 //            withEnv(["Path=${pythonHomePath};$PATH"]){
 //                bat "set"
