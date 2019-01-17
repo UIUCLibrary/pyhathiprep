@@ -53,6 +53,7 @@ def get_python_command(searchPath){
 
 def get_pkg_name(pythonHomePath){
     node("Python3"){
+        echo "creating node for name"
         checkout scm
         script{
             def searcher = new PythonPackageMetadata("${pythonHomePath}")
