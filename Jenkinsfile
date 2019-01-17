@@ -282,7 +282,7 @@ junit_filename                  = ${junit_filename}
 
                     steps {
                         dir("source"){
-
+                            bat "tox --version"
                             script{
                                 try{
                                     bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox"
