@@ -495,32 +495,32 @@ junit_filename                  = ${junit_filename}
                                 }
                             }
                             environment {
-                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};${tool 'CPython-3.7'}/Scripts;$PATH"
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${tool 'CPython-3.7'};${tool 'CPython-3.7'}\\Scripts;;$PATH"
                             }
                             options {
                                 skipDefaultCheckout(true)
                             }
                             stages{
-//                                stage("Creating venv to Test Whl"){
-//                                    steps {
-//                                        lock("system_python_${NODE_NAME}"){
-//                                            bat "if not exist venv\\36 mkdir venv\\36"
-//                                            bat "\"${tool 'CPython-3.6'}\\python.exe\" -m venv venv\\36"
-//                                            bat "if not exist venv\\37 mkdir venv\\37"
-//                                            bat "\"${tool 'CPython-3.7'}\\python.exe\" -m venv venv\\37"
-//                                        }
-//                                        bat "venv\\36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\36\\Scripts\\pip.exe install setuptools --upgrade && venv\\36\\Scripts\\pip.exe install \"tox<3.7\" devpi-client"
-//                                    }
-//
-//                                }
+                                stage("Creating venv to Test Whl"){
+                                    steps {
+                                        lock("system_python_${NODE_NAME}"){
+                                            bat "if not exist venv\\36 mkdir venv\\36"
+                                            bat "\"${tool 'CPython-3.6'}\\python.exe\" -m venv venv\\36"
+                                            bat "if not exist venv\\37 mkdir venv\\37"
+                                            bat "\"${tool 'CPython-3.7'}\\python.exe\" -m venv venv\\37"
+                                        }
+                                        bat "venv\\36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\36\\Scripts\\pip.exe install setuptools --upgrade && venv\\36\\Scripts\\pip.exe install \"tox<3.7\" devpi-client"
+                                    }
+
+                                }
                                 stage("Testing DevPi .whl Package"){
 
                                     steps {
                                         echo "Testing Whl package in devpi"
 //                                        echo "Found devpi at ${powershell(script: '(Get-Command devpi).path', returnStdout: true)} "
                                         devpiTest(
-//                                                devpiExecutable: "venv\\36\\Scripts\\devpi.exe",
-                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+                                                devpiExecutable: "venv\\36\\Scripts\\devpi.exe",
+//                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${PKG_NAME}",
