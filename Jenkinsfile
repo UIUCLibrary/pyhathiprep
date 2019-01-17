@@ -10,7 +10,7 @@ def junit_filename = "junit.xml"
 
 pipeline {
     agent {
-        label "Windows && VS2015 && Python3 && longfilenames"
+        label "Windows && Python3 && longfilenames"
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
