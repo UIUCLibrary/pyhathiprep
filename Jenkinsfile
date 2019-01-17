@@ -14,7 +14,7 @@ def get_pkg_name(pythonHomePath){
         powershell
         script{
             withEnv(["Path=${pythonHomePath};$PATH"]){
-                bat "set"
+//                bat "set"
                 def python_command = powershell(returnStdout: true, script: "Get-Command python".trim())
                 echo "python_command  = ${python_command}"
                 def pkg_name = bat(returnStdout: true, script: "@python setup.py --name").trim()
