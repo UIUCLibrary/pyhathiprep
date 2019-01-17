@@ -5,7 +5,7 @@ import org.ds.*
 
 def PKG_NAME = "unknown"
 def PKG_VERSION = "unknown"
-def DOC_ZIP_FILENAME = "doc.zip"
+//def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
 def get_pkg_name(pythonHomePath){
@@ -130,7 +130,7 @@ pipeline {
 
 
                         script{
-                            DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
+//                            DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
                             junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
                         }
 
@@ -196,8 +196,8 @@ junit_filename                  = ${junit_filename}
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                            stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                            zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
+                            stash includes: "dist/${env.DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
                         }
                         failure{
                             echo "Failed to build Python package"
@@ -206,7 +206,7 @@ junit_filename                  = ${junit_filename}
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
-                                    [pattern: "dist/${DOC_ZIP_FILENAME}", type: 'INCLUDE'],
+                                    [pattern: "dist/${env.DOC_ZIP_FILENAME}", type: 'INCLUDE'],
                                     [pattern: 'build/docs/html/**"', type: 'INCLUDE']
                                     ]
                             )
@@ -409,7 +409,7 @@ junit_filename                  = ${junit_filename}
                         script {
                                 bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
                                 try {
-                                    bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+                                    bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${env.DOC_ZIP_FILENAME}"
                                 } catch (exc) {
                                     echo "Unable to upload to devpi with docs."
                                 }
