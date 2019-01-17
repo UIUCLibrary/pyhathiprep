@@ -9,7 +9,7 @@ def PKG_VERSION = "unknown"
 def junit_filename = "junit.xml"
 
 def get_pkg_name(pythonHomePath){
-    script{
+    node("Python3"){
         return pythonPackageName(pythonPath: pythonHomePath)
     }
 //    node("Python3"){
@@ -22,7 +22,7 @@ def get_pkg_name(pythonHomePath){
 //    }
 }
 def get_pkg_version(pythonHomePath){
-    script{
+    node("Python3"){
         return pythonPackageName(pythonPath: pythonHomePath)
     }
 //    node("Python3"){
