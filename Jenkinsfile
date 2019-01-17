@@ -7,6 +7,7 @@ def PKG_NAME = "unknown"
 def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
+
 class PythonPackageMetadata{
     String get_python_command(searchPath){
         script{
@@ -38,6 +39,7 @@ def get_pkg_name(pythonHomePath){
     node("Python3"){
         checkout scm
         script{
+            def searcher = PythonPackageMetadata()
             def python_command = get_python_command("${pythonHomePath}")
             def pkg_name = bat(returnStdout: true, script: "@\"${python_command}\" setup.py --name").trim()
             deleteDir()
