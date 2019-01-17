@@ -8,18 +8,19 @@ def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
+def get_python_command(searchPath):
+    script{
+        withEnv(["PATH=${searchPath};$PATH"]){
+            def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
+            return python_command
+        }
+
 def get_pkg_name(pythonHomePath){
     node("Python3"){
         checkout scm
-        powershell
         script{
-            withEnv(["PATH=${pythonHomePath};$PATH"]){
-//                bat "set"
-//                def python_command = powershell(returnStdout: true, script: "Get-Command python".trim())
-                def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
-                echo "python_command  = ${python_command}"
-                def pkg_name = bat(returnStdout: true, script: "@${python_command} setup.py --name").trim()
                 deleteDir()
+                def pkg_name = bat(returnStdout: true, script: "@\"${get_python_command(${pythonHomePath})}}\" setup.py --name").trim()
                 return pkg_name
             }
         }
@@ -28,16 +29,16 @@ def get_pkg_name(pythonHomePath){
 def get_pkg_version(pythonHomePath){
     node("Python3"){
         checkout scm
-        bat "dir"
+//        bat "dir"
         script{
-            withEnv(["Path=${pythonHomePath};$PATH"]){
-                bat "set"
-                def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
-                echo "python_command  = ${python_command}"
-                def pkg_version = bat(returnStdout: true, script: "@${python_command} setup.py --version").trim()
+//            withEnv(["Path=${pythonHomePath};$PATH"]){
+//                bat "set"
+//                def python_command = powershell(script: '(Get-Command python).path', returnStdout: true).trim()
+//                echo "python_command  = ${python_command}"
+                def pkg_version = bat(returnStdout: true, script: "@\"${get_python_command(${pythonHomePath})}}\" setup.py --version").trim()
                 deleteDir()
                 return pkg_version
-            }
+//            }
         }
     }
 }
