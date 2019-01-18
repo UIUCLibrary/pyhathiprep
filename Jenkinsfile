@@ -6,7 +6,7 @@ import org.ds.*
 //def PKG_NAME = "unknown"
 //def PKG_VERSION = "unknown"
 //def DOC_ZIP_FILENAME = "doc.zip"
-def junit_filename = "junit.xml"
+//def junit_filename = "junit.xml"
 
 def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
     script {
@@ -123,10 +123,10 @@ pipeline {
                     steps{
 
 
-                        script{
-//                            DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
-                            junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
-                        }
+//                        script{
+////                            DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
+//                            junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
+//                        }
 
                         bat "venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -139,10 +139,8 @@ pipeline {
             post{
                 always{
                     echo """
-//                    Name                            = ${env.PKG_NAME}
-//Version                         = ${env.PKG_VERSION}
 documentation zip file          = ${env.DOC_ZIP_FILENAME}
-junit_filename                  = ${junit_filename}
+//junit_filename                  = ${junit_filename}
 """
 
                 }
@@ -167,7 +165,6 @@ junit_filename                  = ${junit_filename}
                                     pyLint(name: 'Setuptools Build: PyLint', pattern: 'logs/build.log'),
                                 ]
                             )
-//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
                             archiveArtifacts artifacts: "logs/build.log"
                         }
                         failure{
@@ -185,7 +182,6 @@ junit_filename                  = ${junit_filename}
                     post{
                         always {
                             recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
-//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
@@ -402,19 +398,6 @@ junit_filename                  = ${junit_filename}
                         unstash "DOCS_ARCHIVE"
                         bat "devpi.exe use https://devpi.library.illinois.edu"
                         bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//
-//                        }
-//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-//                        script {
-//                                bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
-//                                try {
-//                                    bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${env.DOC_ZIP_FILENAME}"
-//                                } catch (exc) {
-//                                    echo "Unable to upload to devpi with docs."
-//                                }
-//                            }
 
                     }
                 }
@@ -648,16 +631,6 @@ junit_filename                  = ${junit_filename}
                         }
                     }
                 }
-//                bat "tree /A"
-//                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-//                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                        bat "venv\\Scripts\\devpi.exe login DS_Jenkins --password ${DEVPI_PASSWORD}"
-//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-//                    }
-//
-//                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
-//                    echo "Devpi remove exited with code ${devpi_remove_return_code}."
-//                }
             }
             cleanWs(
                 deleteDirs: true,
