@@ -3,10 +3,24 @@
 import org.ds.*
 @Library(["devpi", "PythonHelpers"]) _
 
-def PKG_NAME = "unknown"
-def PKG_VERSION = "unknown"
+//def PKG_NAME = "unknown"
+//def PKG_VERSION = "unknown"
 //def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
+
+def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
+    script {
+                try {
+                    bat "${devpiExecutable} login ${devpiUsername} --password ${devpiPassword}"
+                    bat "${devpiExecutable} use ${devpiIndex}"
+                    bat "${devpiExecutable} remove -y ${pkgName}==${pkgVersion}"
+                } catch (Exception ex) {
+                    echo "Failed to remove ${pkgName}==${pkgVersion} from ${devpiIndex}"
+            }
+
+//        }
+    }
+}
 
 pipeline {
     agent {
@@ -25,6 +39,7 @@ pipeline {
         PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
         PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
         DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
+        DEVPI = credentials("DS_devpi")
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
@@ -517,152 +532,22 @@ junit_filename                  = ${junit_filename}
                     }
                 }
 
-        }
-//        stage("Test DevPi packages") {
-//            when {
-//                allOf{
-//                    anyOf{
-//                        equals expected: true, actual: params.DEPLOY_DEVPI
-//                        triggeredBy "TimerTriggerCause"
-//                    }
-//                    anyOf {
-//                        equals expected: "master", actual: env.BRANCH_NAME
-//                        equals expected: "dev", actual: env.BRANCH_NAME
-//                    }
-//                }
-//            }
-//
-//            parallel {
-//                stage("Testing Submitted Source Distribution") {
-//                    environment {
-//                        PATH = "${tool 'cmake3.12'};${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
-//                    }
-//                    steps {
-//                        echo "Testing Source tar.gz package in devpi"
-//
-//                        timeout(20){
-//                            devpiTest(
-//                                devpiExecutable: "venv36\\Scripts\\devpi.exe",
-//                                url: "https://devpi.library.illinois.edu",
-//                                index: "${env.BRANCH_NAME}_staging",
-//                                pkgName: "${PKG_NAME}",
-//                                pkgVersion: "${PKG_VERSION}",
-//                                pkgRegex: "tar.gz",
-//                                detox: false
-//                            )
-//                        }
-//                        echo "Finished testing Source Distribution: .tar.gz"
-//                    }
-//                    post {
-//                        failure {
-//                            echo "Tests for .tar.gz source on DevPi failed."
-//                        }
-//                    }
-//
-//                }
-//                stage("Built Distribution: py36 .whl") {
-//                    agent {
-//                        node {
-//                            label "Windows && Python3"
-//                        }
-//                    }
-//                    environment {
-//                        PATH = "${tool 'CPython-3.6'};$PATH"
-//                    }
-//                    options {
-//                        skipDefaultCheckout(true)
-//                    }
-//
-//                    steps {
-//                        bat "${tool 'CPython-3.6'}\\python -m venv venv36"
-//                        bat "venv36\\Scripts\\python.exe -m pip install pip --upgrade"
-//                        bat "venv36\\Scripts\\pip.exe install devpi --upgrade"
-//                        echo "Testing Whl package in devpi"
-//                        devpiTest(
-//                                devpiExecutable: "venv36\\Scripts\\devpi.exe",
-//                                url: "https://devpi.library.illinois.edu",
-//                                index: "${env.BRANCH_NAME}_staging",
-//                                pkgName: "${PKG_NAME}",
-//                                pkgVersion: "${PKG_VERSION}",
-//                                pkgRegex: "36.*whl",
-//                                detox: false,
-//                                toxEnvironment: "py36"
-//                            )
-//
-//                        echo "Finished testing Built Distribution: .whl"
-//                    }
-//                    post {
-//                        failure {
-//                            archiveArtifacts allowEmptyArchive: true, artifacts: "**/MSBuild_*.failure.txt"
-//                        }
-//                        cleanup{
-//                            cleanWs(
-//                                deleteDirs: true,
-//                                disableDeferredWipeout: true,
-//                                patterns: [
-//                                    [pattern: 'certs', type: 'INCLUDE']
-//                                    ]
-//                            )
-//                        }
-//                    }
-//                }
-//                stage("Built Distribution: py37 .whl") {
-//                    agent {
-//                        node {
-//                            label "Windows && Python3"
-//                        }}
-//                    environment {
-//                        PATH = "${tool 'CPython-3.7'};$PATH"
-//                    }
-//                    options {
-//                        skipDefaultCheckout(true)
-//                    }
-//
-//                    steps {
-//                        echo "Testing Whl package in devpi"
-//                        bat "\"${tool 'CPython-3.7'}\\python.exe\" -m venv venv37"
-//                        bat "venv37\\Scripts\\python.exe -m pip install pip --upgrade"
-//                        bat "venv37\\Scripts\\pip.exe install devpi --upgrade"
-//                        devpiTest(
-//                                devpiExecutable: "venv37\\Scripts\\devpi.exe",
-//                                url: "https://devpi.library.illinois.edu",
-//                                index: "${env.BRANCH_NAME}_staging",
-//                                pkgName: "${PKG_NAME}",
-//                                pkgVersion: "${PKG_VERSION}",
-//                                pkgRegex: "37.*whl",
-//                                detox: false,
-//                                toxEnvironment: "py37"
-//                            )
-//                        echo "Finished testing Built Distribution: .whl"
-//                    }
-//                    post {
-//                        failure {
-//                            archiveArtifacts allowEmptyArchive: true, artifacts: "**/MSBuild_*.failure.txt"
-//                        }
-//                        cleanup{
-//                            cleanWs(
-//                                deleteDirs: true,
-//                                disableDeferredWipeout: true,
-//                                patterns: [
-//                                    [pattern: 'certs', type: 'INCLUDE']
-//                                    ]
-//                            )
-//                        }
-//                    }
-//                }
-//            }
+            }
             post {
                 success {
                     echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
-                    script {
-                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            bat "venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
-                        }
+//                    script {
+//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW}"
+                            bat "venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
+                            bat "venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} ${env.DEVPI_USR}/${env.BRANCH_NAME}"
+//                        }
 
-                    }
                 }
+                cleanup{
+                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+                }
+//                }
                 failure {
                     echo "At least one package format on DevPi failed."
                 }
@@ -819,16 +704,16 @@ junit_filename                  = ${junit_filename}
                         }
                     }
                 }
-                bat "tree /A"
-                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "venv\\Scripts\\devpi.exe login DS_Jenkins --password ${DEVPI_PASSWORD}"
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                    }
-
-                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
-                    echo "Devpi remove exited with code ${devpi_remove_return_code}."
-                }
+//                bat "tree /A"
+//                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
+//                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                        bat "venv\\Scripts\\devpi.exe login DS_Jenkins --password ${DEVPI_PASSWORD}"
+//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+//                    }
+//
+//                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${env.PKG_NAME}==${env.PKG_VERSION}"
+//                    echo "Devpi remove exited with code ${devpi_remove_return_code}."
+//                }
             }
             cleanWs(
                 deleteDirs: true,
