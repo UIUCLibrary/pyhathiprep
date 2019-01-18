@@ -329,11 +329,14 @@ junit_filename                  = ${junit_filename}
             }
         }
         stage("Packaging") {
+            environment{
+                PATH = "${WORKSPACE}\\venv\\scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+            }
             parallel {
                 stage("Source and Wheel formats"){
                     steps{
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist -d ${WORKSPACE}\\dist --format zip bdist_wheel -d ${WORKSPACE}\\dist"
+                            bat "python setup.py sdist -d ${WORKSPACE}\\dist --format zip bdist_wheel -d ${WORKSPACE}\\dist"
                         }
 
                     }
@@ -352,9 +355,9 @@ junit_filename                  = ${junit_filename}
 //                    }
                     steps{
                         bat "if not exist dist mkdir dist"
-                        bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
+                        bat "pip install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\python.exe cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d ${WORKSPACE}/dist"
+                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d ${WORKSPACE}/dist"
                         }
 
 
