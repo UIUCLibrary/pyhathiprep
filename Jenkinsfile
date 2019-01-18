@@ -444,21 +444,22 @@ junit_filename                  = ${junit_filename}
                                     }
 
                                 }
-                                stage("Testing DevPi tar.gz Package"){
+                                stage("Testing DevPi zip Package"){
+                                    options{
+                                        timeout(20)
+                                    }
                                     steps {
                                         echo "Testing Source tar.gz package in devpi"
-                                        timeout(20){
-                                            bat "where python"
-                                            devpiTest(
-                                                devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                                url: "https://devpi.library.illinois.edu",
-                                                index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${env.PKG_NAME}",
-                                                pkgVersion: "${env.PKG_VERSION}",
-                                                pkgRegex: "zip",
-                                                detox: false
-                                            )
-                                        }
+
+                                        devpiTest(
+                                            devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+                                            url: "https://devpi.library.illinois.edu",
+                                            index: "${env.BRANCH_NAME}_staging",
+                                            pkgName: "${env.PKG_NAME}",
+                                            pkgVersion: "${env.PKG_VERSION}",
+                                            pkgRegex: "zip",
+                                            detox: false
+                                        )
                                         echo "Finished testing Source Distribution: .zip"
                                     }
 
@@ -504,12 +505,14 @@ junit_filename                  = ${junit_filename}
 
                                 }
                                 stage("Testing DevPi .whl Package"){
-
+                                    options{
+                                        timeout(20)
+                                    }
                                     steps {
                                         echo "Testing Whl package in devpi"
                                         devpiTest(
-                                                devpiExecutable: "venv\\36\\Scripts\\devpi.exe",
-//                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+//                                                devpiExecutable: "venv\\36\\Scripts\\devpi.exe",
+                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${env.PKG_NAME}",
