@@ -3,9 +3,6 @@
 import org.ds.*
 @Library(["devpi", "PythonHelpers"]) _
 
-//def PKG_NAME = "unknown"
-//def PKG_VERSION = "unknown"
-//def DOC_ZIP_FILENAME = "doc.zip"
 
 def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
     script {
@@ -118,21 +115,6 @@ pipeline {
                         }
                     }
                 }
-//                stage("Setting variables used by the rest of the build"){
-//                    steps{
-//
-//
-////                        script{
-//////                            DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
-////                        }
-//
-//                        bat "venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//                        }
-//                        bat "dir"
-//                    }
-//                }
             }
             post{
                 always{
