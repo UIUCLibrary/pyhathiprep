@@ -119,22 +119,22 @@ pipeline {
                         }
                     }
                 }
-                stage("Setting variables used by the rest of the build"){
-                    steps{
-
-
-//                        script{
-////                            DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
-//                            junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
+//                stage("Setting variables used by the rest of the build"){
+//                    steps{
+//
+//
+////                        script{
+//////                            DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
+////                            junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
+////                        }
+//
+//                        bat "venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
+//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
 //                        }
-
-                        bat "venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
-                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        }
-                        bat "dir"
-                    }
-                }
+//                        bat "dir"
+//                    }
+//                }
             }
             post{
                 always{
