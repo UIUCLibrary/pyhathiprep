@@ -14,7 +14,6 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
                     echo "Failed to remove ${pkgName}==${pkgVersion} from ${devpiIndex}"
             }
 
-//        }
     }
 }
 
