@@ -392,25 +392,29 @@ junit_filename                  = ${junit_filename}
             options{
                 timestamps()
             }
+            environment{
+                PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+            }
             stages{
                 stage("Upload to DevPi Staging"){
                     steps {
                         unstash "DIST"
                         unstash "DOCS_ARCHIVE"
-                        bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu"
-                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-
-                        }
-                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                        script {
-                                bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
-                                try {
-                                    bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${env.DOC_ZIP_FILENAME}"
-                                } catch (exc) {
-                                    echo "Unable to upload to devpi with docs."
-                                }
-                            }
+                        bat "devpi.exe use https://devpi.library.illinois.edu"
+                        bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
+//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+//
+//                        }
+//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+//                        script {
+//                                bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
+//                                try {
+//                                    bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${env.DOC_ZIP_FILENAME}"
+//                                } catch (exc) {
+//                                    echo "Unable to upload to devpi with docs."
+//                                }
+//                            }
 
                     }
                 }
@@ -455,7 +459,7 @@ junit_filename                  = ${junit_filename}
                                                 detox: false
                                             )
                                         }
-                                        echo "Finished testing Source Distribution: .zip
+                                        echo "Finished testing Source Distribution: .zip"
                                     }
 
                                 }
