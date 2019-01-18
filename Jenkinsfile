@@ -118,10 +118,7 @@ pipeline {
             }
             post{
                 always{
-                    echo """
-documentation zip file          = ${env.DOC_ZIP_FILENAME}
-"""
-
+                    echo "Configured ${env.PKG_NAME}, version ${env.PKG_VERSION}, for testing."
                 }
 
             }
