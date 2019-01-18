@@ -536,18 +536,13 @@ junit_filename                  = ${junit_filename}
             post {
                 success {
                     echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
-//                    script {
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW}"
                             bat "venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
                             bat "venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} ${env.DEVPI_USR}/${env.BRANCH_NAME}"
-//                        }
-
                 }
                 cleanup{
                     remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
                 }
-//                }
                 failure {
                     echo "At least one package format on DevPi failed."
                 }
@@ -592,56 +587,6 @@ junit_filename                  = ${junit_filename}
 
             }
         }
-//         stage("Deploy to SCCM") {
-//            when {
-//                expression { params.RELEASE == "Release_to_devpi_and_sccm"}
-//            }
-//
-//            steps {
-//                node("Linux"){
-//                    unstash "msi"
-//                    deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-//                    input("Push a SCCM release?")
-//                    deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-//                }
-//
-//            }
-//            post {
-//                success {
-//                    script{
-//                        def  deployment_request = requestDeploy this, "deployment.yml"
-//                        echo deployment_request
-//                        writeFile file: "deployment_request.txt", text: deployment_request
-//                        archiveArtifacts artifacts: "deployment_request.txt"
-//                    }
-//                }
-//            }
-//        }
-//        stage("Release to DevPi production") {
-//            when {
-//            allOf{
-//              equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-//              branch "master"
-//            }
-//          }
-//            steps {
-//                script {
-//                    try{
-//                        timeout(30) {
-//                            input "Release ${PKG_NAME} ${PKG_VERSION} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${PKG_NAME}/${PKG_VERSION}) to DevPi Production? "
-//                        }
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//                        }
-//
-//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-//                        bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
-//                    } catch(err){
-//                        echo "User response timed out. Packages not deployed to DevPi Production."
-//                    }
-//                }
-//            }
-//        }
         stage("Update online documentation") {
             agent any
             when {
@@ -673,20 +618,9 @@ junit_filename                  = ${junit_filename}
                         ]
                     )
                 }
-                // updateOnlineDocs stash_name: "HTML Documentation", url_subdomain: params.URL_SUBFOLDER
             }
         }
 
-        // stage("Update online documentation") {
-        //     agent any
-        //     when {
-        //         expression { params.UPDATE_DOCS == true }
-        //     }
-
-        //     steps {
-        //         updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
-        //     }
-        // }
     }
     post{
         cleanup{
