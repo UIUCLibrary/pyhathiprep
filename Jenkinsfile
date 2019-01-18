@@ -333,7 +333,7 @@ junit_filename                  = ${junit_filename}
                 stage("Source and Wheel formats"){
                     steps{
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                            bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist -d ${WORKSPACE}\\dist --format zip bdist_wheel -d ${WORKSPACE}\\dist"
                         }
 
                     }
@@ -343,7 +343,7 @@ junit_filename                  = ${junit_filename}
                             stash includes: 'dist/*.whl,dist/*.tar.gz', name: "DIST"
                         }
                         cleanup{
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.tar.gz', type: 'INCLUDE']]
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.zip', type: 'INCLUDE']]
                         }
                     }
                 }
@@ -448,11 +448,11 @@ junit_filename                  = ${junit_filename}
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${env.PKG_NAME}",
                                                 pkgVersion: "${env.PKG_VERSION}",
-                                                pkgRegex: "tar.gz",
+                                                pkgRegex: "zip",
                                                 detox: false
                                             )
                                         }
-                                        echo "Finished testing Source Distribution: .tar.gz"
+                                        echo "Finished testing Source Distribution: .zip
                                     }
 
                                 }
