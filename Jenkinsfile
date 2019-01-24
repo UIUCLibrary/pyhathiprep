@@ -104,7 +104,7 @@ pipeline {
                             }
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov coverage lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install pytest pytest-cov coverage lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
                         bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
                     }
                     post{
@@ -371,6 +371,7 @@ pipeline {
                     steps {
                         unstash "DIST"
                         unstash "DOCS_ARCHIVE"
+                        bat "pip install devpi-client"
                         bat "devpi.exe use https://devpi.library.illinois.edu"
                         bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
 
