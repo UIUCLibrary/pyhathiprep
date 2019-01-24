@@ -14,7 +14,6 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
                     echo "Failed to remove ${pkgName}==${pkgVersion} from ${devpiIndex}"
             }
 
-//        }
     }
 }
 
@@ -105,7 +104,7 @@ pipeline {
                             }
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov coverage lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install pytest pytest-cov coverage lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
                         bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
                     }
                     post{
@@ -372,6 +371,7 @@ pipeline {
                     steps {
                         unstash "DIST"
                         unstash "DOCS_ARCHIVE"
+                        bat "pip install devpi-client"
                         bat "devpi.exe use https://devpi.library.illinois.edu"
                         bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
 
@@ -407,9 +407,10 @@ pipeline {
                                     options{
                                         timeout(20)
                                     }
+                                    environment {
+                                        PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
+                                    }
                                     steps {
-                                        echo "Testing Source tar.gz package in devpi"
-
                                         devpiTest(
                                             devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                             url: "https://devpi.library.illinois.edu",
@@ -467,6 +468,10 @@ pipeline {
                                     options{
                                         timeout(20)
                                     }
+                                    environment {
+                                        PATH = "${WORKSPACE}\\venv\\36\\Scripts;${WORKSPACE}\\venv\\37\\Scripts;$PATH"
+                                    }
+//
                                     steps {
                                         echo "Testing Whl package in devpi"
                                         devpiTest(
@@ -501,21 +506,27 @@ pipeline {
                     }
                 }
                 stage("Deploy to DevPi Production") {
-                    when {
-                        allOf{
-                            equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-                            branch "master"
+                        when {
+                            allOf{
+                                equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                                branch "master"
+                            }
                         }
-                    }
-                    steps {
-                        script {
-                            input "Release ${env.PKG_NAME} ${env.PKG_VERSION} to DevPi Production?"
-                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW}"
+                        steps {
+                            script {
+                                try{
+                                    timeout(30) {
+                                        input "Release ${env.PKG_NAME} ${env.PKG_VERSION} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${env.PKG_NAME}/${env.PKG_VERSION}) to DevPi Production? "
+                                    }
+                                    bat "devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW}"
 
-                            bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                            bat "venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} production/release"
+                                    bat "devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+                                    bat "devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} production/release"
+                                } catch(err){
+                                    echo "User response timed out. Packages not deployed to DevPi Production."
+                                }
+                            }
                         }
-                    }
                 }
 
             }
