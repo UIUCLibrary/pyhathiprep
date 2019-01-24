@@ -407,9 +407,10 @@ pipeline {
                                     options{
                                         timeout(20)
                                     }
+                                    environment {
+                                        PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
+                                    }
                                     steps {
-                                        echo "Testing Source tar.gz package in devpi"
-
                                         devpiTest(
                                             devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                             url: "https://devpi.library.illinois.edu",
@@ -467,6 +468,10 @@ pipeline {
                                     options{
                                         timeout(20)
                                     }
+                                    environment {
+                                        PATH = "${WORKSPACE}\\venv\\36\\Scripts;${WORKSPACE}\\venv\\37\\Scripts;$PATH"
+                                    }
+//
                                     steps {
                                         echo "Testing Whl package in devpi"
                                         devpiTest(
