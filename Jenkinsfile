@@ -329,7 +329,7 @@ pipeline {
                         bat "if not exist dist mkdir dist"
                         bat "pip install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
                         dir("source"){
-                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d ${WORKSPACE}/dist"
+                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi -d ${WORKSPACE}/dist"
                         }
 
 
