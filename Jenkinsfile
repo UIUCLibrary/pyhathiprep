@@ -136,7 +136,7 @@ pipeline {
                     }
                     post{
                         always{
-                             recordIssues(tools: [
+                            recordIssues(tools: [
                                     pyLint(name: 'Setuptools Build: PyLint', pattern: 'logs/build.log'),
                                 ]
                             )
