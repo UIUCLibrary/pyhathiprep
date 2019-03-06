@@ -549,6 +549,9 @@ pipeline {
         }
         stage("Deploy - SCCM"){
             agent any
+            options {
+                skipDefaultCheckout(true)
+            }
             when{
                 allOf{
                     equals expected: true, actual: params.DEPLOY_SCCM
@@ -591,7 +594,11 @@ pipeline {
             when {
                 equals expected: true, actual: params.UPDATE_DOCS
             }
+            options {
+                skipDefaultCheckout(true)
+            }
             steps {
+                unstash "DOCS_ARCHIVE"
                 dir("build/docs/html/"){
 //                    bat "dir /s /B"
                     sshPublisher(
