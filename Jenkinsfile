@@ -432,7 +432,7 @@ pipeline {
                                         disableDeferredWipeout: true,
                                         patterns: [
                                             [pattern: '*tmp', type: 'INCLUDE'],
-                                            [pattern: 'certs', type: 'INCLUDE']
+                                            [pattern: 'certs', type: 'INCLUDE'],
                                             [pattern: 'source', type: 'INCLUDE']
                                             ]
                                     )
