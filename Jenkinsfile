@@ -105,7 +105,7 @@ pipeline {
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
                         bat "venv\\Scripts\\pip.exe install pytest pytest-cov coverage lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
+                        bat 'venv\\Scripts\\pip.exe install "tox>=3.7,<3.8"'
                     }
                     post{
                         success{
@@ -116,7 +116,7 @@ pipeline {
                 }
             }
             post{
-                always{
+                success{
                     echo "Configured ${env.PKG_NAME}, version ${env.PKG_VERSION}, for testing."
                 }
 
@@ -136,7 +136,7 @@ pipeline {
                     }
                     post{
                         always{
-                             recordIssues(tools: [
+                            recordIssues(tools: [
                                     pyLint(name: 'Setuptools Build: PyLint', pattern: 'logs/build.log'),
                                 ]
                             )
@@ -150,9 +150,10 @@ pipeline {
                 stage("Building Sphinx Documentation"){
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
-                        dir("source"){
-                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
-                        }
+                        bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe source/docs/source build/docs/html -d build/docs/.doctrees -v -w ${WORKSPACE}\\logs\\build_sphinx.log"
+//                        dir("source"){
+//                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
+//                        }
                     }
                     post{
                         always {
@@ -328,7 +329,7 @@ pipeline {
                         bat "if not exist dist mkdir dist"
                         bat "pip install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
                         dir("source"){
-                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d ${WORKSPACE}/dist"
+                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi -d ${WORKSPACE}/dist"
                         }
 
 
@@ -535,9 +536,9 @@ pipeline {
             post {
                 success {
                     echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
-                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW}"
-                            bat "venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
-                            bat "venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} ${env.DEVPI_USR}/${env.BRANCH_NAME}"
+                    bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW}"
+                    bat "venv\\Scripts\\devpi.exe use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging"
+                    bat "venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} ${env.DEVPI_USR}/${env.BRANCH_NAME}"
                 }
                 cleanup{
                     remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
