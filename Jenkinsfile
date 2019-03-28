@@ -433,7 +433,8 @@ pipeline {
                                         disableDeferredWipeout: true,
                                         patterns: [
                                             [pattern: '*tmp', type: 'INCLUDE'],
-                                            [pattern: 'certs', type: 'INCLUDE']
+                                            [pattern: 'certs', type: 'INCLUDE'],
+                                            [pattern: 'source', type: 'INCLUDE']
                                             ]
                                     )
                                 }
@@ -497,6 +498,7 @@ pipeline {
                                         deleteDirs: true,
                                         disableDeferredWipeout: true,
                                         patterns: [
+                                            [pattern: 'source', type: 'INCLUDE'],
                                             [pattern: '*tmp', type: 'INCLUDE'],
                                             [pattern: 'certs', type: 'INCLUDE']
                                             ]
@@ -548,6 +550,9 @@ pipeline {
         }
         stage("Deploy - SCCM"){
             agent any
+            options {
+                skipDefaultCheckout(true)
+            }
             when{
                 allOf{
                     equals expected: true, actual: params.DEPLOY_SCCM
@@ -588,11 +593,15 @@ pipeline {
         stage("Update online documentation") {
             agent any
             when {
-                expression { params.UPDATE_DOCS == true }
+                equals expected: true, actual: params.UPDATE_DOCS
+            }
+            options {
+                skipDefaultCheckout(true)
             }
             steps {
+                unstash "DOCS_ARCHIVE"
                 dir("build/docs/html/"){
-                    bat "dir /s /B"
+//                    bat "dir /s /B"
                     sshPublisher(
                         publishers: [
                             sshPublisherDesc(
@@ -623,24 +632,25 @@ pipeline {
     post{
         cleanup{
 
-            script {
-                if(fileExists('source/setup.py')){
-                    dir("source"){
-                        try{
-                            retry(3) {
-                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe setup.py clean --all"
-                            }
-                        } catch (Exception ex) {
-                            echo "Unable to successfully run clean. Purging source directory."
-                            deleteDir()
-                        }
-                    }
-                }
-            }
+//            script {
+//                if(fileExists('source/setup.py')){
+//                    dir("source"){
+//                        try{
+//                            retry(3) {
+//                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe setup.py clean --all"
+//                            }
+//                        } catch (Exception ex) {
+//                            echo "Unable to successfully run clean. Purging source directory."
+//                            deleteDir()
+//                        }
+//                    }
+//                }
+//            }
             cleanWs(
                 deleteDirs: true,
                 patterns: [
                     [pattern: 'dist', type: 'INCLUDE'],
+                    [pattern: 'source', type: 'INCLUDE'],
                     [pattern: 'build', type: 'INCLUDE'],
                     [pattern: 'reports', type: 'INCLUDE'],
                     [pattern: 'logs', type: 'INCLUDE'],
