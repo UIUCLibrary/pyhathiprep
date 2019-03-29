@@ -207,14 +207,31 @@ pipeline {
                             bat "tox --version"
                             script{
                                 try{
-                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox"
+                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox -v --result-json=${WORKSPACE}\\logs\\tox_report.json"
                                 } catch (exc) {
-                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate"
+                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate -v --result-json=${WORKSPACE}\\logs\\tox_report.json"
                                 }
                             }
 
                         }
                     }
+                    post{
+                        always{
+                            archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log,logs/tox_report.json'
+                        }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [
+                                [pattern: '.tox/py*/log/*.log', type: 'INCLUDE'],
+                                [pattern: '.tox/log/*.log', type: 'INCLUDE'],
+                                [pattern: 'logs/rox_report.json', type: 'INCLUDE']
+                            ]
+                        }
+                        failure {
+                            dir("${WORKSPACE}\\.tox"){
+                                deleteDir()
+                            }
+                        }
+                      }
                 }
                 stage("Documentation"){
                     when{
