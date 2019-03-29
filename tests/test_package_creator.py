@@ -39,9 +39,10 @@ class TestCreatePackage:
                 pass
         return new_package
 
-    def test_create_package(self, package_source_fixture, tmpdir):
+    def test_create_package(self, package_source_fixture, tmpdir_factory):
         print("package_source_fixture = {}".format(str(package_source_fixture)))
-        destination = tmpdir.mkdir("test_dest")
+        # destination = tmpdir.mkdir("test_dest")
+        destination = tmpdir_factory.mktemp("test_dest", numbered=False)
         pyhathiprep.package_creater.create_package(source=str(package_source_fixture), destination=str(destination))
         new_created_package = os.path.join(str(destination), PACKAGE_NAME)
         print("Checking to see if {} exists".format(new_created_package))
@@ -59,8 +60,9 @@ class TestCreatePackage:
         print("Checking for {}".format(checksum))
         assert os.path.exists(checksum)
 
-    def test_create_package_class(self, package_source_fixture, tmpdir):
-        destination = tmpdir.mkdir("test_dest2")
+    def test_create_package_class(self, package_source_fixture, tmpdir_factory):
+        # destination = tmpdir.mkdir("test_dest2")
+        destination = tmpdir_factory.mktemp("test_dest2", numbered=False)
         new_created_package = os.path.join(str(destination), PACKAGE_NAME)
         package_creator = pyhathiprep.package_creater.NewPackage(str(package_source_fixture))
         package_creator.generate_package(destination)

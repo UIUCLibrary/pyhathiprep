@@ -1,3 +1,5 @@
+import os
+
 from pyhathiprep import checksum
 import pytest
 
@@ -78,10 +80,14 @@ def package_source_fixture_b(tmpdir_factory):
 
 
 class TestChecksums:
-    def test_create_checksum(self, tmpdir):
+    def test_create_checksum(self, tmpdir_factory):
         data = b"0000000000"
-        test_file = tmpdir.mkdir("testchecksum").join("dummy.txt")
-        test_file.write(data)
+        temp_dir = tmpdir_factory.mktemp("testchecksum", numbered=False)
+        # temp_dir = tmpdir.mkdir("testchecksum")
+        test_file = os.path.join(temp_dir, "dummy.txt")
+        with open(test_file, "wb") as w:
+            w.write(data)
+            # test_file.write(data)
         expected_hash = "f1b708bba17f1ce948dc979f4d7092bc"
         assert expected_hash == checksum.calculate_md5_hash(test_file)
 
