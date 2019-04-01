@@ -1,4 +1,6 @@
 import os
+import shutil
+
 import pytest
 import pyhathiprep.package_creater
 
@@ -37,7 +39,8 @@ class TestCreatePackage:
             print("Creating test file {}".format(new_file))
             with open(new_file, "w") as w:
                 pass
-        return new_package
+        yield new_package
+        shutil.rmtree(new_package)
 
     def test_create_package(self, package_source_fixture, tmpdir_factory):
         print("package_source_fixture = {}".format(str(package_source_fixture)))
@@ -59,6 +62,7 @@ class TestCreatePackage:
         checksum = os.path.join(new_created_package, "checksum.md5")
         print("Checking for {}".format(checksum))
         assert os.path.exists(checksum)
+        shutil.rmtree(destination)
 
     def test_create_package_class(self, package_source_fixture, tmpdir_factory):
         # destination = tmpdir.mkdir("test_dest2")
@@ -80,6 +84,7 @@ class TestCreatePackage:
         checksum = os.path.join(new_created_package, "checksum.md5")
         print("Checking for {}".format(checksum))
         assert os.path.exists(checksum)
+        shutil.rmtree(destination)
 
 
 class TestCreatePackageInplace:
@@ -91,7 +96,8 @@ class TestCreatePackageInplace:
             print("Creating test file {}".format(new_file))
             with open(new_file, "w") as w:
                 pass
-        return new_package
+        yield new_package
+        shutil.rmtree(new_package)
 
     def test_create_package_class(self, package_source_fixture):
         package_creator = pyhathiprep.package_creater.InplacePackage(str(package_source_fixture))
