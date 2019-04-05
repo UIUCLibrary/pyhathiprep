@@ -1,4 +1,6 @@
 import itertools
+import shutil
+
 import pytz
 import pyhathiprep
 import pytest
@@ -26,12 +28,13 @@ files = ["00000001.jp2", "00000002.jp2", "00000003.jp2", "00000004.jp2",
 class TestMakeYAML:
     @pytest.fixture(scope="session")
     def dummy_fixture(self, tmpdir_factory):
-        x = tmpdir_factory.mktemp("2693684")
+        x = tmpdir_factory.mktemp("2693684", numbered=False)
         for f in files:
             with open(x.join(f), "w"):
                 pass
 
-        return x
+        yield x
+        shutil.rmtree(x)
 
     def test_make_yml(self, dummy_fixture):
         tz = pytz.timezone("America/Chicago")
