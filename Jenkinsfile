@@ -105,7 +105,7 @@ pipeline {
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
                         bat "venv\\Scripts\\pip.exe install pytest pytest-cov coverage lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
-                        bat 'venv\\Scripts\\pip.exe install "tox>=3.7"'
+                        bat 'venv\\Scripts\\pip.exe install "tox>=3.7,<3.10"'
                     }
                     post{
                         success{
@@ -207,14 +207,34 @@ pipeline {
                             bat "tox --version"
                             script{
                                 try{
-                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox"
+                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox -v --result-json=${WORKSPACE}\\logs\\tox_report.json"
                                 } catch (exc) {
-                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate"
+                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate -v --result-json=${WORKSPACE}\\logs\\tox_report.json"
                                 }
                             }
 
                         }
                     }
+                    post{
+                        always{
+                            archiveArtifacts(
+                                allowEmptyArchive: true,
+                                artifacts: '.tox/py*/log/*.log,.tox/log/*.log,logs/tox_report.json'
+                            )
+                        }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [
+                                [pattern: '.tox/py*/log/*.log', type: 'INCLUDE'],
+                                [pattern: '.tox/log/*.log', type: 'INCLUDE'],
+                                [pattern: 'logs/rox_report.json', type: 'INCLUDE']
+                            ]
+                        }
+                        failure {
+                            dir("${WORKSPACE}\\.tox"){
+                                deleteDir()
+                            }
+                        }
+                      }
                 }
                 stage("Documentation"){
                     when{
@@ -373,9 +393,12 @@ pipeline {
                         unstash "DIST"
                         unstash "DOCS_ARCHIVE"
                         bat "pip install devpi-client"
-                        bat "devpi.exe use https://devpi.library.illinois.edu"
-                        bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
-
+                        devpiUpload(
+                            devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+                            url: "https://devpi.library.illinois.edu",
+                            index: "${env.BRANCH_NAME}_staging",
+                            distPath: "dist"
+                            )
                     }
                 }
                 stage("Test DevPi packages") {
