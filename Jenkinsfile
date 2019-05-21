@@ -56,7 +56,7 @@ pipeline {
                 PATH = "${tool 'CPython-3.6'};$PATH"
             }
             stages{
-                stage("Purge all existing data in workspace"){
+                stage("Purge All Existing Data in Workspace"){
                     when{
                         equals expected: true, actual: params.FRESH_WORKSPACE
                     }
@@ -72,7 +72,7 @@ pipeline {
                         }
                     }
                 }
-                stage("Installing required system level dependencies"){
+                stage("Installing Required System Level Dependencies"){
                     steps{
                         lock("system_python_${NODE_NAME}"){
                             bat "python -m pip install --upgrade pip --quiet"
@@ -91,7 +91,7 @@ pipeline {
                         }
                     }
                 }
-                stage("Creating virtualenv for building"){
+                stage("Creating Virtualenv for Building"){
                     steps{
                         bat "python -m venv venv"
                         script {
@@ -197,7 +197,7 @@ pipeline {
 
                     }
                 }
-                stage("Run Tox test") {
+                stage("Run Tox Test") {
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
@@ -401,7 +401,7 @@ pipeline {
                             )
                     }
                 }
-                stage("Test DevPi packages") {
+                stage("Test DevPi Packages") {
 
                     parallel {
                         stage("Testing Submitted Source Distribution") {
@@ -418,7 +418,7 @@ pipeline {
 
                             }
                             stages{
-                                stage("Creating venv to test sdist"){
+                                stage("Creating Virtualenv to Test Sdist"){
                                     steps {
                                         lock("system_python_${NODE_NAME}"){
                                             bat "python -m venv venv"
@@ -591,7 +591,7 @@ pipeline {
                     }
                 }
 
-                stage("Deploy - SCCM upload") {
+                stage("Deploy - SCCM Upload") {
                     steps {
                         deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
                     }
@@ -613,7 +613,7 @@ pipeline {
 
             }
         }
-        stage("Update online documentation") {
+        stage("Update Online Documentation") {
             agent any
             when {
                 equals expected: true, actual: params.UPDATE_DOCS
