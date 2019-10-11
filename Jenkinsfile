@@ -182,13 +182,14 @@ pipeline {
             }
         }
         stage("Tests") {
-            environment {
-                PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
-            }
+
             parallel {
                 stage("PyTest"){
                     when {
                         equals expected: true, actual: params.TEST_RUN_PYTEST
+                    }
+                    environment {
+                        PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
                     }
                     steps{
                         dir("source"){
@@ -200,6 +201,9 @@ pipeline {
                 stage("Run Tox Test") {
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
+                    }
+                    environment {
+                        PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
                     }
 
                     steps {
@@ -240,6 +244,9 @@ pipeline {
                     when{
                         equals expected: true, actual: params.TEST_RUN_DOCTEST
                     }
+                    environment {
+                        PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
+                    }
                     steps{
                         dir("source"){
                             bat "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=${WORKSPACE}\\build\\docs --builder=doctest"
@@ -250,6 +257,9 @@ pipeline {
                 stage("MyPy"){
                     when{
                         equals expected: true, actual: params.TEST_RUN_MYPY
+                    }
+                    environment {
+                        PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
                     }
                     steps{
                         bat "if not exist reports\\mypy mkdir reports\\mypy"
@@ -272,6 +282,9 @@ pipeline {
                 stage("Run Flake8 Static Analysis") {
                     when {
                         equals expected: true, actual: params.TEST_RUN_FLAKE8
+                    }
+                    environment {
+                        PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
                     }
                     steps{
                         script{
