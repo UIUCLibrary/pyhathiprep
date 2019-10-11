@@ -30,7 +30,7 @@ pipeline {
         cron('@daily')
     }
     environment {
-        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+        //PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
         PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
         PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
         DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
