@@ -40,7 +40,6 @@ pipeline {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
         booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
-        booleanParam(name: "TEST_RUN_FLAKE8", defaultValue: true, description: "Run Flake8 Tests")
         booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run unit tests with PyTest")
         booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
@@ -280,18 +279,19 @@ pipeline {
                     }
                 }
                 stage("Run Flake8 Static Analysis") {
-                    when {
-                        equals expected: true, actual: params.TEST_RUN_FLAKE8
-                    }
-                    environment {
-                        PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
+                    agent{
+                        dockerfile {
+                            filename 'CI/docker/pytest_tests/Dockerfile'
+                            label "linux && docker"
+                            dir 'source'
+                            }
                     }
                     steps{
+                        sh "mkdir -p logs"
                         script{
-                            bat "pip install flake8"
                             try{
                                 dir("source"){
-                                    bat "flake8 pyhathiprep --tee --output-file=${WORKSPACE}\\logs\\flake8.log"
+                                    sh "flake8 pyhathiprep --tee --output-file=${WORKSPACE}/logs/flake8.log"
                                 }
                             } catch (exc) {
                                 echo "flake8 found some warnings"
@@ -300,7 +300,6 @@ pipeline {
                     }
                     post {
                         always {
-
                             recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
                         }
                         cleanup{
