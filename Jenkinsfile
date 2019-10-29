@@ -60,12 +60,7 @@ pipeline {
     }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
-        booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
-        booleanParam(name: "TEST_RUN_DOCTEST", defaultValue: true, description: "Test documentation")
-        booleanParam(name: "TEST_RUN_PYTEST", defaultValue: true, description: "Run unit tests with PyTest")
-        booleanParam(name: "TEST_RUN_MYPY", defaultValue: true, description: "Run MyPy static analysis")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
-
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         string(name: 'URL_SUBFOLDER', defaultValue: "pyhathiprep", description: 'The directory that the docs should be saved under')
@@ -225,9 +220,6 @@ pipeline {
 
             parallel {
                 stage("PyTest"){
-                    when {
-                        equals expected: true, actual: params.TEST_RUN_PYTEST
-                    }
                     environment {
                         PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
                     }
@@ -281,9 +273,6 @@ pipeline {
                       }
                 }
                 stage("Documentation"){
-                    when{
-                        equals expected: true, actual: params.TEST_RUN_DOCTEST
-                    }
                     environment {
                         PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
                     }
@@ -295,9 +284,6 @@ pipeline {
 
                 }
                 stage("MyPy"){
-                    when{
-                        equals expected: true, actual: params.TEST_RUN_MYPY
-                    }
                     environment {
                         PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
                     }
