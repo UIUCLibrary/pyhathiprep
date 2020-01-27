@@ -359,11 +359,14 @@ pipeline {
             }
         }
         stage("Packaging") {
-            environment{
-                PATH = "${WORKSPACE}\\venv\\scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-            }
             parallel {
                 stage("Source and Wheel formats"){
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python37/windows/build/msvc/Dockerfile'
+                            label "windows && docker"
+                        }
+                    }
                     steps{
                         bat "python setup.py sdist -d ${WORKSPACE}\\dist --format zip bdist_wheel -d ${WORKSPACE}\\dist"
                     }
@@ -378,16 +381,18 @@ pipeline {
                     }
                 }
                 stage("Windows CX_Freeze MSI"){
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python37/windows/build/msvc/Dockerfile'
+                            label "windows && docker"
+                        }
+                    }
                     steps{
-                        bat "if not exist dist mkdir dist"
-                        bat "pip install -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt"
                         bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi -d ${WORKSPACE}/dist"
                     }
                     post{
                         success{
-                            dir("dist") {
-                                stash includes: "*.msi", name: "msi"
-                            }
+                            stash includes: "dist/*.msi", name: "msi"
                             archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
                         }
                         cleanup{
