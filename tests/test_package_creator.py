@@ -2,6 +2,9 @@ import os
 import shutil
 
 import pytest
+import pytz
+import tzlocal
+
 import pyhathiprep.package_creater
 
 PACKAGE_NAME = "7213857"
@@ -42,7 +45,11 @@ class TestCreatePackage:
         yield new_package
         shutil.rmtree(new_package)
 
-    def test_create_package(self, package_source_fixture, tmpdir_factory):
+    def test_create_package(self, package_source_fixture, tmpdir_factory, monkeypatch):
+        def mock_get_localzone():
+            return pytz.timezone('America/Chicago')
+        monkeypatch.setattr(tzlocal, "get_localzone", mock_get_localzone)
+
         print("package_source_fixture = {}".format(str(package_source_fixture)))
         # destination = tmpdir.mkdir("test_dest")
         destination = tmpdir_factory.mktemp("test_dest", numbered=False)
@@ -64,8 +71,13 @@ class TestCreatePackage:
         assert os.path.exists(checksum)
         shutil.rmtree(destination)
 
-    def test_create_package_class(self, package_source_fixture, tmpdir_factory):
+    def test_create_package_class(self, package_source_fixture, tmpdir_factory, monkeypatch):
         # destination = tmpdir.mkdir("test_dest2")
+        def mock_get_localzone():
+            return pytz.timezone('America/Chicago')
+
+        monkeypatch.setattr(tzlocal, "get_localzone", mock_get_localzone)
+
         destination = tmpdir_factory.mktemp("test_dest2", numbered=False)
         new_created_package = os.path.join(str(destination), PACKAGE_NAME)
         package_creator = pyhathiprep.package_creater.NewPackage(str(package_source_fixture))
@@ -99,7 +111,12 @@ class TestCreatePackageInplace:
         yield new_package
         shutil.rmtree(new_package)
 
-    def test_create_package_class(self, package_source_fixture):
+    def test_create_package_class(self, package_source_fixture, monkeypatch):
+        def mock_get_localzone():
+            return pytz.timezone('America/Chicago')
+
+        monkeypatch.setattr(tzlocal, "get_localzone", mock_get_localzone)
+
         package_creator = pyhathiprep.package_creater.InplacePackage(str(package_source_fixture))
         package_creator.generate_package()
         package_root = os.path.join(str(package_source_fixture))
