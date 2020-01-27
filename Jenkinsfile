@@ -41,9 +41,7 @@ def get_package_name(stashName, metadataFile){
 
 
 pipeline {
-    agent {
-        label "Windows && Python3 && longfilenames"
-    }
+    agent none
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
         timeout(60)  // Timeout after 60 minutes. This shouldn't take this long but it hangs for some reason
@@ -622,21 +620,6 @@ pipeline {
                     )
                 }
             }
-        }
-    }
-    post{
-        cleanup{
-            cleanWs(
-                deleteDirs: true,
-                patterns: [
-                    [pattern: 'dist', type: 'INCLUDE'],
-                    [pattern: 'build', type: 'INCLUDE'],
-                    [pattern: 'reports', type: 'INCLUDE'],
-                    [pattern: 'logs', type: 'INCLUDE'],
-                    [pattern: 'certs', type: 'INCLUDE'],
-                    [pattern: '*tmp', type: 'INCLUDE'],
-                ]
-            )
         }
     }
 }
