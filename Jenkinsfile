@@ -47,15 +47,11 @@ pipeline {
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
         timeout(60)  // Timeout after 60 minutes. This shouldn't take this long but it hangs for some reason
-        checkoutToSubdirectory("source")
     }
     triggers {
         cron('@daily')
     }
     environment {
-        //PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
-
-
         DEVPI = credentials("DS_devpi")
     }
     parameters {
@@ -78,9 +74,7 @@ pipeline {
                     }
                     steps{
                         deleteDir()
-                        dir("source"){
-                            checkout scm
-                        }
+                        checkout scm
                     }
                     post{
                         success{
@@ -112,16 +106,12 @@ pipeline {
                         PATH = "${tool 'CPython-3.7'};$PATH"
                     }
                     steps{
-                        dir("source"){
-                            bat "python setup.py dist_info"
-                        }
+                        bat "python setup.py dist_info"
                     }
                     post{
                         success{
-                            dir("source"){
-                                stash includes: "pyhathiprep.dist-info/**", name: 'DIST-INFO'
-                                archiveArtifacts artifacts: "pyhathiprep.dist-info/**"
-                            }
+                            stash includes: "pyhathiprep.dist-info/**", name: 'DIST-INFO'
+                            archiveArtifacts artifacts: "pyhathiprep.dist-info/**"
                         }
                     }
                 }
@@ -138,7 +128,7 @@ pipeline {
                             }
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        bat "venv\\Scripts\\pip.exe install pytest pytest-cov coverage lxml -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install pytest pytest-cov coverage lxml -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt --upgrade-strategy only-if-needed"
                         bat 'venv\\Scripts\\pip.exe install "tox>=3.7,<3.10"'
                     }
                     post{
@@ -154,12 +144,7 @@ pipeline {
             stages{
                 stage("Building Python Package"){
                     steps {
-
-
-                        dir("source"){
-                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
-                        }
-
+                        powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
                     }
                     post{
                         always{
@@ -181,10 +166,7 @@ pipeline {
                     }
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
-                        bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe source/docs/source build/docs/html -d build/docs/.doctrees -v -w ${WORKSPACE}\\logs\\build_sphinx.log"
-//                        dir("source"){
-//                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
-//                        }
+                        bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe docs/source build/docs/html -d build/docs/.doctrees -v -w ${WORKSPACE}\\logs\\build_sphinx.log"
                     }
                     post{
                         always {
@@ -198,7 +180,6 @@ pipeline {
                                 zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
                                 stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
                             }
-
                         }
                         failure{
                             echo "Failed to build Python package"
@@ -217,17 +198,13 @@ pipeline {
             }
         }
         stage("Tests") {
-
             parallel {
                 stage("PyTest"){
                     environment {
                         PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
                     }
                     steps{
-                        dir("source"){
-                            bat "coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}"
-                        }
-
+                        bat "coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=${WORKSPACE}/reports/pytest/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}"
                     }
                 }
                 stage("Run Tox Test") {
@@ -237,18 +214,14 @@ pipeline {
                     environment {
                         PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
                     }
-
                     steps {
-                        dir("source"){
-                            bat "tox --version"
-                            script{
-                                try{
-                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox -v --result-json=${WORKSPACE}\\logs\\tox_report.json"
-                                } catch (exc) {
-                                    bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate -v --result-json=${WORKSPACE}\\logs\\tox_report.json"
-                                }
+                        bat "tox --version"
+                        script{
+                            try{
+                                bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox -v --result-json=${WORKSPACE}\\logs\\tox_report.json"
+                            } catch (exc) {
+                                bat "tox --parallel=auto --parallel-live --workdir ${WORKSPACE}\\.tox --recreate -v --result-json=${WORKSPACE}\\logs\\tox_report.json"
                             }
-
                         }
                     }
                     post{
@@ -277,11 +250,8 @@ pipeline {
                         PATH = "${WORKSPACE}\\venv\\Scripts;$PATH"
                     }
                     steps{
-                        dir("source"){
-                            bat "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=${WORKSPACE}\\build\\docs --builder=doctest"
-                        }
+                        bat "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=${WORKSPACE}\\build\\docs --builder=doctest"
                     }
-
                 }
                 stage("MyPy"){
                     environment {
@@ -289,10 +259,7 @@ pipeline {
                     }
                     steps{
                         bat "if not exist reports\\mypy mkdir reports\\mypy"
-                        dir("source") {
-
-                            bat returnStatus: true, script: "mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/mypy/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy/mypy_html > ${WORKSPACE}\\logs\\mypy.log"
-                        }
+                        bat returnStatus: true, script: "mypy.exe -p pyhathiprep --junit-xml=${WORKSPACE}/reports/mypy/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy/mypy_html > ${WORKSPACE}\\logs\\mypy.log"
                     }
                     post{
                         always {
@@ -310,16 +277,13 @@ pipeline {
                         dockerfile {
                             filename 'CI/docker/pytest_tests/Dockerfile'
                             label "linux && docker"
-                            dir 'source'
                             }
                     }
                     steps{
                         sh "mkdir -p logs"
                         script{
                             try{
-                                dir("source"){
-                                    sh "flake8 pyhathiprep --tee --output-file=${WORKSPACE}/logs/flake8.log"
-                                }
+                                sh "flake8 pyhathiprep --tee --output-file=${WORKSPACE}/logs/flake8.log"
                             } catch (exc) {
                                 echo "flake8 found some warnings"
                             }
@@ -328,10 +292,8 @@ pipeline {
                     post {
                         always {
                             stash includes: "logs/flake8.log", name: 'FLAKE8_LOGS'
-                            dir("source"){
-                                unstash "FLAKE8_LOGS"
-                                recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
-                            }
+                            unstash "FLAKE8_LOGS"
+                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
                         }
                         cleanup{
                             cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
@@ -341,12 +303,9 @@ pipeline {
             }
             post{
                 always{
-                    dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\coverage combine"
-                            bat "${WORKSPACE}\\venv\\Scripts\\coverage xml -o ${WORKSPACE}\\reports\\coverage.xml"
-                            bat "${WORKSPACE}\\venv\\Scripts\\coverage html -d ${WORKSPACE}\\reports\\coverage"
-
-                    }
+                    bat "${WORKSPACE}\\venv\\Scripts\\coverage combine"
+                    bat "${WORKSPACE}\\venv\\Scripts\\coverage xml -o ${WORKSPACE}\\reports\\coverage.xml"
+                    bat "${WORKSPACE}\\venv\\Scripts\\coverage html -d ${WORKSPACE}\\reports\\coverage"
                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                     publishCoverage adapters: [
                                     coberturaAdapter('reports/coverage.xml')
@@ -357,7 +316,6 @@ pipeline {
                     cleanWs(patterns: [
                             [pattern: 'reports/coverage.xml', type: 'INCLUDE'],
                             [pattern: 'reports/coverage', type: 'INCLUDE'],
-                            [pattern: 'source/.coverage', type: 'INCLUDE']
                         ]
                     )
                 }
@@ -370,10 +328,7 @@ pipeline {
             parallel {
                 stage("Source and Wheel formats"){
                     steps{
-                        dir("source"){
-                            bat "python setup.py sdist -d ${WORKSPACE}\\dist --format zip bdist_wheel -d ${WORKSPACE}\\dist"
-                        }
-
+                        bat "python setup.py sdist -d ${WORKSPACE}\\dist --format zip bdist_wheel -d ${WORKSPACE}\\dist"
                     }
                     post{
                         success{
@@ -385,17 +340,11 @@ pipeline {
                         }
                     }
                 }
-
                 stage("Windows CX_Freeze MSI"){
-//                    }
                     steps{
                         bat "if not exist dist mkdir dist"
-                        bat "pip install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
-                        dir("source"){
-                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi -d ${WORKSPACE}/dist"
-                        }
-
-
+                        bat "pip install -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt"
+                        bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi -d ${WORKSPACE}/dist"
                     }
                     post{
                         success{
@@ -447,7 +396,6 @@ pipeline {
                     }
                 }
                 stage("Test DevPi Packages") {
-
                     parallel {
                         stage("Testing Submitted Source Distribution") {
                             environment {
@@ -460,7 +408,6 @@ pipeline {
                             }
                             options {
                                 skipDefaultCheckout(true)
-
                             }
                             stages{
                                 stage("Creating Virtualenv to Test Sdist"){
@@ -470,7 +417,6 @@ pipeline {
                                         }
                                         bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
                                     }
-
                                 }
                                 stage("Testing DevPi zip Package"){
                                     options{
@@ -491,7 +437,6 @@ pipeline {
                                         )
                                         echo "Finished testing Source Distribution: .zip"
                                     }
-
                                 }
                             }
                             post {
@@ -502,12 +447,10 @@ pipeline {
                                         patterns: [
                                             [pattern: '*tmp', type: 'INCLUDE'],
                                             [pattern: 'certs', type: 'INCLUDE'],
-                                            [pattern: 'source', type: 'INCLUDE']
                                             ]
                                     )
                                 }
                             }
-
                         }
                         stage("Built Distribution: .whl") {
                             agent {
@@ -532,7 +475,6 @@ pipeline {
                                         }
                                         bat "venv\\36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\36\\Scripts\\pip.exe install setuptools --upgrade && venv\\36\\Scripts\\pip.exe install \"tox<3.7\" devpi-client"
                                     }
-
                                 }
                                 stage("Testing DevPi .whl Package"){
                                     options{
@@ -541,11 +483,9 @@ pipeline {
                                     environment {
                                         PATH = "${WORKSPACE}\\venv\\36\\Scripts;${WORKSPACE}\\venv\\37\\Scripts;$PATH"
                                     }
-//
                                     steps {
                                         echo "Testing Whl package in devpi"
                                         devpiTest(
-//                                                devpiExecutable: "venv\\36\\Scripts\\devpi.exe",
                                                 devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
@@ -554,11 +494,9 @@ pipeline {
                                                 pkgRegex: "whl",
                                                 detox: false
                                             )
-
                                         echo "Finished testing Built Distribution: .whl"
                                     }
                                 }
-
                             }
                             post {
                                 cleanup{
@@ -566,7 +504,6 @@ pipeline {
                                         deleteDirs: true,
                                         disableDeferredWipeout: true,
                                         patterns: [
-                                            [pattern: 'source', type: 'INCLUDE'],
                                             [pattern: '*tmp', type: 'INCLUDE'],
                                             [pattern: 'certs', type: 'INCLUDE']
                                             ]
@@ -590,7 +527,6 @@ pipeline {
                                         input "Release ${env.PKG_NAME} ${env.PKG_VERSION} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${env.PKG_NAME}/${env.PKG_VERSION}) to DevPi Production? "
                                     }
                                     bat "devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW}"
-
                                     bat "devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                                     bat "devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} production/release"
                                 } catch(err){
@@ -599,7 +535,6 @@ pipeline {
                             }
                         }
                 }
-
             }
             post {
                 success {
@@ -629,18 +564,15 @@ pipeline {
             }
             stages{
                  stage("Deploy - Staging") {
-
                     steps {
                         deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
                         input("Deploy to production?")
                     }
                 }
-
                 stage("Deploy - SCCM Upload") {
                     steps {
                         deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
                     }
-
                     post {
                         success {
                             script{
@@ -650,12 +582,9 @@ pipeline {
                                 writeFile file: "deployment_request.txt", text: deployment_request
                                 archiveArtifacts artifacts: "deployment_request.txt"
                             }
-
                         }
                     }
                 }
-
-
             }
         }
         stage("Update Online Documentation") {
@@ -669,7 +598,6 @@ pipeline {
             steps {
                 unstash "DOCS_ARCHIVE"
                 dir("build/docs/html/"){
-//                    bat "dir /s /B"
                     sshPublisher(
                         publishers: [
                             sshPublisherDesc(
@@ -695,37 +623,20 @@ pipeline {
                 }
             }
         }
-
     }
     post{
         cleanup{
-
-//            script {
-//                if(fileExists('source/setup.py')){
-//                    dir("source"){
-//                        try{
-//                            retry(3) {
-//                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe setup.py clean --all"
-//                            }
-//                        } catch (Exception ex) {
-//                            echo "Unable to successfully run clean. Purging source directory."
-//                            deleteDir()
-//                        }
-//                    }
-//                }
-//            }
             cleanWs(
                 deleteDirs: true,
                 patterns: [
                     [pattern: 'dist', type: 'INCLUDE'],
-                    [pattern: 'source', type: 'INCLUDE'],
                     [pattern: 'build', type: 'INCLUDE'],
                     [pattern: 'reports', type: 'INCLUDE'],
                     [pattern: 'logs', type: 'INCLUDE'],
                     [pattern: 'certs', type: 'INCLUDE'],
                     [pattern: '*tmp', type: 'INCLUDE'],
-                    ]
-                )
+                ]
+            )
         }
     }
 }
