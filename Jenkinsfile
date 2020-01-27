@@ -61,83 +61,108 @@ pipeline {
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
     }
     stages {
-        stage("Configure") {
-            environment {
-                PATH = "${tool 'CPython-3.6'};$PATH"
+        stage("Getting Distribution Info"){
+            agent {
+                dockerfile {
+                    filename 'CI/docker/python37/windows/build/msvc/Dockerfile'
+                    label "windows && docker"
+                }
             }
-            stages{
-                stage("Purge All Existing Data in Workspace"){
-                    when{
-                        equals expected: true, actual: params.FRESH_WORKSPACE
-                    }
-                    steps{
-                        deleteDir()
-                        checkout scm
-                    }
-                    post{
-                        success{
-                            bat "dir /s /B"
-                        }
-                    }
+            steps{
+                bat "python setup.py dist_info"
+            }
+            post{
+                success{
+                    stash includes: "pyhathiprep.dist-info/**", name: 'DIST-INFO'
+                    archiveArtifacts artifacts: "pyhathiprep.dist-info/**"
                 }
-                stage("Installing Required System Level Dependencies"){
-                    steps{
-                        lock("system_python_${NODE_NAME}"){
-                            bat "python -m pip install --upgrade pip --quiet"
-                        }
-                    }
-                    post{
-                        always{
-                            bat "if not exist logs mkdir logs"
-                            lock("system_python_${NODE_NAME}"){
-                                bat "python -m pip list > logs\\pippackages_system_${NODE_NAME}.log"
-                            }
-                            archiveArtifacts artifacts: "logs/pippackages_system_${NODE_NAME}.log"
-                        }
-                        failure {
-                            deleteDir()
-                        }
-                    }
-                }
-                stage("Getting Distribution Info"){
-                    environment{
-                        PATH = "${tool 'CPython-3.7'};$PATH"
-                    }
-                    steps{
-                        bat "python setup.py dist_info"
-                    }
-                    post{
-                        success{
-                            stash includes: "pyhathiprep.dist-info/**", name: 'DIST-INFO'
-                            archiveArtifacts artifacts: "pyhathiprep.dist-info/**"
-                        }
-                    }
-                }
-                stage("Creating Virtualenv for Building"){
-                    steps{
-                        bat "python -m venv venv"
-                        script {
-                            try {
-                                bat "call venv\\Scripts\\python.exe -m pip install -U pip"
-                            }
-                            catch (exc) {
-                                bat "python -m venv venv"
-                                bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
-                            }
-                        }
-                        bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        bat "venv\\Scripts\\pip.exe install pytest pytest-cov coverage lxml -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt --upgrade-strategy only-if-needed"
-                        bat 'venv\\Scripts\\pip.exe install "tox>=3.7,<3.10"'
-                    }
-                    post{
-                        success{
-                            bat "venv\\Scripts\\pip.exe list > ${WORKSPACE}\\logs\\pippackages_venv_${NODE_NAME}.log"
-                            archiveArtifacts artifacts: "logs/pippackages_venv_${NODE_NAME}.log"
-                        }
-                    }
+                cleanup{
+                    cleanWs(
+                        deleteDirs: true,
+                        patterns: [
+                            [pattern: "pyhathiprep.dist-info/", type: 'INCLUDE'],
+                            ]
+                    )
                 }
             }
         }
+//         stage("Configure") {
+//             environment {
+//                 PATH = "${tool 'CPython-3.6'};$PATH"
+//             }
+//             stages{
+//                 stage("Purge All Existing Data in Workspace"){
+//                     when{
+//                         equals expected: true, actual: params.FRESH_WORKSPACE
+//                     }
+//                     steps{
+//                         deleteDir()
+//                         checkout scm
+//                     }
+//                     post{
+//                         success{
+//                             bat "dir /s /B"
+//                         }
+//                     }
+//                 }
+//                 stage("Installing Required System Level Dependencies"){
+//                     steps{
+//                         lock("system_python_${NODE_NAME}"){
+//                             bat "python -m pip install --upgrade pip --quiet"
+//                         }
+//                     }
+//                     post{
+//                         always{
+//                             bat "if not exist logs mkdir logs"
+//                             lock("system_python_${NODE_NAME}"){
+//                                 bat "python -m pip list > logs\\pippackages_system_${NODE_NAME}.log"
+//                             }
+//                             archiveArtifacts artifacts: "logs/pippackages_system_${NODE_NAME}.log"
+//                         }
+//                         failure {
+//                             deleteDir()
+//                         }
+//                     }
+//                 }
+//                 stage("Getting Distribution Info"){
+//                     environment{
+//                         PATH = "${tool 'CPython-3.7'};$PATH"
+//                     }
+//                     steps{
+//                         bat "python setup.py dist_info"
+//                     }
+//                     post{
+//                         success{
+//                             stash includes: "pyhathiprep.dist-info/**", name: 'DIST-INFO'
+//                             archiveArtifacts artifacts: "pyhathiprep.dist-info/**"
+//                         }
+//                     }
+//                 }
+//                 stage("Creating Virtualenv for Building"){
+//                     steps{
+//                         bat "python -m venv venv"
+//                         script {
+//                             try {
+//                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip"
+//                             }
+//                             catch (exc) {
+//                                 bat "python -m venv venv"
+//                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
+//                             }
+//                         }
+//                         bat "venv\\Scripts\\pip.exe install -U setuptools"
+//                         bat "venv\\Scripts\\pip.exe install pytest pytest-cov coverage lxml -r requirements.txt -r requirements-dev.txt -r requirements-freeze.txt --upgrade-strategy only-if-needed"
+//                         bat 'venv\\Scripts\\pip.exe install "tox>=3.7,<3.10"'
+//                     }
+//                     post{
+//                         success{
+//                             bat "venv\\Scripts\\pip.exe list > ${WORKSPACE}\\logs\\pippackages_venv_${NODE_NAME}.log"
+//                             archiveArtifacts artifacts: "logs/pippackages_venv_${NODE_NAME}.log"
+//                         }
+//                     }
+//                 }
+//             }
+//         }
         stage("Building") {
             stages{
                 stage("Building Python Package"){
