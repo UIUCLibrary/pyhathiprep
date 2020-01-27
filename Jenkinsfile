@@ -164,10 +164,17 @@ pipeline {
 //             }
 //         }
         stage("Building") {
+            agent {
+                dockerfile {
+                    filename 'CI/docker/python37/windows/build/msvc/Dockerfile'
+                    label "windows && docker"
+                }
+            }
             stages{
                 stage("Building Python Package"){
                     steps {
-                        powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
+                        bat "if not exist logs mkdir logs"
+                        powershell "& python setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
                     }
                     post{
                         always{
@@ -189,7 +196,7 @@ pipeline {
                     }
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
-                        bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe docs/source build/docs/html -d build/docs/.doctrees -v -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                        bat "python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w ${WORKSPACE}\\logs\\build_sphinx.log"
                     }
                     post{
                         always {
@@ -211,8 +218,9 @@ pipeline {
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
-                                    [pattern: "dist/*.doc.zip", type: 'INCLUDE'],
-                                    [pattern: 'build/docs/html/**"', type: 'INCLUDE']
+                                    [pattern: "dist/", type: 'INCLUDE'],
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: 'logs/', type: 'INCLUDE']
                                     ]
                             )
                         }
