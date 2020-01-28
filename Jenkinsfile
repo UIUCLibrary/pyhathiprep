@@ -299,6 +299,18 @@ pipeline {
                     }
                 }
             }
+            post{
+                cleanup{
+                    cleanWs(
+                        deleteDirs: true,
+                        patterns: [
+                            [pattern: "dist/", type: 'INCLUDE'],
+                            [pattern: 'build/', type: 'INCLUDE'],
+                            [pattern: 'logs/', type: 'INCLUDE']
+                            ]
+                    )
+                }
+            }
         }
         stage("Packaging") {
             parallel {
