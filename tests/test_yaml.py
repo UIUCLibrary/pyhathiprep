@@ -2,6 +2,8 @@ import itertools
 import shutil
 
 import pytz
+import tzlocal
+
 import pyhathiprep
 import pytest
 from pyhathiprep.hathiyml import HathiYmlBuilder
@@ -36,7 +38,12 @@ class TestMakeYAML:
         yield x
         shutil.rmtree(x)
 
-    def test_make_yml(self, dummy_fixture):
+    def test_make_yml(self, dummy_fixture, monkeypatch):
+        def mock_get_localzone():
+            return pytz.timezone('America/Chicago')
+
+        monkeypatch.setattr(tzlocal, "get_localzone", mock_get_localzone)
+
         tz = pytz.timezone("America/Chicago")
         test_date = tz.localize(datetime(year=2017, month=7, day=3, hour=14, minute=22, second=0))
         yml = pyhathiprep.make_yml(dummy_fixture, capture_date=test_date, scanner_user="Henry")
@@ -46,8 +53,14 @@ class TestMakeYAML:
         for expected_page_name, (actual_page_name, actual_page_values) in zip(files, parsed["pagedata"].items()):
             assert expected_page_name == actual_page_name
 
-    def test_make_yml_with_title(self, dummy_fixture):
+    def test_make_yml_with_title(self, dummy_fixture, monkeypatch):
+        def mock_get_localzone():
+            return pytz.timezone('America/Chicago')
+
+        monkeypatch.setattr(tzlocal, "get_localzone", mock_get_localzone)
+
         tz = pytz.timezone("America/Chicago")
+
         test_date = tz.localize(datetime(year=2017, month=7, day=3, hour=14, minute=22))
         yml = pyhathiprep.make_yml(dummy_fixture, title_page="00000033.jp2", capture_date=test_date,
                                    scanner_user="Henry")
@@ -61,7 +74,7 @@ class TestMakeYAML:
                 assert actual_page_values["label"] == "TITLE"
 
 
-def test_hathi_yml_builder():
+def test_hathi_yml_builder(monkeypatch):
     expected_yml = """capture_date: 2017-07-03T14:22:00-05:00
 capture_agent: illinois
 scanner_user: University of Illinois Digitization Services
@@ -73,6 +86,11 @@ pagedata:
     00000004.jp2: {}
     00000005.jp2: {}
 """
+
+    def mock_get_localzone():
+        return pytz.timezone('America/Chicago')
+
+    monkeypatch.setattr(tzlocal, "get_localzone", mock_get_localzone)
 
     builder = HathiYmlBuilder()
     for file in ["00000001.jp2", "00000002.jp2", "00000003.jp2", "00000004.jp2", "00000005.jp2"]:
