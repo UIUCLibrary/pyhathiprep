@@ -320,11 +320,10 @@ pipeline {
                             label "windows && docker"
                         }
                     }
-                    options{
-                        timeout(5)
-                    }
                     steps{
-                        bat "python setup.py sdist -d ${WORKSPACE}\\dist --format zip bdist_wheel -d ${WORKSPACE}\\dist"
+                        timeout(5){
+                            bat "python setup.py sdist -d ${WORKSPACE}\\dist --format zip bdist_wheel -d ${WORKSPACE}\\dist"
+                        }
                     }
                     post{
                         success{
@@ -345,11 +344,10 @@ pipeline {
                             label "windows && docker"
                         }
                     }
-                    options{
-                        timeout(5)
-                    }
                     steps{
-                        bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi -d ${WORKSPACE}/dist"
+                        timeout(5){
+                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi -d ${WORKSPACE}/dist"
+                        }
                     }
                     post{
                         success{
