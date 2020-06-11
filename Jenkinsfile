@@ -327,13 +327,14 @@ pipeline {
                 stage("Source and Wheel formats"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/windows/build/msvc/Dockerfile'
-                            label "windows && docker"
-                        }
+                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                            label 'linux&&docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                          }
                     }
                     steps{
                         timeout(5){
-                            bat "python setup.py sdist -d ${WORKSPACE}\\dist --format zip bdist_wheel -d ${WORKSPACE}\\dist"
+                            sh "python setup.py sdist -d dist --format zip bdist_wheel -d dist"
                         }
                     }
                     post{
