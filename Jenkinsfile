@@ -169,26 +169,21 @@ pipeline {
         stage("Tests") {
             agent {
                 dockerfile {
-                    filename 'CI/docker/python/windows/build/msvc/Dockerfile'
-                    label "windows && docker"
+                    filename 'CI/docker/python/linux/Dockerfile'
+                    label "linux && docker"
                 }
             }
             stages{
-                stage("Setting up Tests"){
-                    steps{
-                        bat "if not exist reports mkdir reports"
-                        bat "if not exist logs mkdir logs"
-                    }
-                }
                 stage("Run Tests"){
-                    options{
-                        timeout(15)
-                    }
                     parallel {
                         stage("PyTest"){
                             steps{
                                 catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
-                                    bat "coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}"
+                                    sh(label:"Running pytest",
+                                       script: """mkdir -p reports/pytest/
+                                                  coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest
+                                               """
+                                    )
                                 }
                             }
                             post{
@@ -212,7 +207,7 @@ pipeline {
                             steps {
                                 bat "tox --version"
                                 catchError(buildResult: 'UNSTABLE', message: 'Tox Failed', stageResult: 'UNSTABLE') {
-                                    bat "tox  --workdir ${WORKSPACE}\\.tox -v -e py"
+                                    sh "tox  --workdir .tox -v -e py"
                                 }
                             }
                             post{
@@ -231,13 +226,17 @@ pipeline {
                         }
                         stage("Documentation"){
                             steps{
-                                bat "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=${WORKSPACE}\\build\\docs --builder=doctest"
+                                sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest"
                             }
                         }
                         stage("MyPy"){
                             steps{
                                 catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
-                                    bat returnStatus: true, script: "mypy.exe -p pyhathiprep --html-report ${WORKSPACE}/reports/mypy/mypy_html > ${WORKSPACE}\\logs\\mypy.log"
+                                    sh (label: "Running MyPy",
+                                        script: """mkdir -p reports/mypy
+                                                   mkdir -p logs
+                                                   mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log"""
+                                        )
                                 }
                             }
                             post{
@@ -259,7 +258,11 @@ pipeline {
                         stage("Run Flake8 Static Analysis") {
                             steps{
                                 catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
-                                    bat "flake8 pyhathiprep --tee --output-file=${WORKSPACE}/logs/flake8.log"
+                                    sh(label: "Running flake8",
+                                       script: """mkdir -p logs
+                                                  flake8 pyhathiprep --tee --output-file=logs/flake8.log
+                                                  """
+                                     )
                                 }
                             }
                             post {
@@ -276,9 +279,15 @@ pipeline {
                     }
                     post{
                         always{
-                            bat "coverage combine"
-                            bat "coverage xml -o reports\\coverage.xml"
-                            bat "coverage html -d reports\\coverage"
+                            sh(label: "Combining Coverage data",
+                               script: """coverage combine
+                                          coverage xml -o reports/coverage.xml
+                                          coverage html -d reports/coverage
+                                       """
+                            )
+//                             bat "coverage combine"
+//                             bat "coverage xml -o reports\\coverage.xml"
+//                             bat "coverage html -d reports\\coverage"
                             publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                             publishCoverage adapters: [
                                             coberturaAdapter('reports/coverage.xml')
