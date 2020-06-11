@@ -533,79 +533,79 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
         stage("Deploy"){
             parallel{
                 stage("Deploy - SCCM"){
-                agent any
-                options {
-                    skipDefaultCheckout(true)
-                }
-                when{
-                    allOf{
-                        equals expected: true, actual: params.DEPLOY_SCCM
-                        branch "master"
+                    agent any
+                    options {
+                        skipDefaultCheckout(true)
                     }
-                    beforeAgent true
-                }
-                stages{
-                     stage("Deploy - Staging") {
-                        steps {
-                            deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-                            input("Deploy to production?")
+                    when{
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_SCCM
+                            branch "master"
                         }
+                        beforeAgent true
                     }
-                    stage("Deploy - SCCM Upload") {
-                        steps {
-                            deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                    stages{
+                         stage("Deploy - Staging") {
+                            steps {
+                                deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
+                                input("Deploy to production?")
+                            }
                         }
-                        post {
-                            success {
-                                script{
-                                    unstash "Source"
-                                    def  deployment_request = requestDeploy this, "deployment.yml"
-                                    echo deployment_request
-                                    writeFile file: "deployment_request.txt", text: deployment_request
-                                    archiveArtifacts artifacts: "deployment_request.txt"
+                        stage("Deploy - SCCM Upload") {
+                            steps {
+                                deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                            }
+                            post {
+                                success {
+                                    script{
+                                        unstash "Source"
+                                        def  deployment_request = requestDeploy this, "deployment.yml"
+                                        echo deployment_request
+                                        writeFile file: "deployment_request.txt", text: deployment_request
+                                        archiveArtifacts artifacts: "deployment_request.txt"
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            stage("Update Online Documentation") {
-                agent any
-                when {
-                    equals expected: true, actual: params.UPDATE_DOCS
-                    beforeAgent true
-                }
-                options {
-                    skipDefaultCheckout(true)
-                }
-                steps {
-                    unstash "DOCS_ARCHIVE"
-                    dir("build/docs/html/"){
-                        sshPublisher(
-                            publishers: [
-                                sshPublisherDesc(
-                                    configName: 'apache-ns - lib-dccuser-updater',
-                                    sshLabel: [label: 'Linux'],
-                                    transfers: [sshTransfer(excludes: '',
-                                    execCommand: '',
-                                    execTimeout: 120000,
-                                    flatten: false,
-                                    makeEmptyDirs: false,
-                                    noDefaultExcludes: false,
-                                    patternSeparator: '[, ]+',
-                                    remoteDirectory: "${params.URL_SUBFOLDER}",
-                                    remoteDirectorySDF: false,
-                                    removePrefix: '',
-                                    sourceFiles: '**')],
-                                usePromotionTimestamp: false,
-                                useWorkspaceInPromotion: false,
-                                verbose: true
-                                )
-                            ]
-                        )
+                stage("Update Online Documentation") {
+                    agent any
+                    when {
+                        equals expected: true, actual: params.UPDATE_DOCS
+                        beforeAgent true
+                    }
+                    options {
+                        skipDefaultCheckout(true)
+                    }
+                    steps {
+                        unstash "DOCS_ARCHIVE"
+                        dir("build/docs/html/"){
+                            sshPublisher(
+                                publishers: [
+                                    sshPublisherDesc(
+                                        configName: 'apache-ns - lib-dccuser-updater',
+                                        sshLabel: [label: 'Linux'],
+                                        transfers: [sshTransfer(excludes: '',
+                                        execCommand: '',
+                                        execTimeout: 120000,
+                                        flatten: false,
+                                        makeEmptyDirs: false,
+                                        noDefaultExcludes: false,
+                                        patternSeparator: '[, ]+',
+                                        remoteDirectory: "${params.URL_SUBFOLDER}",
+                                        remoteDirectorySDF: false,
+                                        removePrefix: '',
+                                        sourceFiles: '**')],
+                                    usePromotionTimestamp: false,
+                                    useWorkspaceInPromotion: false,
+                                    verbose: true
+                                    )
+                                ]
+                            )
+                        }
                     }
                 }
-            }
 
             }
         }
