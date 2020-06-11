@@ -76,11 +76,10 @@ pipeline {
                     label "windows && docker"
                 }
             }
-            options{
-                timeout(5)
-            }
             steps{
-                bat "python setup.py dist_info"
+                timeout(5){
+                    bat "python setup.py dist_info"
+                }
             }
             post{
                 success{
@@ -603,6 +602,52 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                                     )
                                 ]
                             )
+                        }
+                    }
+                }
+                stage("Tagging git Commit"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/testing/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        }
+                    }
+                    when{
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_ADD_TAG
+                        }
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    options{
+                        timeout(time: 1, unit: 'DAYS')
+                        retry(3)
+                    }
+                    input {
+                          message 'Add a version tag to git commit?'
+                          parameters {
+                                credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
+                          }
+                    }
+                    steps{
+                        unstash "DIST-INFO"
+                        script{
+                            def props = readProperties interpolate: true, file: "pyhathiprep.dist-info/METADATA"
+                            def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
+                            withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
+                                sh(label: "Tagging ${commitTag}",
+                                   script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
+                                              git tag -a ${commitTag} -m 'Tagged by Jenkins'
+                                              git push origin --tags
+                                   """
+                                )
+                            }
+                        }
+                    }
+                    post{
+                        cleanup{
+                            deleteDir()
                         }
                     }
                 }
