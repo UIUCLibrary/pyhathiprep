@@ -52,9 +52,6 @@ def get_package_name(stashName, metadataFile){
 
 pipeline {
     agent none
-    options {
-        disableConcurrentBuilds()  //each branch has 1 job running at a time
-    }
     triggers {
         parameterizedCron '@daily % DEPLOY_DEVPI=true; TEST_RUN_TOX=true'
     }
