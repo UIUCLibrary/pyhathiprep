@@ -72,6 +72,7 @@ pipeline {
                 dockerfile {
                     filename 'CI/docker/python/linux/Dockerfile'
                     label "linux && docker"
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                 }
             }
             steps{
@@ -99,6 +100,7 @@ pipeline {
                 dockerfile {
                     filename 'CI/docker/python/linux/Dockerfile'
                     label "linux && docker"
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                 }
             }
             stages{
@@ -168,6 +170,7 @@ pipeline {
                 dockerfile {
                     filename 'CI/docker/python/linux/Dockerfile'
                     label "linux && docker"
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                 }
             }
             stages{
