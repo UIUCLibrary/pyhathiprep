@@ -73,13 +73,13 @@ pipeline {
         stage("Getting Distribution Info"){
             agent {
                 dockerfile {
-                    filename 'CI/docker/python37/windows/build/msvc/Dockerfile'
-                    label "windows && docker"
+                    filename 'CI/docker/python/linux/Dockerfile'
+                    label "linux && docker"
                 }
             }
             steps{
                 timeout(5){
-                    bat "python setup.py dist_info"
+                    sh "python setup.py dist_info"
                 }
             }
             post{
@@ -100,7 +100,7 @@ pipeline {
         stage("Building") {
             agent {
                 dockerfile {
-                    filename 'CI/docker/python37/windows/build/msvc/Dockerfile'
+                    filename 'CI/docker/python/windows/build/msvc/Dockerfile'
                     label "windows && docker"
                 }
             }
@@ -168,7 +168,7 @@ pipeline {
         stage("Tests") {
             agent {
                 dockerfile {
-                    filename 'CI/docker/python37/windows/build/msvc/Dockerfile'
+                    filename 'CI/docker/python/windows/build/msvc/Dockerfile'
                     label "windows && docker"
                 }
             }
@@ -317,7 +317,7 @@ pipeline {
                 stage("Source and Wheel formats"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python37/windows/build/msvc/Dockerfile'
+                            filename 'CI/docker/python/windows/build/msvc/Dockerfile'
                             label "windows && docker"
                         }
                     }
@@ -341,7 +341,7 @@ pipeline {
                 stage("Windows CX_Freeze MSI"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python37/windows/build/msvc/Dockerfile'
+                            filename 'CI/docker/python/windows/build/msvc/Dockerfile'
                             label "windows && docker"
                         }
                     }
