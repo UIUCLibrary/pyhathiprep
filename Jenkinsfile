@@ -100,18 +100,20 @@ pipeline {
         stage("Building") {
             agent {
                 dockerfile {
-                    filename 'CI/docker/python/windows/build/msvc/Dockerfile'
-                    label "windows && docker"
+                    filename 'CI/docker/python/linux/Dockerfile'
+                    label "linux && docker"
                 }
             }
             stages{
                 stage("Building Python Package"){
-                    options{
-                        timeout(5)
-                    }
                     steps {
-                        bat "if not exist logs mkdir logs"
-                        powershell "& python setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
+                        timeout(5){
+                            sh(label: "Building Python package",
+                                script: """ mkdir -p logs
+                                python setup.py build -b build  | tee logs/build.log
+                                """
+                                )
+                        }
                     }
                     post{
                         always{
@@ -121,9 +123,6 @@ pipeline {
                             )
                             archiveArtifacts artifacts: "logs/build.log"
                         }
-                        failure{
-                            echo "Failed to build Python package"
-                        }
                     }
                 }
                 stage("Building Sphinx Documentation"){
@@ -131,12 +130,14 @@ pipeline {
                         PKG_NAME = get_package_name("DIST-INFO", "pyhathiprep.dist-info/METADATA")
                         PKG_VERSION = get_package_version("DIST-INFO", "pyhathiprep.dist-info/METADATA")
                     }
-                    options{
-                        timeout(5)
-                    }
                     steps {
-                        echo "Building docs on ${env.NODE_NAME}"
-                        bat "python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w ${WORKSPACE}\\logs\\build_sphinx.log"
+                        timeout(5){
+                            sh(label:"Building docs on ${env.NODE_NAME}",
+                               script: """mkdir -p logs
+                                       python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log
+                                       """
+                               )
+                        }
                     }
                     post{
                         always {
