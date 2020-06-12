@@ -513,7 +513,7 @@ pipeline {
                                 equals expected: true, actual: params.TEST_RUN_TOX
                             }
                             steps {
-                                bat "tox --version"
+                                sh "tox --version"
                                 catchError(buildResult: 'UNSTABLE', message: 'Tox Failed', stageResult: 'UNSTABLE') {
                                     sh "tox  --workdir .tox -v -e py"
                                 }
