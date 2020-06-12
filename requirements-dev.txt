@@ -4,3 +4,6 @@ sphinx
 pytest
 pytest-runner
 tox
+lxml
+coverage
+flake8

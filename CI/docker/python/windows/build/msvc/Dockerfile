@@ -14,3 +14,4 @@ ADD requirements.txt requirements-freeze.txt requirements-dev.txt c:/temp/
 
 RUN python -m pip install pip --upgrade ; python -m pip install -r c:\temp\requirements.txt -r c:\temp\requirements-dev.txt -r c:\temp\requirements-freeze.txt coverage flake8 lxml
 RUN python -m pip install setuptools --upgrade
+RUN pip install devpi-client
