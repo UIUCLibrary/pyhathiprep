@@ -949,7 +949,7 @@ pipeline {
                 stage("Tagging git Commit"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/pytest_tests/Dockerfile'
+                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux && docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                         }
