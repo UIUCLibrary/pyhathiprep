@@ -30,6 +30,7 @@ ENV PIP_EXTRA_INDEX_URL="https://devpi.library.illinois.edu/production/release"
 ENV PIP_TRUSTED_HOST="devpi.library.illinois.edu"
 
 RUN pip install --no-index --find-links=/wheels -r /tmp/requirements.txt -r /tmp/requirements-dev.txt
+RUN pip install devpi-client
 ENV PIP_FIND_LINKS=/wheels
 USER user
 WORKDIR /home/user
