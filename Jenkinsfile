@@ -17,309 +17,309 @@ import org.ds.*
 
 
 def CONFIGURATIONS = [
-        "3.6" : [
-            os: [
-                windows:[
-                    agents: [
-                        build: [
+    "3.6" : [
+        os: [
+            windows:[
+                agents: [
+                    build: [
+                        dockerfile: [
+                            filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                            label: 'Windows&&Docker',
+                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
+                        ]
+                    ],
+                    test:[
+                        wheel: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                label: 'Windows&&Docker',
+                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6',
+                                baseImage: "python:3.6-windowsservercore"
+                            ]
+                        ],
+                        sdist: [
+                            dockerfile: [
+                                filename: 'ci/docker/windows/build/msvc/Dockerfile',
+                                label: 'Windows&&Docker',
+                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
+                            ]
+                        ]
+                    ],
+                    devpi: [
+                        wheel: [
                             dockerfile: [
                                 filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                             ]
                         ],
-                        test:[
-                            wheel: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
-                                    label: 'Windows&&Docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6',
-                                    baseImage: "python:3.6-windowsservercore"
-                                ]
-                            ],
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'ci/docker/windows/build/msvc/Dockerfile',
-                                    label: 'Windows&&Docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
-                                ]
+                        sdist: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                label: 'Windows&&Docker',
+                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                             ]
-                        ],
-                        devpi: [
-                            wheel: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
-                                    label: 'Windows&&Docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
-                                ]
-                            ],
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
-                                    label: 'Windows&&Docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
-                                ]
+                        ]
+                    ]
+                ],
+                pkgRegex: [
+                    wheel: "*cp36*.whl",
+                    sdist: "*.zip"
+                ]
+            ],
+            linux: [
+                agents: [
+                    build: [
+                        dockerfile: [
+                            filename: 'CI/docker/python/linux/Dockerfile',
+                            label: 'linux&&docker',
+                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        ]
+                    ],
+                    test: [
+                        sdist: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/linux/Dockerfile',
+                                label: 'linux&&docker',
+                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
                         ]
                     ],
-                    pkgRegex: [
-                        wheel: "*cp36*.whl",
-                        sdist: "*.zip"
-                    ]
-                ],
-                linux: [
-                    agents: [
-                        build: [
+                    devpi: [
+                        whl: [
                             dockerfile: [
                                 filename: 'CI/docker/python/linux/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
                         ],
-                        test: [
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/linux/Dockerfile',
-                                    label: 'linux&&docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                ]
-                            ]
-                        ],
-                        devpi: [
-                            whl: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/linux/Dockerfile',
-                                    label: 'linux&&docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                ]
-                            ],
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/linux/Dockerfile',
-                                    label: 'linux&&docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                ]
+                        sdist: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/linux/Dockerfile',
+                                label: 'linux&&docker',
+                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
                         ]
-                    ],
-                    pkgRegex: [
-                        wheel: "*cp36*.whl",
-                        sdist: "*.zip"
                     ]
+                ],
+                pkgRegex: [
+                    wheel: "*cp36*.whl",
+                    sdist: "*.zip"
                 ]
-            ],
-            tox_env: "py36",
-            devpiSelector: [
-                sdist: "zip",
-                wheel: "36.*whl",
-            ],
-            pkgRegex: [
-                wheel: "*cp36*.whl",
-                sdist: "*.zip"
             ]
         ],
-        "3.7" : [
-            os: [
-                windows: [
-                    agents: [
-                        build: [
+        tox_env: "py36",
+        devpiSelector: [
+            sdist: "zip",
+            wheel: "36.*whl",
+        ],
+        pkgRegex: [
+            wheel: "*cp36*.whl",
+            sdist: "*.zip"
+        ]
+    ],
+    "3.7" : [
+        os: [
+            windows: [
+                agents: [
+                    build: [
+                        dockerfile: [
+                            filename: 'ci/docker/windows/build/msvc/Dockerfile',
+                            label: 'Windows&&Docker',
+                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
+                        ]
+                    ],
+                    test: [
+                        sdist: [
                             dockerfile: [
                                 filename: 'ci/docker/windows/build/msvc/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                             ]
                         ],
-                        test: [
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'ci/docker/windows/build/msvc/Dockerfile',
-                                    label: 'Windows&&Docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                                ]
-                            ],
-                            wheel: [
-                                dockerfile: [
-                                    filename: 'ci/docker/windows/build/test/msvc/Dockerfile',
-                                    label: 'windows && docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                                ]
-                            ]
-                        ],
-                        devpi: [
-                            wheel: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
-                                    label: 'Windows&&Docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                                ]
-                            ],
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
-                                    label: 'Windows&&Docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                                ]
+                        wheel: [
+                            dockerfile: [
+                                filename: 'ci/docker/windows/build/test/msvc/Dockerfile',
+                                label: 'windows && docker',
+                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                             ]
                         ]
                     ],
-                    pkgRegex: [
-                        wheel: "*cp37*.whl",
-                        sdist: "*.zip"
+                    devpi: [
+                        wheel: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                label: 'Windows&&Docker',
+                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
+                            ]
+                        ],
+                        sdist: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                label: 'Windows&&Docker',
+                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
+                            ]
+                        ]
                     ]
                 ],
-                linux: [
-                    agents: [
-                        build: [
+                pkgRegex: [
+                    wheel: "*cp37*.whl",
+                    sdist: "*.zip"
+                ]
+            ],
+            linux: [
+                agents: [
+                    build: [
+                        dockerfile: [
+                            filename: 'CI/docker/python/linux/Dockerfile',
+                            label: 'linux&&docker',
+                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        ]
+                    ],
+                    test: [
+                        sdist: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/linux/Dockerfile',
+                                label: 'linux&&docker',
+                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            ]
+                        ]
+                    ],
+                    devpi: [
+                        wheel: [
                             dockerfile: [
                                 filename: 'CI/docker/python/linux/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
                         ],
-                        test: [
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/linux/Dockerfile',
-                                    label: 'linux&&docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                ]
-                            ]
-                        ],
-                        devpi: [
-                            wheel: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/linux/Dockerfile',
-                                    label: 'linux&&docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                ]
-                            ],
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/linux/Dockerfile',
-                                    label: 'linux&&docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                ]
+                        sdist: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/linux/Dockerfile',
+                                label: 'linux&&docker',
+                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
                         ]
-                    ],
-                    pkgRegex: [
-                        wheel: "*cp37*.whl",
-                        sdist: "*.zip"
                     ]
+                ],
+                pkgRegex: [
+                    wheel: "*cp37*.whl",
+                    sdist: "*.zip"
                 ]
-            ],
-            tox_env: "py37",
-            devpiSelector: [
-                sdist: "zip",
-                wheel: "37.*whl",
-            ],
-            pkgRegex: [
-                wheel: "*cp37*.whl",
-                sdist: "*.zip"
             ]
         ],
-        "3.8" : [
-            os: [
-                windows: [
-                    agents: [
-                        build: [
+        tox_env: "py37",
+        devpiSelector: [
+            sdist: "zip",
+            wheel: "37.*whl",
+        ],
+        pkgRegex: [
+            wheel: "*cp37*.whl",
+            sdist: "*.zip"
+        ]
+    ],
+    "3.8" : [
+        os: [
+            windows: [
+                agents: [
+                    build: [
+                        dockerfile: [
+                            filename: 'ci/docker/windows/build/msvc/Dockerfile',
+                            label: 'Windows&&Docker',
+                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
+                        ]
+                    ],
+                    test: [
+                        sdist: [
                             dockerfile: [
                                 filename: 'ci/docker/windows/build/msvc/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                             ]
                         ],
-                        test: [
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'ci/docker/windows/build/msvc/Dockerfile',
-                                    label: 'Windows&&Docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                                ]
-                            ],
-                            wheel: [
-                                dockerfile: [
-                                    filename: 'ci/docker/windows/build/test/msvc/Dockerfile',
-                                    label: 'windows && docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                                ]
-                            ]
-                        ],
-                        devpi: [
-                            wheel: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
-                                    label: 'Windows&&Docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                                ]
-                            ],
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
-                                    label: 'Windows&&Docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                                ]
+                        wheel: [
+                            dockerfile: [
+                                filename: 'ci/docker/windows/build/test/msvc/Dockerfile',
+                                label: 'windows && docker',
+                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                             ]
                         ]
-
                     ],
-                    pkgRegex: [
-                        wheel: "*cp38*.whl",
-                        sdist: "*.zip"
+                    devpi: [
+                        wheel: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                label: 'Windows&&Docker',
+                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
+                            ]
+                        ],
+                        sdist: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                label: 'Windows&&Docker',
+                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
+                            ]
+                        ]
                     ]
+
                 ],
-                linux: [
-                    agents: [
-                        build: [
+                pkgRegex: [
+                    wheel: "*cp38*.whl",
+                    sdist: "*.zip"
+                ]
+            ],
+            linux: [
+                agents: [
+                    build: [
+                        dockerfile: [
+                            filename: 'CI/docker/python/linux/Dockerfile',
+                            label: 'linux&&docker',
+                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        ]
+                    ],
+                    test: [
+                        sdist: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/linux/Dockerfile',
+                                label: 'linux&&docker',
+                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                            ]
+                        ]
+                    ],
+                    devpi: [
+                        wheel: [
                             dockerfile: [
                                 filename: 'CI/docker/python/linux/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
                         ],
-                        test: [
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/linux/Dockerfile',
-                                    label: 'linux&&docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                ]
-                            ]
-                        ],
-                        devpi: [
-                            wheel: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/linux/Dockerfile',
-                                    label: 'linux&&docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                ]
-                            ],
-                            sdist: [
-                                dockerfile: [
-                                    filename: 'CI/docker/python/linux/Dockerfile',
-                                    label: 'linux&&docker',
-                                    additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                ]
+                        sdist: [
+                            dockerfile: [
+                                filename: 'CI/docker/python/linux/Dockerfile',
+                                label: 'linux&&docker',
+                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
                         ]
-                    ],
-                    pkgRegex: [
-                        wheel: "*cp38*.whl",
-                        sdist: "*.zip"
                     ]
+                ],
+                pkgRegex: [
+                    wheel: "*cp38*.whl",
+                    sdist: "*.zip"
                 ]
-            ],
-            tox_env: "py38",
-            devpiSelector: [
-                sdist: "zip",
-                wheel: "38.*whl",
-            ],
-            pkgRegex: [
-                wheel: "*cp38*.whl",
-                sdist: "*.zip"
             ]
         ],
-    ]
+        tox_env: "py38",
+        devpiSelector: [
+            sdist: "zip",
+            wheel: "38.*whl",
+        ],
+        pkgRegex: [
+            wheel: "*cp38*.whl",
+            sdist: "*.zip"
+        ]
+    ],
+]
 
 
 def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
