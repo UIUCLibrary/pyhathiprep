@@ -365,6 +365,7 @@ pipeline {
     }
     parameters {
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
+        booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         string(name: 'URL_SUBFOLDER', defaultValue: "pyhathiprep", description: 'The directory that the docs should be saved under')
@@ -630,6 +631,14 @@ pipeline {
         stage("Packaging") {
             parallel {
                 stage("Source and Wheel formats"){
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.BUILD_PACKAGES
+                            equals expected: true, actual: params.DEPLOY_DEVPI
+                            equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                        }
+                        beforeAgent true
+                    }
                     agent {
                         dockerfile {
                             filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
