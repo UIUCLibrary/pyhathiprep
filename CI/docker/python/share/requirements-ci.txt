@@ -1,1 +1,4 @@
 devpi-client
+coverage
+flake8
+lxml
