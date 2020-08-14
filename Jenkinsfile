@@ -23,7 +23,7 @@ def CONFIGURATIONS = [
                 agents: [
                     build: [
                         dockerfile: [
-                            filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                            filename: 'CI/docker/python/windows/Dockerfile',
                             label: 'Windows&&Docker',
                             additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                         ]
@@ -31,7 +31,7 @@ def CONFIGURATIONS = [
                     test:[
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6',
                                 baseImage: "python:3.6-windowsservercore"
@@ -48,14 +48,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                             ]
@@ -148,14 +148,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                             ]
@@ -248,14 +248,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                             ]
@@ -365,7 +365,9 @@ pipeline {
         DEVPI = credentials("DS_devpi")
     }
     parameters {
+        booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
+        booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         string(name: 'URL_SUBFOLDER', defaultValue: "pyhathiprep", description: 'The directory that the docs should be saved under')
@@ -471,143 +473,160 @@ pipeline {
                 }
             }
         }
-        stage("Tests") {
-            agent {
-                dockerfile {
-                    filename 'CI/docker/python/linux/Dockerfile'
-                    label "linux && docker"
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                }
+        stage("Checks"){
+            when{
+                equals expected: true, actual: params.RUN_CHECKS
             }
             stages{
-                stage("Run Tests"){
-                    parallel {
-                        stage("PyTest"){
-                            steps{
-                                catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
-                                    sh(label:"Running pytest",
-                                       script: """mkdir -p reports/pytest/
-                                                  coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest
+                stage("Tests") {
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label "linux && docker"
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        }
+                    }
+                    stages{
+                        stage("Run Tests"){
+                            parallel {
+                                stage("PyTest"){
+                                    steps{
+                                        catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
+                                            sh(label:"Running pytest",
+                                               script: """mkdir -p reports/pytest/
+                                                          coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest
+                                                       """
+                                            )
+                                        }
+                                    }
+                                    post{
+                                        always{
+                                            junit 'reports/pytest/junit-pytest.xml'
+                                        }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                patterns: [
+                                                    [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                                ]
+                                            )
+                                        }
+                                    }
+                                }
+                                stage("Run Tox Test") {
+                                    when{
+                                        equals expected: true, actual: params.TEST_RUN_TOX
+                                    }
+                                    steps {
+                                        sh "tox --version"
+                                        catchError(buildResult: 'UNSTABLE', message: 'Tox Failed', stageResult: 'UNSTABLE') {
+                                            sh "tox  --workdir .tox -v -e py"
+                                        }
+                                    }
+                                    post{
+                                        always{
+                                            archiveArtifacts(
+                                                allowEmptyArchive: true,
+                                                artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
+                                            )
+                                        }
+                                        cleanup{
+                                            cleanWs deleteDirs: true, patterns: [
+                                                [pattern: '.tox/', type: 'INCLUDE'],
+                                            ]
+                                        }
+                                    }
+                                }
+                                stage("Documentation"){
+                                    steps{
+                                        sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest"
+                                    }
+                                }
+                                stage("MyPy"){
+                                    steps{
+                                        catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
+                                            sh (label: "Running MyPy",
+                                                script: """mkdir -p reports/mypy
+                                                           mkdir -p logs
+                                                           mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log"""
+                                                )
+                                        }
+                                    }
+                                    post{
+                                        always {
+                                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
+                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                        }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                patterns: [
+                                                    [pattern: 'reports/mypy/', type: 'INCLUDE'],
+                                                    [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                                ]
+                                            )
+                                        }
+                                    }
+                                }
+                                stage("Run Flake8 Static Analysis") {
+                                    steps{
+                                        catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
+                                            sh(label: "Running flake8",
+                                               script: """mkdir -p logs
+                                                          flake8 pyhathiprep --tee --output-file=logs/flake8.log
+                                                          """
+                                             )
+                                        }
+                                    }
+                                    post {
+                                        always {
+                                            stash includes: "logs/flake8.log", name: 'FLAKE8_LOGS'
+                                            unstash "FLAKE8_LOGS"
+                                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                        }
+                                        cleanup{
+                                            cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
+                                        }
+                                    }
+                                }
+                            }
+                            post{
+                                always{
+                                    sh(label: "Combining Coverage data",
+                                       script: """coverage combine
+                                                  coverage xml -o reports/coverage.xml
+                                                  coverage html -d reports/coverage
                                                """
                                     )
-                                }
-                            }
-                            post{
-                                always{
-                                    junit 'reports/pytest/junit-pytest.xml'
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        patterns: [
-                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                        ]
-                                    )
-                                }
-                            }
-                        }
-                        stage("Run Tox Test") {
-                            when{
-                                equals expected: true, actual: params.TEST_RUN_TOX
-                            }
-                            steps {
-                                sh "tox --version"
-                                catchError(buildResult: 'UNSTABLE', message: 'Tox Failed', stageResult: 'UNSTABLE') {
-                                    sh "tox  --workdir .tox -v -e py"
-                                }
-                            }
-                            post{
-                                always{
-                                    archiveArtifacts(
-                                        allowEmptyArchive: true,
-                                        artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
-                                    )
-                                }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [
-                                        [pattern: '.tox/', type: 'INCLUDE'],
-                                    ]
-                                }
-                            }
-                        }
-                        stage("Documentation"){
-                            steps{
-                                sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest"
-                            }
-                        }
-                        stage("MyPy"){
-                            steps{
-                                catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
-                                    sh (label: "Running MyPy",
-                                        script: """mkdir -p reports/mypy
-                                                   mkdir -p logs
-                                                   mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log"""
-                                        )
-                                }
-                            }
-                            post{
-                                always {
-                                    recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
-                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                                    publishCoverage adapters: [
+                                                    coberturaAdapter('reports/coverage.xml')
+                                                    ],
+                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                                 }
                                 cleanup{
                                     cleanWs(
                                         deleteDirs: true,
                                         patterns: [
-                                            [pattern: 'reports/mypy/', type: 'INCLUDE'],
-                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                        ]
+                                            [pattern: "dist/", type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE'],
+                                            [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
+                                            [pattern: 'reports/', type: 'INCLUDE'],
+                                            [pattern: 'logs/', type: 'INCLUDE']
+                                            ]
                                     )
-                                }
-                            }
-                        }
-                        stage("Run Flake8 Static Analysis") {
-                            steps{
-                                catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
-                                    sh(label: "Running flake8",
-                                       script: """mkdir -p logs
-                                                  flake8 pyhathiprep --tee --output-file=logs/flake8.log
-                                                  """
-                                     )
-                                }
-                            }
-                            post {
-                                always {
-                                    stash includes: "logs/flake8.log", name: 'FLAKE8_LOGS'
-                                    unstash "FLAKE8_LOGS"
-                                    recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
-                                }
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
                                 }
                             }
                         }
                     }
                     post{
-                        always{
-                            sh(label: "Combining Coverage data",
-                               script: """coverage combine
-                                          coverage xml -o reports/coverage.xml
-                                          coverage html -d reports/coverage
-                                       """
-                            )
-//                             bat "coverage combine"
-//                             bat "coverage xml -o reports\\coverage.xml"
-//                             bat "coverage html -d reports\\coverage"
-                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            publishCoverage adapters: [
-                                            coberturaAdapter('reports/coverage.xml')
-                                            ],
-                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                        }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
                                     [pattern: "dist/", type: 'INCLUDE'],
                                     [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
-                                    [pattern: 'reports/', type: 'INCLUDE'],
+                                    [pattern: '**/__pycache__', type: 'INCLUDE'],
                                     [pattern: 'logs/', type: 'INCLUDE']
                                     ]
                             )
@@ -615,65 +634,198 @@ pipeline {
                     }
                 }
             }
-            post{
-                cleanup{
-                    cleanWs(
-                        deleteDirs: true,
-                        patterns: [
-                            [pattern: "dist/", type: 'INCLUDE'],
-                            [pattern: 'build/', type: 'INCLUDE'],
-                            [pattern: 'logs/', type: 'INCLUDE']
-                            ]
-                    )
-                }
-            }
         }
         stage("Packaging") {
-            parallel {
-                stage("Source and Wheel formats"){
-                    agent {
-                        dockerfile {
-                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
-                            label 'linux&&docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                          }
-                    }
-                    steps{
-                        timeout(5){
-                            sh "python setup.py sdist -d dist --format zip bdist_wheel -d dist"
+            when{
+                anyOf{
+                    equals expected: true, actual: params.BUILD_PACKAGES
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                }
+                beforeAgent true
+            }
+            stages{
+                stage("Building"){
+                    parallel{
+                        stage("Building Source and Wheel formats"){
+                            agent {
+                                dockerfile {
+                                    filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                                    label 'linux&&docker'
+                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                  }
+                            }
+                            steps{
+                                timeout(5){
+                                    sh "python -m pep517.build ."
+                                }
+                            }
+                            post{
+                                success{
+                                    archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.g,dist/*.zip", fingerprint: true
+                                }
+                                always{
+                                    stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: "PYTHON_PACKAGES"
+                                }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.zip', type: 'INCLUDE']]
+                                }
+                            }
                         }
-                    }
-                    post{
-                        success{
-                            archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.g,dist/*.zip", fingerprint: true
-                        }
-                        always{
-                            stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: "PYTHON_PACKAGES"
-                        }
-                        cleanup{
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.zip', type: 'INCLUDE']]
+                        stage("Windows CX_Freeze MSI"){
+                            agent {
+                                dockerfile {
+                                    filename 'CI/docker/python/windows/Dockerfile'
+                                    label "windows && docker"
+                                }
+                            }
+                            steps{
+                                timeout(5){
+                                    bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi -d ${WORKSPACE}/dist"
+                                }
+                            }
+                            post{
+                                success{
+                                    stash includes: "dist/*.msi", name: "msi"
+                                    archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
+                                }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.msi', type: 'INCLUDE']]
+                                }
+                            }
                         }
                     }
                 }
-                stage("Windows CX_Freeze MSI"){
-                    agent {
-                        dockerfile {
-                            filename 'CI/docker/python/windows/build/msvc/Dockerfile'
-                            label "windows && docker"
+                stage('Testing all Package') {
+                    matrix{
+                        agent none
+                        axes{
+                            axis {
+                                name "PLATFORM"
+                                values(
+                                    "windows",
+                                    "linux"
+                                )
+                            }
+                            axis {
+                                name "PYTHON_VERSION"
+                                values(
+                                    "3.7",
+                                    "3.8"
+                                )
+                            }
                         }
-                    }
-                    steps{
-                        timeout(5){
-                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi -d ${WORKSPACE}/dist"
-                        }
-                    }
-                    post{
-                        success{
-                            stash includes: "dist/*.msi", name: "msi"
-                            archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
-                        }
-                        cleanup{
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.msi', type: 'INCLUDE']]
+                        stages{
+                            stage("Testing Wheel Package"){
+                                agent {
+                                    dockerfile {
+                                        filename "CI/docker/python/${PLATFORM}/Dockerfile"
+                                        label "${PLATFORM} && docker"
+                                        additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                    }
+                                }
+                                steps{
+                                    unstash "PYTHON_PACKAGES"
+                                    script{
+                                        findFiles(glob: "**/*.whl").each{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                disableDeferredWipeout: true,
+                                                patterns: [
+                                                    [pattern: '.git/', type: 'EXCLUDE'],
+                                                    [pattern: 'tests/', type: 'EXCLUDE'],
+                                                    [pattern: 'dist/', type: 'EXCLUDE'],
+                                                    [pattern: 'tox.ini', type: 'EXCLUDE']
+                                                ]
+                                            )
+                                            timeout(15){
+                                                if(isUnix()){
+                                                    sh(label: "Testing ${it}",
+                                                        script: """python --version
+                                                                   tox --installpkg=${it.path} -e py -vv
+                                                                   """
+                                                    )
+                                                } else {
+                                                    bat(label: "Testing ${it}",
+                                                        script: """python --version
+                                                                   tox --installpkg=${it.path} -e py -vv
+                                                                   """
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                post{
+                                    cleanup{
+                                        cleanWs(
+                                            notFailBuild: true,
+                                            deleteDirs: true,
+                                            patterns: [
+                                                [pattern: 'dist/', type: 'INCLUDE'],
+                                                [pattern: '**/__pycache__', type: 'INCLUDE'],
+                                                [pattern: 'build/', type: 'INCLUDE'],
+                                                [pattern: '.tox/', type: 'INCLUDE'],
+                                                ]
+                                        )
+                                    }
+                                }
+                            }
+                            stage("Testing sdist Package"){
+                                agent {
+                                    dockerfile {
+                                        filename "CI/docker/python/${PLATFORM}/Dockerfile"
+                                        label "${PLATFORM} && docker"
+                                        additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                    }
+                                }
+                                steps{
+                                    unstash "PYTHON_PACKAGES"
+                                    script{
+                                        findFiles(glob: "dist/*.tar.gz,dist/*.zip").each{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                disableDeferredWipeout: true,
+                                                patterns: [
+                                                    [pattern: '.git/', type: 'EXCLUDE'],
+                                                    [pattern: 'tests/', type: 'EXCLUDE'],
+                                                    [pattern: 'dist/', type: 'EXCLUDE'],
+                                                    [pattern: 'tox.ini', type: 'EXCLUDE']
+                                                ]
+                                            )
+                                            timeout(15){
+                                                if(isUnix()){
+                                                    sh(label: "Testing ${it}",
+                                                        script: """python --version
+                                                                   tox --installpkg=${it.path} -e py -vv
+                                                                   """
+                                                    )
+                                                } else {
+                                                    bat(label: "Testing ${it}",
+                                                        script: """python --version
+                                                                   tox --installpkg=${it.path} -e py -vv
+                                                                   """
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                post{
+                                    cleanup{
+                                        cleanWs(
+                                            notFailBuild: true,
+                                            deleteDirs: true,
+                                            patterns: [
+                                                [pattern: 'dist/', type: 'INCLUDE'],
+                                                [pattern: 'build/', type: 'INCLUDE'],
+                                                [pattern: '**/__pycache__', type: 'INCLUDE'],
+                                                [pattern: '.tox/', type: 'INCLUDE'],
+                                                ]
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
