@@ -656,7 +656,7 @@ pipeline {
                             }
                             steps{
                                 timeout(5){
-                                    sh "python setup.py sdist -d dist --format zip bdist_wheel -d dist"
+                                    sh "python -m pep517.build ."
                                 }
                             }
                             post{
