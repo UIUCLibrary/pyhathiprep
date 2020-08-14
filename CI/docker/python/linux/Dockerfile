@@ -38,5 +38,6 @@ RUN pip install --no-index --find-links=/wheels \
     -r /requirements/requirements-ci.txt
 
 ENV PIP_FIND_LINKS=/wheels
+ENV PIP_NO_CACHE_DIR=1
 USER user
 WORKDIR /home/user
