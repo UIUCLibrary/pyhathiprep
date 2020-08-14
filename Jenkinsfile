@@ -634,29 +634,33 @@ pipeline {
             }
         }
         stage("Packaging") {
-            parallel {
+            stages {
                 stage("Source and Wheel formats"){
-                    agent {
-                        dockerfile {
-                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
-                            label 'linux&&docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                          }
-                    }
-                    steps{
-                        timeout(5){
-                            sh "python setup.py sdist -d dist --format zip bdist_wheel -d dist"
-                        }
-                    }
-                    post{
-                        success{
-                            archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.g,dist/*.zip", fingerprint: true
-                        }
-                        always{
-                            stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: "PYTHON_PACKAGES"
-                        }
-                        cleanup{
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.zip', type: 'INCLUDE']]
+                    stages{
+                        stage("Building Source and Wheel formats"){
+                            agent {
+                                dockerfile {
+                                    filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                                    label 'linux&&docker'
+                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                  }
+                            }
+                            steps{
+                                timeout(5){
+                                    sh "python setup.py sdist -d dist --format zip bdist_wheel -d dist"
+                                }
+                            }
+                            post{
+                                success{
+                                    archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.g,dist/*.zip", fingerprint: true
+                                }
+                                always{
+                                    stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: "PYTHON_PACKAGES"
+                                }
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.zip', type: 'INCLUDE']]
+                                }
+                            }
                         }
                     }
                 }
