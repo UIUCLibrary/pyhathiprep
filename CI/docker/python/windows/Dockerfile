@@ -36,3 +36,4 @@ RUN python -m pip install pip --upgrade ; `
         -r c:\temp\requirements-freeze.txt `
         -r c:/temp/requirements-ci.txt
 
+ENV PIP_FIND_LINKS=c:/wheels/
