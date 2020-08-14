@@ -626,6 +626,7 @@ pipeline {
                                 patterns: [
                                     [pattern: "dist/", type: 'INCLUDE'],
                                     [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: '**/__pycache__', type: 'INCLUDE'],
                                     [pattern: 'logs/', type: 'INCLUDE']
                                     ]
                             )
