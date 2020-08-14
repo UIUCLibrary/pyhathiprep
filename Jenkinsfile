@@ -742,7 +742,7 @@ pipeline {
                                             dockerfile {
                                                 filename "ci/docker/python/${PLATFORM}/Dockerfile"
                                                 label "${PLATFORM} && docker"
-                                                additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image[PLATFORM]} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                                additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
                                             }
                                         }
                                         steps{
