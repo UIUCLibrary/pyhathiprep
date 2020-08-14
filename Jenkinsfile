@@ -23,7 +23,7 @@ def CONFIGURATIONS = [
                 agents: [
                     build: [
                         dockerfile: [
-                            filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                            filename: 'CI/docker/python/windows/Dockerfile',
                             label: 'Windows&&Docker',
                             additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                         ]
@@ -31,7 +31,7 @@ def CONFIGURATIONS = [
                     test:[
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6',
                                 baseImage: "python:3.6-windowsservercore"
@@ -48,14 +48,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                             ]
@@ -148,14 +148,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                             ]
@@ -248,14 +248,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/build/msvc/Dockerfile',
+                                filename: 'CI/docker/python/windows/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                             ]
@@ -662,12 +662,145 @@ pipeline {
                                 }
                             }
                         }
+                        stage('Testing all Package') {
+                            matrix{
+                                agent none
+                                axes{
+                                    axis {
+                                        name "PLATFORM"
+                                        values(
+                                            "windows",
+                                            "linux"
+                                        )
+                                    }
+                                    axis {
+                                        name "PYTHON_VERSION"
+                                        values(
+                                            "3.7",
+                                            "3.8"
+                                        )
+                                    }
+                                }
+                                stages{
+                                    stage("Testing Wheel Package"){
+                                        agent {
+                                            dockerfile {
+                                                filename "CI/docker/python/${PLATFORM}/Dockerfile"
+                                                label "${PLATFORM} && docker"
+                                                additionalBuildArgs "--build-arg PYTHON_VERSION --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                            }
+                                        }
+                                        steps{
+                                            unstash "PYTHON_PACKAGES"
+                                            script{
+                                                findFiles(glob: "**/*.whl").each{
+                                                    cleanWs(
+                                                        deleteDirs: true,
+                                                        disableDeferredWipeout: true,
+                                                        patterns: [
+                                                            [pattern: '.git/', type: 'EXCLUDE'],
+                                                            [pattern: 'tests/', type: 'EXCLUDE'],
+                                                            [pattern: 'dist/', type: 'EXCLUDE'],
+                                                            [pattern: 'tox.ini', type: 'EXCLUDE']
+                                                        ]
+                                                    )
+                                                    timeout(15){
+                                                        if(isUnix()){
+                                                            sh(label: "Testing ${it}",
+                                                                script: """python --version
+                                                                           tox --installpkg=${it.path} -e py -vv
+                                                                           """
+                                                            )
+                                                        } else {
+                                                            bat(label: "Testing ${it}",
+                                                                script: """python --version
+                                                                           tox --installpkg=${it.path} -e py -vv
+                                                                           """
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        post{
+                                            cleanup{
+                                                cleanWs(
+                                                    notFailBuild: true,
+                                                    deleteDirs: true,
+                                                    patterns: [
+                                                        [pattern: 'dist/', type: 'INCLUDE'],
+                                                        [pattern: '**/__pycache__', type: 'INCLUDE'],
+                                                        [pattern: 'build/', type: 'INCLUDE'],
+                                                        [pattern: '.tox/', type: 'INCLUDE'],
+                                                        ]
+                                                )
+                                            }
+                                        }
+                                    }
+                                    stage("Testing sdist Package"){
+                                        agent {
+                                            dockerfile {
+                                                filename "ci/docker/python/${PLATFORM}/Dockerfile"
+                                                label "${PLATFORM} && docker"
+                                                additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image[PLATFORM]} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
+                                            }
+                                        }
+                                        steps{
+                                            unstash "PYTHON_PACKAGES"
+                                            script{
+                                                findFiles(glob: "dist/*.tar.gz,dist/*.zip").each{
+                                                    cleanWs(
+                                                        deleteDirs: true,
+                                                        disableDeferredWipeout: true,
+                                                        patterns: [
+                                                            [pattern: '.git/', type: 'EXCLUDE'],
+                                                            [pattern: 'tests/', type: 'EXCLUDE'],
+                                                            [pattern: 'dist/', type: 'EXCLUDE'],
+                                                            [pattern: 'tox.ini', type: 'EXCLUDE']
+                                                        ]
+                                                    )
+                                                    timeout(15){
+                                                        if(isUnix()){
+                                                            sh(label: "Testing ${it}",
+                                                                script: """python --version
+                                                                           tox --installpkg=${it.path} -e py -vv
+                                                                           """
+                                                            )
+                                                        } else {
+                                                            bat(label: "Testing ${it}",
+                                                                script: """python --version
+                                                                           tox --installpkg=${it.path} -e py -vv
+                                                                           """
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        post{
+                                            cleanup{
+                                                cleanWs(
+                                                    notFailBuild: true,
+                                                    deleteDirs: true,
+                                                    patterns: [
+                                                        [pattern: 'dist/', type: 'INCLUDE'],
+                                                        [pattern: 'build/', type: 'INCLUDE'],
+                                                        [pattern: '**/__pycache__', type: 'INCLUDE'],
+                                                        [pattern: '.tox/', type: 'INCLUDE'],
+                                                        ]
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 stage("Windows CX_Freeze MSI"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/windows/build/msvc/Dockerfile'
+                            filename 'CI/docker/python/windows/Dockerfile'
                             label "windows && docker"
                         }
                     }
