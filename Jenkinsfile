@@ -365,6 +365,7 @@ pipeline {
         DEVPI = credentials("DS_devpi")
     }
     parameters {
+        booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
@@ -471,160 +472,164 @@ pipeline {
                 }
             }
         }
-        stage("Tests") {
-            agent {
-                dockerfile {
-                    filename 'CI/docker/python/linux/Dockerfile'
-                    label "linux && docker"
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                }
+        stage("Checks"){
+            when{
+                equals expected: true, actual: params.RUN_CHECKS
             }
             stages{
-                stage("Run Tests"){
-                    parallel {
-                        stage("PyTest"){
-                            steps{
-                                catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
-                                    sh(label:"Running pytest",
-                                       script: """mkdir -p reports/pytest/
-                                                  coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest
+                stage("Tests") {
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label "linux && docker"
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        }
+                    }
+                    stages{
+                        stage("Run Tests"){
+                            parallel {
+                                stage("PyTest"){
+                                    steps{
+                                        catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
+                                            sh(label:"Running pytest",
+                                               script: """mkdir -p reports/pytest/
+                                                          coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest
+                                                       """
+                                            )
+                                        }
+                                    }
+                                    post{
+                                        always{
+                                            junit 'reports/pytest/junit-pytest.xml'
+                                        }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                patterns: [
+                                                    [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                                ]
+                                            )
+                                        }
+                                    }
+                                }
+                                stage("Run Tox Test") {
+                                    when{
+                                        equals expected: true, actual: params.TEST_RUN_TOX
+                                    }
+                                    steps {
+                                        sh "tox --version"
+                                        catchError(buildResult: 'UNSTABLE', message: 'Tox Failed', stageResult: 'UNSTABLE') {
+                                            sh "tox  --workdir .tox -v -e py"
+                                        }
+                                    }
+                                    post{
+                                        always{
+                                            archiveArtifacts(
+                                                allowEmptyArchive: true,
+                                                artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
+                                            )
+                                        }
+                                        cleanup{
+                                            cleanWs deleteDirs: true, patterns: [
+                                                [pattern: '.tox/', type: 'INCLUDE'],
+                                            ]
+                                        }
+                                    }
+                                }
+                                stage("Documentation"){
+                                    steps{
+                                        sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest"
+                                    }
+                                }
+                                stage("MyPy"){
+                                    steps{
+                                        catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
+                                            sh (label: "Running MyPy",
+                                                script: """mkdir -p reports/mypy
+                                                           mkdir -p logs
+                                                           mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log"""
+                                                )
+                                        }
+                                    }
+                                    post{
+                                        always {
+                                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
+                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                        }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                patterns: [
+                                                    [pattern: 'reports/mypy/', type: 'INCLUDE'],
+                                                    [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                                ]
+                                            )
+                                        }
+                                    }
+                                }
+                                stage("Run Flake8 Static Analysis") {
+                                    steps{
+                                        catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
+                                            sh(label: "Running flake8",
+                                               script: """mkdir -p logs
+                                                          flake8 pyhathiprep --tee --output-file=logs/flake8.log
+                                                          """
+                                             )
+                                        }
+                                    }
+                                    post {
+                                        always {
+                                            stash includes: "logs/flake8.log", name: 'FLAKE8_LOGS'
+                                            unstash "FLAKE8_LOGS"
+                                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                        }
+                                        cleanup{
+                                            cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
+                                        }
+                                    }
+                                }
+                            }
+                            post{
+                                always{
+                                    sh(label: "Combining Coverage data",
+                                       script: """coverage combine
+                                                  coverage xml -o reports/coverage.xml
+                                                  coverage html -d reports/coverage
                                                """
                                     )
-                                }
-                            }
-                            post{
-                                always{
-                                    junit 'reports/pytest/junit-pytest.xml'
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        patterns: [
-                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                        ]
-                                    )
-                                }
-                            }
-                        }
-                        stage("Run Tox Test") {
-                            when{
-                                equals expected: true, actual: params.TEST_RUN_TOX
-                            }
-                            steps {
-                                sh "tox --version"
-                                catchError(buildResult: 'UNSTABLE', message: 'Tox Failed', stageResult: 'UNSTABLE') {
-                                    sh "tox  --workdir .tox -v -e py"
-                                }
-                            }
-                            post{
-                                always{
-                                    archiveArtifacts(
-                                        allowEmptyArchive: true,
-                                        artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
-                                    )
-                                }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [
-                                        [pattern: '.tox/', type: 'INCLUDE'],
-                                    ]
-                                }
-                            }
-                        }
-                        stage("Documentation"){
-                            steps{
-                                sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest"
-                            }
-                        }
-                        stage("MyPy"){
-                            steps{
-                                catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
-                                    sh (label: "Running MyPy",
-                                        script: """mkdir -p reports/mypy
-                                                   mkdir -p logs
-                                                   mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log"""
-                                        )
-                                }
-                            }
-                            post{
-                                always {
-                                    recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
-                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                                    publishCoverage adapters: [
+                                                    coberturaAdapter('reports/coverage.xml')
+                                                    ],
+                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                                 }
                                 cleanup{
                                     cleanWs(
                                         deleteDirs: true,
                                         patterns: [
-                                            [pattern: 'reports/mypy/', type: 'INCLUDE'],
-                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                        ]
+                                            [pattern: "dist/", type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE'],
+                                            [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
+                                            [pattern: 'reports/', type: 'INCLUDE'],
+                                            [pattern: 'logs/', type: 'INCLUDE']
+                                            ]
                                     )
-                                }
-                            }
-                        }
-                        stage("Run Flake8 Static Analysis") {
-                            steps{
-                                catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
-                                    sh(label: "Running flake8",
-                                       script: """mkdir -p logs
-                                                  flake8 pyhathiprep --tee --output-file=logs/flake8.log
-                                                  """
-                                     )
-                                }
-                            }
-                            post {
-                                always {
-                                    stash includes: "logs/flake8.log", name: 'FLAKE8_LOGS'
-                                    unstash "FLAKE8_LOGS"
-                                    recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
-                                }
-                                cleanup{
-                                    cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
                                 }
                             }
                         }
                     }
                     post{
-                        always{
-                            sh(label: "Combining Coverage data",
-                               script: """coverage combine
-                                          coverage xml -o reports/coverage.xml
-                                          coverage html -d reports/coverage
-                                       """
-                            )
-//                             bat "coverage combine"
-//                             bat "coverage xml -o reports\\coverage.xml"
-//                             bat "coverage html -d reports\\coverage"
-                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            publishCoverage adapters: [
-                                            coberturaAdapter('reports/coverage.xml')
-                                            ],
-                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                        }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
                                     [pattern: "dist/", type: 'INCLUDE'],
                                     [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
-                                    [pattern: 'reports/', type: 'INCLUDE'],
                                     [pattern: 'logs/', type: 'INCLUDE']
                                     ]
                             )
                         }
                     }
-                }
-            }
-            post{
-                cleanup{
-                    cleanWs(
-                        deleteDirs: true,
-                        patterns: [
-                            [pattern: "dist/", type: 'INCLUDE'],
-                            [pattern: 'build/', type: 'INCLUDE'],
-                            [pattern: 'logs/', type: 'INCLUDE']
-                            ]
-                    )
                 }
             }
         }
