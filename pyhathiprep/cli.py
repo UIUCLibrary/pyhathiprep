@@ -4,6 +4,10 @@ from pyhathiprep.utils import get_packages
 from . import configure_logging
 import argparse
 import os
+try:
+    from importlib import metadata
+except ImportError:
+    import importlib_metadata as metadata  # type: ignore
 
 
 def destination_path(path):
@@ -18,11 +22,14 @@ def destination_path(path):
 
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Replacement for HathiPrep script")
-
+    try:
+        version = metadata.version(pyhathiprep.__package__)
+    except metadata.PackageNotFoundError:
+        version = "dev"
     parser.add_argument(
         '--version',
         action='version',
-        version=pyhathiprep.__version__
+        version=version
     )
 
     parser.add_argument(

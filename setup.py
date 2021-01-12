@@ -6,7 +6,8 @@ setup(
     install_requires=[
         "ruamel.yaml",
         "pytz",
-        "tzlocal"
+        "tzlocal",
+        'importlib_resources;python_version<"3.7"'
     ],
     test_suite="tests",
     setup_requires=['pytest-runner'],
