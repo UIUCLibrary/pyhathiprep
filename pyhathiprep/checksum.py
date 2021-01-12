@@ -29,7 +29,7 @@ class HathiChecksumReport(AbsChecksumBuilder):
 
     def build(self) -> str:
         lines = []
-        for entry in self._files:
+        for entry in sorted(self._files, key=lambda x: x.filename):
             lines.append(self._format_entry(filename=entry.filename, hash_value=entry.hash))
 
         return "{}\n".format("\n".join(lines))
