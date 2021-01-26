@@ -489,15 +489,6 @@ pipeline {
                                 )
                         }
                     }
-                    post{
-                        always{
-                            recordIssues(tools: [
-                                    pyLint(name: 'Setuptools Build: PyLint', pattern: 'logs/build.log'),
-                                ]
-                            )
-                            archiveArtifacts artifacts: "logs/build.log"
-                        }
-                    }
                 }
                 stage("Building Sphinx Documentation"){
                     environment{
