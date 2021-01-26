@@ -625,8 +625,7 @@ pipeline {
                                             }
                                             post {
                                                 always {
-                                                    stash includes: "logs/flake8.log", name: 'FLAKE8_LOGS'
-                                                    unstash "FLAKE8_LOGS"
+                                                    stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
                                                     recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
                                                 }
                                                 cleanup{
@@ -685,7 +684,7 @@ pipeline {
 //                                         'COVERAGE_REPORT_DATA',
 //                                         'PYTEST_UNIT_TEST_RESULTS',
 //                                         'PYLINT_REPORT',
-//                                         'FLAKE8_REPORT'
+                                        'FLAKE8_REPORT'
                                     ]
                                     def sonarqubeConfig = [
                                         installationName: 'sonarcloud',
