@@ -643,7 +643,7 @@ pipeline {
                                                           coverage html -d reports/coverage
                                                        """
                                             )
-                                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                                            stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
                                             publishCoverage adapters: [
                                                             coberturaAdapter('reports/coverage.xml')
                                                             ],
@@ -682,7 +682,7 @@ pipeline {
                                         sonarqube = load('CI/jenkins/scripts/sonarqube.groovy')
                                     }
                                     def stashes = [
-//                                         'COVERAGE_REPORT_DATA',
+                                        'COVERAGE_REPORT_DATA',
                                         'PYTEST_UNIT_TEST_RESULTS',
 //                                         'PYLINT_REPORT',
                                         'FLAKE8_REPORT'
