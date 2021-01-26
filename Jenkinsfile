@@ -570,6 +570,7 @@ pipeline {
                                             }
                                             post{
                                                 always{
+                                                    stash includes: 'reports/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
                                                     junit 'reports/pytest/junit-pytest.xml'
                                                 }
                                                 cleanup{
@@ -682,7 +683,7 @@ pipeline {
                                     }
                                     def stashes = [
 //                                         'COVERAGE_REPORT_DATA',
-//                                         'PYTEST_UNIT_TEST_RESULTS',
+                                        'PYTEST_UNIT_TEST_RESULTS',
 //                                         'PYLINT_REPORT',
                                         'FLAKE8_REPORT'
                                     ]
