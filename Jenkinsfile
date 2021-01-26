@@ -614,6 +614,28 @@ pipeline {
                                                 }
                                             }
                                         }
+                                        stage("Run Pylint Static Analysis") {
+                                            steps{
+                                                catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                                    sh(label: "Running pylint",
+                                                        script: '''pylint pyhathiprep -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
+                                                                   '''
+
+                                                    )
+                                                }
+                                                sh(
+                                                    script: 'pylint pyhathiprep -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
+                                                    label: "Running pylint for sonarqube",
+                                                    returnStatus: true
+                                                )
+                                            }
+                                            post{
+                                                always{
+                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                    stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
+                                                }
+                                            }
+                                        }
                                         stage("Run Flake8 Static Analysis") {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
