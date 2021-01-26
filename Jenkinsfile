@@ -3,6 +3,8 @@
 import org.ds.*
 @Library(["devpi", "PythonHelpers"]) _
 
+SONARQUBE_CREDENTIAL_ID = "sonartoken-pyhathiprep"
+
 // CONFIGURATIONS = [
 //     '3.6': [
 //         test_docker_image: "python:3.6-windowsservercore",
@@ -14,6 +16,9 @@ import org.ds.*
 //         ]
 // ]
 
+defaultParameterValues = [
+    USE_SONARQUBE: false
+]
 
 
 def CONFIGURATIONS = [
@@ -356,6 +361,67 @@ def get_package_name(stashName, metadataFile){
         }
     }
 }
+def startup(){
+    def SONARQUBE_CREDENTIAL_ID = SONARQUBE_CREDENTIAL_ID
+    parallel(
+        [
+            failFast: true,
+            "Checking sonarqube Settings": {
+                node(){
+                    try{
+                        withCredentials([string(credentialsId: SONARQUBE_CREDENTIAL_ID, variable: 'dddd')]) {
+                            echo 'Found credentials for sonarqube'
+                        }
+                        defaultParameterValues.USE_SONARQUBE = true
+                    } catch(e){
+                        echo "Setting defaultValue for USE_SONARQUBE to false. Reason: ${e}"
+                        defaultParameterValues.USE_SONARQUBE = false
+                    }
+                }
+            },
+            "Getting Distribution Info": {
+                node('linux && docker') {
+                    timeout(2){
+                        ws{
+                            checkout scm
+                            try{
+                                docker.image('python:3.8').inside {
+                                    sh(
+                                       label: "Running setup.py with dist_info",
+                                       script: """python --version
+                                                  python setup.py dist_info
+                                               """
+                                    )
+                                    stash includes: "*.dist-info/**", name: 'DIST-INFO'
+                                    archiveArtifacts artifacts: "*.dist-info/**"
+                                }
+                            } finally{
+                                deleteDir()
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+    )
+}
+def get_props(){
+    stage('Reading Package Metadata'){
+        node(){
+            unstash 'DIST-INFO'
+            def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
+            def metadata = readProperties(interpolate: true, file: metadataFile.path )
+            echo """Version = ${metadata.Version}
+Name = ${metadata.Name}
+"""
+            return metadata
+        }
+    }
+}
+
+
+startup()
+def props = get_props()
 
 
 pipeline {
@@ -366,6 +432,7 @@ pipeline {
     }
     parameters {
         booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
+        booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
@@ -474,11 +541,209 @@ pipeline {
             }
         }
         stage("Checks"){
-            when{
-                equals expected: true, actual: params.RUN_CHECKS
-            }
+//             when{
+//                 equals expected: true, actual: params.RUN_CHECKS
+//             }
             stages{
-                stage("Tests") {
+                stage("Code Quality"){
+                    stages{
+                        stage("Testing"){
+                            agent {
+                                dockerfile {
+                                    filename 'CI/docker/python/linux/Dockerfile'
+                                    label "linux && docker"
+                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                }
+                            }
+                            stages{
+                                stage("Run Tests"){
+                                    parallel {
+                                        stage("PyTest"){
+                                            steps{
+                                                catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
+                                                    sh(label:"Running pytest",
+                                                       script: """mkdir -p reports/pytest/
+                                                                  coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest
+                                                               """
+                                                    )
+                                                }
+                                            }
+                                            post{
+                                                always{
+                                                    junit 'reports/pytest/junit-pytest.xml'
+                                                }
+                                                cleanup{
+                                                    cleanWs(
+                                                        deleteDirs: true,
+                                                        patterns: [
+                                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                                        ]
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        stage("Documentation"){
+                                            steps{
+                                                sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest"
+                                            }
+                                        }
+                                        stage("MyPy"){
+                                            steps{
+                                                catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
+                                                    sh (label: "Running MyPy",
+                                                        script: """mkdir -p reports/mypy
+                                                                   mkdir -p logs
+                                                                   mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log"""
+                                                        )
+                                                }
+                                            }
+                                            post{
+                                                always {
+                                                    recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
+                                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                                }
+                                                cleanup{
+                                                    cleanWs(
+                                                        deleteDirs: true,
+                                                        patterns: [
+                                                            [pattern: 'reports/mypy/', type: 'INCLUDE'],
+                                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                                        ]
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        stage("Run Flake8 Static Analysis") {
+                                            steps{
+                                                catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
+                                                    sh(label: "Running flake8",
+                                                       script: """mkdir -p logs
+                                                                  flake8 pyhathiprep --tee --output-file=logs/flake8.log
+                                                                  """
+                                                     )
+                                                }
+                                            }
+                                            post {
+                                                always {
+                                                    stash includes: "logs/flake8.log", name: 'FLAKE8_LOGS'
+                                                    unstash "FLAKE8_LOGS"
+                                                    recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                                }
+                                                cleanup{
+                                                    cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
+                                                }
+                                            }
+                                        }
+                                    }
+                                    post{
+                                        always{
+                                            sh(label: "Combining Coverage data",
+                                               script: """coverage combine
+                                                          coverage xml -o reports/coverage.xml
+                                                          coverage html -d reports/coverage
+                                                       """
+                                            )
+                                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                                            publishCoverage adapters: [
+                                                            coberturaAdapter('reports/coverage.xml')
+                                                            ],
+                                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                                        }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                patterns: [
+                                                    [pattern: "dist/", type: 'INCLUDE'],
+                                                    [pattern: 'build/', type: 'INCLUDE'],
+                                                    [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
+                                                    [pattern: 'reports/', type: 'INCLUDE'],
+                                                    [pattern: 'logs/', type: 'INCLUDE']
+                                                    ]
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        stage('Run Sonarqube Analysis'){
+                            options{
+                                lock('pyhathiprep-sonarscanner')
+                            }
+                            when{
+                                equals expected: true, actual: params.USE_SONARQUBE
+                                beforeAgent true
+                                beforeOptions true
+                            }
+                            steps{
+                                script{
+                                    def sonarqube
+                                    node(){
+                                        checkout scm
+                                        sonarqube = load('CI/jenkins/scripts/sonarqube.groovy')
+                                    }
+                                    def stashes = [
+//                                         'COVERAGE_REPORT_DATA',
+//                                         'PYTEST_UNIT_TEST_RESULTS',
+//                                         'PYLINT_REPORT',
+//                                         'FLAKE8_REPORT'
+                                    ]
+                                    def sonarqubeConfig = [
+                                        installationName: 'sonarcloud',
+                                        credentialsId: SONARQUBE_CREDENTIAL_ID,
+                                    ]
+                                    def agent = [
+                                            dockerfile: [
+                                                filename: 'CI/docker/python/linux/Dockerfile',
+                                                label: 'linux && docker',
+                                                additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                args: '--mount source=sonar-cache-hathiprep,target=/home/user/.sonar/cache',
+                                            ]
+                                        ]
+                                    if (env.CHANGE_ID){
+                                        sonarqube.submitToSonarcloud(
+                                            agent: agent,
+                                            reportStashes: stashes,
+                                            artifactStash: 'sonarqube artifacts',
+                                            sonarqube: sonarqubeConfig,
+                                            pullRequest: [
+                                                source: env.CHANGE_ID,
+                                                destination: env.BRANCH_NAME,
+                                            ],
+                                            package: [
+                                                version: props.Version,
+                                                name: props.Name
+                                            ],
+                                        )
+                                    } else {
+                                        sonarqube.submitToSonarcloud(
+                                            agent: agent,
+                                            reportStashes: stashes,
+                                            artifactStash: 'sonarqube artifacts',
+                                            sonarqube: sonarqubeConfig,
+                                            package: [
+                                                version: props.Version,
+                                                name: props.Name
+                                            ]
+                                        )
+                                    }
+                                }
+                            }
+                            post {
+                                always{
+                                    node(''){
+                                        unstash 'sonarqube artifacts'
+                                        recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                stage("Run Tox Test") {
+                    when{
+                        equals expected: true, actual: params.TEST_RUN_TOX
+                        beforeAgent true
+                    }
                     agent {
                         dockerfile {
                             filename 'CI/docker/python/linux/Dockerfile'
@@ -486,150 +751,23 @@ pipeline {
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                         }
                     }
-                    stages{
-                        stage("Run Tests"){
-                            parallel {
-                                stage("PyTest"){
-                                    steps{
-                                        catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
-                                            sh(label:"Running pytest",
-                                               script: """mkdir -p reports/pytest/
-                                                          coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest
-                                                       """
-                                            )
-                                        }
-                                    }
-                                    post{
-                                        always{
-                                            junit 'reports/pytest/junit-pytest.xml'
-                                        }
-                                        cleanup{
-                                            cleanWs(
-                                                deleteDirs: true,
-                                                patterns: [
-                                                    [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                                ]
-                                            )
-                                        }
-                                    }
-                                }
-                                stage("Run Tox Test") {
-                                    when{
-                                        equals expected: true, actual: params.TEST_RUN_TOX
-                                    }
-                                    steps {
-                                        sh "tox --version"
-                                        catchError(buildResult: 'UNSTABLE', message: 'Tox Failed', stageResult: 'UNSTABLE') {
-                                            sh "tox  --workdir .tox -v -e py"
-                                        }
-                                    }
-                                    post{
-                                        always{
-                                            archiveArtifacts(
-                                                allowEmptyArchive: true,
-                                                artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
-                                            )
-                                        }
-                                        cleanup{
-                                            cleanWs deleteDirs: true, patterns: [
-                                                [pattern: '.tox/', type: 'INCLUDE'],
-                                            ]
-                                        }
-                                    }
-                                }
-                                stage("Documentation"){
-                                    steps{
-                                        sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest"
-                                    }
-                                }
-                                stage("MyPy"){
-                                    steps{
-                                        catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
-                                            sh (label: "Running MyPy",
-                                                script: """mkdir -p reports/mypy
-                                                           mkdir -p logs
-                                                           mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log"""
-                                                )
-                                        }
-                                    }
-                                    post{
-                                        always {
-                                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
-                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                                        }
-                                        cleanup{
-                                            cleanWs(
-                                                deleteDirs: true,
-                                                patterns: [
-                                                    [pattern: 'reports/mypy/', type: 'INCLUDE'],
-                                                    [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                                ]
-                                            )
-                                        }
-                                    }
-                                }
-                                stage("Run Flake8 Static Analysis") {
-                                    steps{
-                                        catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
-                                            sh(label: "Running flake8",
-                                               script: """mkdir -p logs
-                                                          flake8 pyhathiprep --tee --output-file=logs/flake8.log
-                                                          """
-                                             )
-                                        }
-                                    }
-                                    post {
-                                        always {
-                                            stash includes: "logs/flake8.log", name: 'FLAKE8_LOGS'
-                                            unstash "FLAKE8_LOGS"
-                                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
-                                        }
-                                        cleanup{
-                                            cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
-                                        }
-                                    }
-                                }
-                            }
-                            post{
-                                always{
-                                    sh(label: "Combining Coverage data",
-                                       script: """coverage combine
-                                                  coverage xml -o reports/coverage.xml
-                                                  coverage html -d reports/coverage
-                                               """
-                                    )
-                                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                                    publishCoverage adapters: [
-                                                    coberturaAdapter('reports/coverage.xml')
-                                                    ],
-                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        patterns: [
-                                            [pattern: "dist/", type: 'INCLUDE'],
-                                            [pattern: 'build/', type: 'INCLUDE'],
-                                            [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
-                                            [pattern: 'reports/', type: 'INCLUDE'],
-                                            [pattern: 'logs/', type: 'INCLUDE']
-                                            ]
-                                    )
-                                }
-                            }
+                    steps {
+                        sh "tox --version"
+                        catchError(buildResult: 'UNSTABLE', message: 'Tox Failed', stageResult: 'UNSTABLE') {
+                            sh "tox  --workdir .tox -v -e py"
                         }
                     }
                     post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: "dist/", type: 'INCLUDE'],
-                                    [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: '**/__pycache__', type: 'INCLUDE'],
-                                    [pattern: 'logs/', type: 'INCLUDE']
-                                    ]
+                        always{
+                            archiveArtifacts(
+                                allowEmptyArchive: true,
+                                artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
                             )
+                        }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [
+                                [pattern: '.tox/', type: 'INCLUDE'],
+                            ]
                         }
                     }
                 }
@@ -916,9 +1054,9 @@ pipeline {
                                   }
                                 }
                                 steps{
-                                    unstash "DIST-INFO"
+//                                     unstash "DIST-INFO"
                                     script{
-                                        def props = readProperties interpolate: true, file: "pyhathiprep.dist-info/METADATA"
+//                                         def props = readProperties interpolate: true, file: "pyhathiprep.dist-info/METADATA"
 
                                         if(isUnix()){
                                             sh(
@@ -970,8 +1108,8 @@ pipeline {
                     }
                     steps {
                         script {
-                            unstash "DIST-INFO"
-                            def props = readProperties interpolate: true, file: 'pyhathiprep.dist-info/METADATA'
+//                             unstash "DIST-INFO"
+//                             def props = readProperties interpolate: true, file: 'pyhathiprep.dist-info/METADATA'
                             try{
                                 timeout(30) {
                                     input "Release ${props.Name} ${props.Version} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${props.Name}/${props.Version}) to DevPi Production? "
@@ -990,8 +1128,8 @@ pipeline {
                         checkout scm
                         script{
                             docker.build("pyhathiprep:devpi",'-f ./CI/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'pyhathiprep.dist-info/METADATA'
+//                                 unstash "DIST-INFO"
+//                                 def props = readProperties interpolate: true, file: 'pyhathiprep.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
@@ -1006,8 +1144,8 @@ pipeline {
                     node('linux && docker') {
                        script{
                             docker.build("pyhathiprep:devpi",'-f ./CI/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'pyhathiprep.dist-info/METADATA'
+//                                 unstash "DIST-INFO"
+//                                 def props = readProperties interpolate: true, file: 'pyhathiprep.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
@@ -1122,9 +1260,9 @@ pipeline {
                           }
                     }
                     steps{
-                        unstash "DIST-INFO"
+//                         unstash "DIST-INFO"
                         script{
-                            def props = readProperties interpolate: true, file: "pyhathiprep.dist-info/METADATA"
+//                             def props = readProperties interpolate: true, file: "pyhathiprep.dist-info/METADATA"
                             def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
                             withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
                                 sh(label: "Tagging ${commitTag}",
