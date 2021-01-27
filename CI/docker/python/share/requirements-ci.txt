@@ -3,3 +3,4 @@ devpi-client
 flake8
 lxml
 pep517
+pylint

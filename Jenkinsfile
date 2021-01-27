@@ -489,15 +489,6 @@ pipeline {
                                 )
                         }
                     }
-                    post{
-                        always{
-                            recordIssues(tools: [
-                                    pyLint(name: 'Setuptools Build: PyLint', pattern: 'logs/build.log'),
-                                ]
-                            )
-                            archiveArtifacts artifacts: "logs/build.log"
-                        }
-                    }
                 }
                 stage("Building Sphinx Documentation"){
                     environment{
@@ -570,6 +561,7 @@ pipeline {
                                             }
                                             post{
                                                 always{
+                                                    stash includes: 'reports/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
                                                     junit 'reports/pytest/junit-pytest.xml'
                                                 }
                                                 cleanup{
@@ -613,6 +605,28 @@ pipeline {
                                                 }
                                             }
                                         }
+                                        stage("Run Pylint Static Analysis") {
+                                            steps{
+                                                catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                                    sh(label: "Running pylint",
+                                                        script: '''pylint pyhathiprep -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
+                                                                   '''
+
+                                                    )
+                                                }
+                                                sh(
+                                                    script: 'pylint pyhathiprep -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
+                                                    label: "Running pylint for sonarqube",
+                                                    returnStatus: true
+                                                )
+                                            }
+                                            post{
+                                                always{
+                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                    stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
+                                                }
+                                            }
+                                        }
                                         stage("Run Flake8 Static Analysis") {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
@@ -625,8 +639,7 @@ pipeline {
                                             }
                                             post {
                                                 always {
-                                                    stash includes: "logs/flake8.log", name: 'FLAKE8_LOGS'
-                                                    unstash "FLAKE8_LOGS"
+                                                    stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
                                                     recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
                                                 }
                                                 cleanup{
@@ -643,7 +656,7 @@ pipeline {
                                                           coverage html -d reports/coverage
                                                        """
                                             )
-                                            publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "reports/coverage", reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                                            stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
                                             publishCoverage adapters: [
                                                             coberturaAdapter('reports/coverage.xml')
                                                             ],
@@ -682,10 +695,10 @@ pipeline {
                                         sonarqube = load('CI/jenkins/scripts/sonarqube.groovy')
                                     }
                                     def stashes = [
-//                                         'COVERAGE_REPORT_DATA',
-//                                         'PYTEST_UNIT_TEST_RESULTS',
-//                                         'PYLINT_REPORT',
-//                                         'FLAKE8_REPORT'
+                                        'COVERAGE_REPORT_DATA',
+                                        'PYTEST_UNIT_TEST_RESULTS',
+                                        'PYLINT_REPORT',
+                                        'FLAKE8_REPORT'
                                     ]
                                     def sonarqubeConfig = [
                                         installationName: 'sonarcloud',
