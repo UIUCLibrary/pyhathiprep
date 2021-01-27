@@ -735,8 +735,8 @@ pipeline {
                                 checkout scm
                                 tox = load("ci/jenkins/scripts/tox.groovy")
                             }
-                            def windowsJobs
-                            def linuxJobs
+                            def windowsJobs = [:]
+                            def linuxJobs = [:]
                             stage("Scanning Tox Environments"){
                                 parallel(
                                     "Linux":{
@@ -747,14 +747,14 @@ pipeline {
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                             )
                                     },
-                                    "Windows":{
-                                        windowsJobs = tox.getToxTestsParallel(
-                                                envNamePrefix: "Tox Windows",
-                                                label: 'windows && docker',
-                                                dockerfile: "ci/docker/python/windows/tox/Dockerfile",
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
-                                            )
-                                    },
+//                                     "Windows":{
+//                                         windowsJobs = tox.getToxTestsParallel(
+//                                                 envNamePrefix: "Tox Windows",
+//                                                 label: 'windows && docker',
+//                                                 dockerfile: "ci/docker/python/windows/tox/Dockerfile",
+//                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+//                                             )
+//                                     },
                                     failFast: true
                                 )
                             }
