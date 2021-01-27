@@ -504,9 +504,9 @@ pipeline {
             }
         }
         stage("Checks"){
-//             when{
-//                 equals expected: true, actual: params.RUN_CHECKS
-//             }
+            when{
+                equals expected: true, actual: params.RUN_CHECKS
+            }
             stages{
                 stage("Code Quality"){
                     stages{
@@ -727,12 +727,10 @@ pipeline {
                 stage("Run Tox Test") {
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
-                        beforeAgent true
                     }
                      steps {
                         script{
                             def tox
-
                             node(){
                                 checkout scm
                                 tox = load("ci/jenkins/scripts/tox.groovy")
@@ -761,19 +759,6 @@ pipeline {
                                 )
                             }
                             parallel(windowsJobs + linuxJobs)
-                        }
-                    }
-                    post{
-                        always{
-                            archiveArtifacts(
-                                allowEmptyArchive: true,
-                                artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
-                            )
-                        }
-                        cleanup{
-                            cleanWs deleteDirs: true, patterns: [
-                                [pattern: '.tox/', type: 'INCLUDE'],
-                            ]
                         }
                     }
                 }
