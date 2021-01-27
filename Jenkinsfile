@@ -442,34 +442,6 @@ pipeline {
         booleanParam(name: "DEPLOY_ADD_TAG", defaultValue: false, description: "Tag commit to current version")
     }
     stages {
-        stage("Getting Distribution Info"){
-            agent {
-                dockerfile {
-                    filename 'CI/docker/python/linux/Dockerfile'
-                    label "linux && docker"
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                }
-            }
-            steps{
-                timeout(5){
-                    sh "python setup.py dist_info"
-                }
-            }
-            post{
-                success{
-                    stash includes: "pyhathiprep.dist-info/**", name: 'DIST-INFO'
-                    archiveArtifacts artifacts: "pyhathiprep.dist-info/**"
-                }
-                cleanup{
-                    cleanWs(
-                        deleteDirs: true,
-                        patterns: [
-                            [pattern: "pyhathiprep.dist-info/", type: 'INCLUDE'],
-                            ]
-                    )
-                }
-            }
-        }
         stage("Building") {
             agent {
                 dockerfile {
