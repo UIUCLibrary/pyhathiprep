@@ -729,17 +729,38 @@ pipeline {
                         equals expected: true, actual: params.TEST_RUN_TOX
                         beforeAgent true
                     }
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label "linux && docker"
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        }
-                    }
-                    steps {
-                        sh "tox --version"
-                        catchError(buildResult: 'UNSTABLE', message: 'Tox Failed', stageResult: 'UNSTABLE') {
-                            sh "tox  --workdir .tox -v -e py"
+                     steps {
+                        script{
+                            def tox
+
+                            node(){
+                                checkout scm
+                                tox = load("ci/jenkins/scripts/tox.groovy")
+                            }
+                            def windowsJobs
+                            def linuxJobs
+                            stage("Scanning Tox Environments"){
+                                parallel(
+                                    "Linux":{
+                                        linuxJobs = tox.getToxTestsParallel(
+                                                envNamePrefix: "Tox Linux",
+                                                label: "linux && docker",
+                                                dockerfile: "ci/docker/python/linux/tox/Dockerfile",
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                            )
+                                    },
+                                    "Windows":{
+                                        windowsJobs = tox.getToxTestsParallel(
+                                                envNamePrefix: "Tox Windows",
+                                                label: 'windows && docker',
+                                                dockerfile: "ci/docker/python/windows/tox/Dockerfile",
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                            )
+                                    },
+                                    failFast: true
+                                )
+                            }
+                            parallel(windowsJobs + linuxJobs)
                         }
                     }
                     post{
