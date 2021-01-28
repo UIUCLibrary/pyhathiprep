@@ -15,7 +15,7 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
 ARG ChocolateyEnvironmentDebug=false
-ADD ci/docker/python/share/install_choco.ps1  choco/install_choco.ps1
+ADD ci/docker/python/windows/tox/chocolatey/install_choco.ps1  choco/install_choco.ps1
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
     ./choco/install_choco.ps1 -packageRepo $env:CHOCOLATEY_SOURCE ; `
     if( -not ([string]::IsNullOrEmpty($Env:CHOCOLATEY_SOURCE ))) `
