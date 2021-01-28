@@ -426,10 +426,6 @@ def props = get_props()
 
 pipeline {
     agent none
-    
-    environment {
-        DEVPI = credentials("DS_devpi")
-    }
     parameters {
         booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
         booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
