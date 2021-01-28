@@ -130,14 +130,9 @@ def getToxTestsParallel(args = [:]){
         def envs
         def originalNodeLabel
         def dockerImageName = "${currentBuild.fullProjectName}:tox".replaceAll("-", "").replaceAll('/', "").replaceAll(' ', "").toLowerCase()
-        echo "HERE !!! ${args} - ${dockerImageName}"
-        echo "Getting a node ${args}"
         node(label){
-            echo "Got a node ${args}"
             originalNodeLabel = env.NODE_NAME
-            echo "HERE !!! ${args} - checking out scm"
             checkout scm
-            echo "HERE !!! ${args} - docker building"
             def dockerImage = docker.build(dockerImageName, "-f ${dockerfile} ${dockerArgs} .")
             dockerImage.inside{
                 envs = getToxEnvs()
