@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pyhathiprep
 from pyhathiprep.package_creater import create_package
 from pyhathiprep.utils import get_packages
@@ -73,15 +75,15 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main():
+def main(args: Optional[argparse.Namespace]=None):
     parser = get_parser()
-    args = parser.parse_args()
+    args = args or parser.parse_args()
 
     logger = configure_logging.configure_logger(
         debug_mode=args.debug, log_file=args.log_debug
     )
 
-    logger.info("Prepping folder in {}".format(args.source))
+    logger.info("Prepping folder in %s", args.source)
     for package in get_packages(args.source):
         logger.info("    {}".format(package))
         try:
