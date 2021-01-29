@@ -151,7 +151,7 @@ def make_yml(directory: str, title_page=None, **overrides) -> str:
 
 
 def get_images(directory, page_data_extensions=(".jp2", ".tif")):
-    for root, dirs, files in os.walk(directory):
+    for root, _, files in os.walk(directory):
         for file_ in sorted(files):
             if os.path.splitext(file_)[1] in page_data_extensions:
                 yield os.path.join(root, file_)

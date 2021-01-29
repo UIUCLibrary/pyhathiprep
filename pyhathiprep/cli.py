@@ -1,9 +1,9 @@
+import argparse
+import os
 import pyhathiprep
 from pyhathiprep.package_creater import create_package
 from pyhathiprep.utils import get_packages
 from . import configure_logging
-import argparse
-import os
 try:
     from importlib import metadata
 except ImportError:
