@@ -16,6 +16,7 @@ SONARQUBE_CREDENTIAL_ID = "sonartoken-pyhathiprep"
 //         ]
 // ]
 
+
 defaultParameterValues = [
     USE_SONARQUBE: false
 ]
@@ -770,6 +771,18 @@ pipeline {
                 beforeAgent true
             }
             stages{
+
+                stage("Building2"){
+                    steps{
+                        script{
+                            def packages
+                            node(){
+                                checkout scm
+                                packages = load('ci/jenkins/scripts/packaging.groovy')
+                            }
+                        }
+                    }
+                }
                 stage("Building"){
                     parallel{
                         stage("Building Source and Wheel formats"){
