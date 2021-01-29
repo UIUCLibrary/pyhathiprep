@@ -19,7 +19,7 @@ SONARQUBE_CREDENTIAL_ID = "sonartoken-pyhathiprep"
 // ============================================================================
 // Versions of python that are supported
 // ----------------------------------------------------------------------------
-// SUPPORTED_MAC_VERSIONS = ['3.8', '3.9']
+SUPPORTED_MAC_VERSIONS = ['3.8', '3.9']
 SUPPORTED_LINUX_VERSIONS = ['3.6', '3.7']
 SUPPORTED_WINDOWS_VERSIONS = ['3.6', '3.7']
 
@@ -438,6 +438,7 @@ pipeline {
         booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "BUILD_PACKAGES", defaultValue: false, description: "Build Python packages")
+        booleanParam(name: 'TEST_PACKAGES_ON_MAC', defaultValue: false, description: 'Test Python packages on Mac')
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         string(name: 'URL_SUBFOLDER', defaultValue: "pyhathiprep", description: 'The directory that the docs should be saved under')
@@ -901,64 +902,64 @@ pipeline {
                             }
 
                             def macTests = [:]
-//                             SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
-//                                 macTests["Mac - Python ${pythonVersion}: sdist"] = {
-//                                     packages.testPkg(
-//                                             agent: [
-//                                                 label: "mac && python${pythonVersion}",
-//                                             ],
-//                                             glob: 'dist/*.tar.gz,dist/*.zip',
-//                                             stash: 'dist',
-//                                             pythonVersion: pythonVersion,
-//                                             toxExec: 'venv/bin/tox',
-//                                             testSetup: {
-//                                                 checkout scm
-//                                                 unstash 'dist'
-//                                                 sh(
-//                                                     label:'Install Tox',
-//                                                     script: '''python3 -m venv venv
-//                                                                venv/bin/pip install pip --upgrade
-//                                                                venv/bin/pip install tox
-//                                                                '''
-//                                                 )
-//                                             },
-//                                             testTeardown: {
-//                                                 sh 'rm -r venv/'
-//                                             }
-//
-//                                         )
-//                                 }
-//                                 macTests["Mac - Python ${pythonVersion}: wheel"] = {
-//                                     packages.testPkg(
-//                                             agent: [
-//                                                 label: "mac && python${pythonVersion}",
-//                                             ],
-//                                             glob: 'dist/*.whl',
-//                                             stash: 'dist',
-//                                             pythonVersion: pythonVersion,
-//                                             toxExec: 'venv/bin/tox',
-//                                             testSetup: {
-//                                                 checkout scm
-//                                                 unstash 'dist'
-//                                                 sh(
-//                                                     label:'Install Tox',
-//                                                     script: '''python3 -m venv venv
-//                                                                venv/bin/pip install pip --upgrade
-//                                                                venv/bin/pip install tox
-//                                                                '''
-//                                                 )
-//                                             },
-//                                             testTeardown: {
-//                                                 sh 'rm -r venv/'
-//                                             }
-//
-//                                         )
-//                                 }
-//                             }
+                            SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
+                                macTests["Mac - Python ${pythonVersion}: sdist"] = {
+                                    packages.testPkg(
+                                            agent: [
+                                                label: "mac && python${pythonVersion}",
+                                            ],
+                                            glob: 'dist/*.tar.gz,dist/*.zip',
+                                            stash: 'PYTHON_PACKAGES',
+                                            pythonVersion: pythonVersion,
+                                            toxExec: 'venv/bin/tox',
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'PYTHON_PACKAGES'
+                                                sh(
+                                                    label:'Install Tox',
+                                                    script: '''python3 -m venv venv
+                                                               venv/bin/pip install pip --upgrade
+                                                               venv/bin/pip install tox
+                                                               '''
+                                                )
+                                            },
+                                            testTeardown: {
+                                                sh 'rm -r venv/'
+                                            }
+
+                                        )
+                                }
+                                macTests["Mac - Python ${pythonVersion}: wheel"] = {
+                                    packages.testPkg(
+                                            agent: [
+                                                label: "mac && python${pythonVersion}",
+                                            ],
+                                            glob: 'dist/*.whl',
+                                            stash: 'PYTHON_PACKAGES',
+                                            pythonVersion: pythonVersion,
+                                            toxExec: 'venv/bin/tox',
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'PYTHON_PACKAGES'
+                                                sh(
+                                                    label:'Install Tox',
+                                                    script: '''python3 -m venv venv
+                                                               venv/bin/pip install pip --upgrade
+                                                               venv/bin/pip install tox
+                                                               '''
+                                                )
+                                            },
+                                            testTeardown: {
+                                                sh 'rm -r venv/'
+                                            }
+
+                                        )
+                                }
+                            }
                             def tests = linuxTests + windowsTests
-//                             if(params.TEST_PACKAGES_ON_MAC == true){
-//                                 tests = tests + macTests
-//                             }
+                            if(params.TEST_PACKAGES_ON_MAC == true){
+                                tests = tests + macTests
+                            }
                             parallel(tests)
                         }
                     }
