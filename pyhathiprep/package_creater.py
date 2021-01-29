@@ -178,8 +178,8 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
 
         logger.debug("Making checksum.md5 for %s", temp)
         checksum_report = create_checksum_report(temp)
-        with open(os.path.join(temp, "checksum.md5"), "w") as w:
-            w.write(checksum_report)
+        with open(os.path.join(temp, "checksum.md5"), "w") as write_file:
+            write_file.write(checksum_report)
 
         # On success move everything to destination
         os.makedirs(new_package_path)
