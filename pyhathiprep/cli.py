@@ -1,9 +1,9 @@
+import argparse
+import os
 import pyhathiprep
 from pyhathiprep.package_creater import create_package
 from pyhathiprep.utils import get_packages
 from . import configure_logging
-import argparse
-import os
 try:
     from importlib import metadata
 except ImportError:
@@ -21,7 +21,10 @@ def destination_path(path):
 
 
 def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Replacement for HathiPrep script")
+    parser = argparse.ArgumentParser(
+        description="Replacement for HathiPrep script"
+    )
+
     try:
         version = metadata.version(pyhathiprep.__package__)
     except metadata.PackageNotFoundError:
@@ -60,19 +63,33 @@ def get_parser() -> argparse.ArgumentParser:
         '--debug',
         action="store_true",
         help="Run script in debug mode")
-    debug_group.add_argument("--log-debug", dest="log_debug", help="Save debug information to a file")
+
+    debug_group.add_argument(
+        "--log-debug",
+        dest="log_debug",
+        help="Save debug information to a file"
+    )
 
     return parser
 
 
-def main():
+def main(args=None):
     parser = get_parser()
-    args = parser.parse_args()
-    logger = configure_logging.configure_logger(debug_mode=args.debug, log_file=args.log_debug)
-    logger.info("Prepping folder in {}".format(args.source))
-    for package in get_packages(args.source):
-        logger.info("    {}".format(package))
+    cli_args = parser.parse_args(args)
+
+    logger = configure_logging.configure_logger(
+        debug_mode=cli_args.debug, log_file=cli_args.log_debug
+    )
+
+    logger.info("Prepping folder in %s", cli_args.source)
+    for package in get_packages(cli_args.source):
+        logger.info("    %s", package)
         try:
-            create_package(source=package, destination=args.dest, overwrite=args.overwrite)
+            create_package(
+                source=package,
+                destination=cli_args.dest,
+                overwrite=cli_args.overwrite
+            )
+
         except FileExistsError as e:
             print(e)
