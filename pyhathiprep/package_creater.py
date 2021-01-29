@@ -110,7 +110,9 @@ class NewPackage(AbsPackageCreator):
                 shutil.rmtree(new_package_path)
             else:
                 raise FileExistsError(
-                    "Cannot create destination folder because it already exists: '{}'.".format(new_package_path))
+                    "Cannot create destination folder because it already"
+                    " exists: '{}'.".format(new_package_path))
+
         os.makedirs(new_package_path)
 
         for item in os.scandir(build_path):
@@ -118,7 +120,9 @@ class NewPackage(AbsPackageCreator):
             shutil.move(item.path, new_package_path)
 
 
-def create_package(source: str, destination=None, prefix=None, overwrite=False) -> None:
+def create_package(source: str, destination=None, prefix=None,
+                   overwrite=False) -> None:
+
     """ Create a single package folder for Hathi
 
     Args:
@@ -126,7 +130,8 @@ def create_package(source: str, destination=None, prefix=None, overwrite=False) 
         destination: Path where the package will be saved after prepped
         prefix: the name of the directory that the package will be saved in.
             If none given, it will use the name of the parent directory
-        overwrite: If destination already exists, remove first it before saving.
+        overwrite: If destination already exists, remove first it before
+            saving.
 
     """
     if destination:
@@ -152,7 +157,9 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
             shutil.rmtree(new_package_path)
         else:
             raise FileExistsError(
-                "Cannot create destination folder because it already exists: '{}'.".format(new_package_path))
+                "Cannot create destination folder because it already "
+                "exists: '{}'.".format(new_package_path))
+
     with tempfile.TemporaryDirectory() as temp:
         # Copy contents to temp folder
         for item in filter(lambda x: x.is_file(), os.scandir(source)):
@@ -161,7 +168,10 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
 
         # make YML
         logger.debug("Making YAML for {}".format(temp))
-        yml = make_yml(temp, capture_date=datetime.now(), title_page=title_page)
+
+        yml = make_yml(
+            temp, capture_date=datetime.now(), title_page=title_page)
+
         with open(os.path.join(temp, "meta.yml"), "w") as w:
             w.write(yml)
 

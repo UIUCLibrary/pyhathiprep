@@ -76,11 +76,18 @@ def get_parser() -> argparse.ArgumentParser:
 def main():
     parser = get_parser()
     args = parser.parse_args()
-    logger = configure_logging.configure_logger(debug_mode=args.debug, log_file=args.log_debug)
+
+    logger = configure_logging.configure_logger(
+        debug_mode=args.debug, log_file=args.log_debug
+    )
+
     logger.info("Prepping folder in {}".format(args.source))
     for package in get_packages(args.source):
         logger.info("    {}".format(package))
         try:
-            create_package(source=package, destination=args.dest, overwrite=args.overwrite)
+            create_package(
+                source=package, destination=args.dest, overwrite=args.overwrite
+            )
+
         except FileExistsError as e:
             print(e)
