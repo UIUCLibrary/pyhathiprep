@@ -42,15 +42,23 @@ def test_main_cli_reports_search_path(tmpdir, monkeypatch):
 
 
 def test_create_packages_called(tmpdir, monkeypatch):
+    dummy_package = os.path.join(".", "dummy")
+    dummy_output = os.path.join(".", "dummy_output")
 
     def mock_get_packages(*args, **kwargs):
         return [
-            os.path.join(".", "dummy")
+            dummy_package
         ]
 
     mock_create_package = MagicMock()
     monkeypatch.setattr(cli, "create_package", mock_create_package)
     monkeypatch.setattr(cli, "get_packages", mock_get_packages)
-    cli.main()
-    args = mock_create_package.call_args_list[0][1]
-    assert args['source'] == "./dummy"
+    monkeypatch.setattr(cli, "destination_path", lambda x: x)
+
+    cli.main([".", "--dest", dummy_output])
+
+    mock_create_package.assert_called_with(
+        source=dummy_package,
+        destination=dummy_output,
+        overwrite=False
+    )
