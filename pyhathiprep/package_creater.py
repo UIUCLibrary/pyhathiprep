@@ -176,7 +176,7 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
         with open(os.path.join(temp, "meta.yml"), "w") as w:
             w.write(yml)
 
-        logger.debug("Making checksum.md5 for {}".format(temp))
+        logger.debug("Making checksum.md5 for %s", temp)
         checksum_report = create_checksum_report(temp)
         with open(os.path.join(temp, "checksum.md5"), "w") as w:
             w.write(checksum_report)
