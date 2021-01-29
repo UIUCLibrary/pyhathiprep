@@ -3,11 +3,16 @@ import sys
 from pyhathiprep import cli
 
 
-def main():
-    if len(sys.argv) > 1 and sys.argv[1] == "--pytest":
+def main(args=None, test_suite=None):
+    args = args or sys.argv
+    if len(args) > 1 and args[1] == "--pytest":
         try:
-            import pytest  # type: ignore
-            sys.exit(pytest.main(sys.argv[2:]))
+            if test_suite is None:
+                def test_suite():
+                    # pylint: disable=import-outside-toplevel
+                    import pytest  # type: ignore
+                    return pytest.main(args)
+            sys.exit(test_suite())
         except ImportError as error:
             print("Unable to run tests. Reason {}".format(error),
                   file=sys.stderr)
