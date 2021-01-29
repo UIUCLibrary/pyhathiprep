@@ -20,7 +20,7 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def make_yaml(self, build_path, title_page = None):
+    def make_yaml(self, build_path, title_page=None):
         pass
 
     def copy_source(self, build_path):
@@ -30,19 +30,28 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
     def deploy(self, build_path, destination, overwrite=False):
         pass
 
-    def generate_package(self, destination=None, overwrite=False, title_page=None):
+    def generate_package(self, destination=None, overwrite=False,
+                         title_page=None):
+
         with tempfile.TemporaryDirectory() as temp:
             self.copy_source(build_path=temp)
             self.make_yaml(build_path=temp, title_page=title_page)
             self.create_checksum_report(build_path=temp)
-            self.deploy(build_path=temp, destination=destination, overwrite=overwrite)
+
+            self.deploy(
+                build_path=temp, destination=destination, overwrite=overwrite
+            )
 
 
 class InplacePackage(AbsPackageCreator):
-    def make_yaml(self, build_path, title_page = None):
+    def make_yaml(self, build_path, title_page=None):
         logger = logging.getLogger(__name__)
         logger.debug("Making YAML for {}".format(build_path))
-        yml = make_yml(self._source, capture_date=datetime.now(), title_page=title_page)
+
+        yml = make_yml(
+            self._source, capture_date=datetime.now(), title_page=title_page
+        )
+
         with open(os.path.join(build_path, "meta.yml"), "w") as w:
             w.write(yml)
 
@@ -65,10 +74,14 @@ class InplacePackage(AbsPackageCreator):
 
 
 class NewPackage(AbsPackageCreator):
-    def make_yaml(self, build_path, title_page = None):
+    def make_yaml(self, build_path, title_page=None):
         logger = logging.getLogger(__name__)
         logger.debug("Making YAML for {}".format(build_path))
-        yml = make_yml(build_path, capture_date=datetime.now(), title_page=title_page)
+
+        yml = make_yml(
+            build_path, capture_date=datetime.now(), title_page=title_page
+        )
+
         with open(os.path.join(build_path, "meta.yml"), "w") as w:
             w.write(yml)
 
@@ -111,8 +124,8 @@ def create_package(source: str, destination=None, prefix=None, overwrite=False) 
     Args:
         source: Path to source files
         destination: Path where the package will be saved after prepped
-        prefix: the name of the directory that the package will be saved in. If none given, it will use the name of the
-            parent directory
+        prefix: the name of the directory that the package will be saved in.
+            If none given, it will use the name of the parent directory
         overwrite: If destination already exists, remove first it before saving.
 
     """
@@ -124,7 +137,9 @@ def create_package(source: str, destination=None, prefix=None, overwrite=False) 
         inplace_creator.generate_package(overwrite=overwrite)
 
 
-def create_new_package(source, destination, prefix=None, overwrite=False, title_page=None):
+def create_new_package(source, destination, prefix=None, overwrite=False,
+                       title_page=None):
+
     warnings.warn("Use NewPackage class instead", DeprecationWarning)
     logger = logging.getLogger(__name__)
     if not prefix:

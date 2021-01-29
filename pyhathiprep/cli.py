@@ -21,7 +21,10 @@ def destination_path(path):
 
 
 def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Replacement for HathiPrep script")
+    parser = argparse.ArgumentParser(
+        description="Replacement for HathiPrep script"
+    )
+
     try:
         version = metadata.version(pyhathiprep.__package__)
     except metadata.PackageNotFoundError:
@@ -60,7 +63,12 @@ def get_parser() -> argparse.ArgumentParser:
         '--debug',
         action="store_true",
         help="Run script in debug mode")
-    debug_group.add_argument("--log-debug", dest="log_debug", help="Save debug information to a file")
+
+    debug_group.add_argument(
+        "--log-debug",
+        dest="log_debug",
+        help="Save debug information to a file"
+    )
 
     return parser
 

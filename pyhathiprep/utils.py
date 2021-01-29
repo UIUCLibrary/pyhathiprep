@@ -20,7 +20,7 @@ def derive_package_prefix(path):
     """Derive a package prefix name based on path given
 
     Args:
-        path: 
+        path:
 
     Returns:
         Prefix

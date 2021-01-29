@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-def configure_logger(debug_mode=False, log_file=None)->logging.Logger:
+def configure_logger(debug_mode=False, log_file=None) -> logging.Logger:
     logger = logging.getLogger(__package__)
     logger.setLevel(logging.DEBUG)
     debug_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

@@ -36,7 +36,8 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
 def strip_date_quotes(func):
     """ Remove quotes added around dates
 
-    This is a hack, that's required right now because ruamel.yaml seems to inconsistent about it's date formatting.
+    This is a hack, that's required right now because ruamel.yaml seems to
+        inconsistent about it's date formatting.
 
     Args:
         func:
@@ -101,7 +102,8 @@ class HathiYmlBuilder(AbsYmlBuilder):
                 data[key] = self.data[key]
 
         # Then anything else
-        for key, value in filter(lambda i: i[0] not in ordered, self.data.items()):
+        for key, value in filter(
+                lambda i: i[0] not in ordered, self.data.items()):
             data[key] = value
 
         # Finally add the pages
