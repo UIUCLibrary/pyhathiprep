@@ -28,7 +28,7 @@ def CONFIGURATIONS = [
                 agents: [
                     build: [
                         dockerfile: [
-                            filename: 'CI/docker/python/windows/Dockerfile',
+                            filename: 'ci/docker/python/windows/jenkins/Dockerfile',
                             label: 'Windows&&Docker',
                             additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                         ]
@@ -36,7 +36,7 @@ def CONFIGURATIONS = [
                     test:[
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/Dockerfile',
+                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6',
                                 baseImage: "python:3.6-windowsservercore"
@@ -53,14 +53,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/Dockerfile',
+                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/Dockerfile',
+                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
                             ]
@@ -76,7 +76,7 @@ def CONFIGURATIONS = [
                 agents: [
                     build: [
                         dockerfile: [
-                            filename: 'CI/docker/python/linux/Dockerfile',
+                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                             label: 'linux&&docker',
                             additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                         ]
@@ -84,7 +84,7 @@ def CONFIGURATIONS = [
                     test: [
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/linux/Dockerfile',
+                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
@@ -93,14 +93,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         whl: [
                             dockerfile: [
-                                filename: 'CI/docker/python/linux/Dockerfile',
+                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/linux/Dockerfile',
+                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
@@ -153,14 +153,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/Dockerfile',
+                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/Dockerfile',
+                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
                             ]
@@ -176,7 +176,7 @@ def CONFIGURATIONS = [
                 agents: [
                     build: [
                         dockerfile: [
-                            filename: 'CI/docker/python/linux/Dockerfile',
+                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                             label: 'linux&&docker',
                             additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                         ]
@@ -184,7 +184,7 @@ def CONFIGURATIONS = [
                     test: [
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/linux/Dockerfile',
+                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
@@ -193,14 +193,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/linux/Dockerfile',
+                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/linux/Dockerfile',
+                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
@@ -253,14 +253,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/Dockerfile',
+                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/windows/Dockerfile',
+                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
                                 label: 'Windows&&Docker',
                                 additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
                             ]
@@ -277,7 +277,7 @@ def CONFIGURATIONS = [
                 agents: [
                     build: [
                         dockerfile: [
-                            filename: 'CI/docker/python/linux/Dockerfile',
+                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                             label: 'linux&&docker',
                             additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                         ]
@@ -285,7 +285,7 @@ def CONFIGURATIONS = [
                     test: [
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/linux/Dockerfile',
+                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
@@ -294,14 +294,14 @@ def CONFIGURATIONS = [
                     devpi: [
                         wheel: [
                             dockerfile: [
-                                filename: 'CI/docker/python/linux/Dockerfile',
+                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
                         ],
                         sdist: [
                             dockerfile: [
-                                filename: 'CI/docker/python/linux/Dockerfile',
+                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                 label: 'linux&&docker',
                                 additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             ]
@@ -426,10 +426,6 @@ def props = get_props()
 
 pipeline {
     agent none
-    
-    environment {
-        DEVPI = credentials("DS_devpi")
-    }
     parameters {
         booleanParam(name: "RUN_CHECKS", defaultValue: true, description: "Run checks on code")
         booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
@@ -445,7 +441,7 @@ pipeline {
         stage("Building") {
             agent {
                 dockerfile {
-                    filename 'CI/docker/python/linux/Dockerfile'
+                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
                     label "linux && docker"
                     additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                 }
@@ -504,16 +500,16 @@ pipeline {
             }
         }
         stage("Checks"){
-//             when{
-//                 equals expected: true, actual: params.RUN_CHECKS
-//             }
+            when{
+                equals expected: true, actual: params.RUN_CHECKS
+            }
             stages{
                 stage("Code Quality"){
                     stages{
                         stage("Testing"){
                             agent {
                                 dockerfile {
-                                    filename 'CI/docker/python/linux/Dockerfile'
+                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
                                     label "linux && docker"
                                     additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                 }
@@ -664,7 +660,7 @@ pipeline {
                                     def sonarqube
                                     node(){
                                         checkout scm
-                                        sonarqube = load('CI/jenkins/scripts/sonarqube.groovy')
+                                        sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
                                     }
                                     def stashes = [
                                         'COVERAGE_REPORT_DATA',
@@ -678,7 +674,7 @@ pipeline {
                                     ]
                                     def agent = [
                                             dockerfile: [
-                                                filename: 'CI/docker/python/linux/Dockerfile',
+                                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
                                                 label: 'linux && docker',
                                                 additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                                                 args: '--mount source=sonar-cache-hathiprep,target=/home/user/.sonar/cache',
@@ -727,32 +723,38 @@ pipeline {
                 stage("Run Tox Test") {
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
-                        beforeAgent true
                     }
-                    agent {
-                        dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
-                            label "linux && docker"
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        }
-                    }
-                    steps {
-                        sh "tox --version"
-                        catchError(buildResult: 'UNSTABLE', message: 'Tox Failed', stageResult: 'UNSTABLE') {
-                            sh "tox  --workdir .tox -v -e py"
-                        }
-                    }
-                    post{
-                        always{
-                            archiveArtifacts(
-                                allowEmptyArchive: true,
-                                artifacts: '.tox/py*/log/*.log,.tox/log/*.log'
-                            )
-                        }
-                        cleanup{
-                            cleanWs deleteDirs: true, patterns: [
-                                [pattern: '.tox/', type: 'INCLUDE'],
-                            ]
+                     steps {
+                        script{
+                            def tox
+                            node(){
+                                checkout scm
+                                tox = load("ci/jenkins/scripts/tox.groovy")
+                            }
+                            def windowsJobs = [:]
+                            def linuxJobs = [:]
+                            stage("Scanning Tox Environments"){
+                                parallel(
+                                    "Linux":{
+                                        linuxJobs = tox.getToxTestsParallel(
+                                                envNamePrefix: "Tox Linux",
+                                                label: "linux && docker",
+                                                dockerfile: "ci/docker/python/linux/tox/Dockerfile",
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                            )
+                                    },
+                                    "Windows":{
+                                        windowsJobs = tox.getToxTestsParallel(
+                                                envNamePrefix: "Tox Windows",
+                                                label: 'windows && docker',
+                                                dockerfile: "ci/docker/python/windows/tox/Dockerfile",
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                            )
+                                    },
+                                    failFast: true
+                                )
+                            }
+                            parallel(windowsJobs + linuxJobs)
                         }
                     }
                 }
@@ -773,7 +775,7 @@ pipeline {
                         stage("Building Source and Wheel formats"){
                             agent {
                                 dockerfile {
-                                    filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                                    filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                                     label 'linux&&docker'
                                     additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                   }
@@ -798,7 +800,7 @@ pipeline {
                         stage("Windows CX_Freeze MSI"){
                             agent {
                                 dockerfile {
-                                    filename 'CI/docker/python/windows/Dockerfile'
+                                    filename 'ci/docker/python/windows/jenkins/Dockerfile'
                                     label "windows && docker"
                                 }
                             }
@@ -842,7 +844,7 @@ pipeline {
                             stage("Testing Wheel Package"){
                                 agent {
                                     dockerfile {
-                                        filename "CI/docker/python/${PLATFORM}/Dockerfile"
+                                        filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                                         label "${PLATFORM} && docker"
                                         additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
                                     }
@@ -897,7 +899,7 @@ pipeline {
                             stage("Testing sdist Package"){
                                 agent {
                                     dockerfile {
-                                        filename "CI/docker/python/${PLATFORM}/Dockerfile"
+                                        filename "ci/docker/python/${PLATFORM}/jenkins/Dockerfile"
                                         label "${PLATFORM} && docker"
                                         additionalBuildArgs "--build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PIP_INDEX_URL --build-arg PIP_EXTRA_INDEX_URL"
                                     }
@@ -976,7 +978,7 @@ pipeline {
                 stage("Deploy to Devpi Staging") {
                     agent {
                         dockerfile {
-                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux&&docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
@@ -1083,7 +1085,7 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux&&docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                         }
@@ -1107,7 +1109,7 @@ pipeline {
                     node('linux && docker') {
                         checkout scm
                         script{
-                            docker.build("pyhathiprep:devpi",'-f ./CI/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("pyhathiprep:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
@@ -1121,7 +1123,7 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("pyhathiprep:devpi",'-f ./CI/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("pyhathiprep:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
@@ -1213,7 +1215,7 @@ pipeline {
                 stage("Tagging git Commit"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux && docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                         }
