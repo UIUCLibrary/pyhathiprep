@@ -75,7 +75,7 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(args: Optional[argparse.Namespace]=None):
+def main(args: Optional[argparse.Namespace] = None):
     parser = get_parser()
     args = args or parser.parse_args()
 
@@ -85,7 +85,7 @@ def main(args: Optional[argparse.Namespace]=None):
 
     logger.info("Prepping folder in %s", args.source)
     for package in get_packages(args.source):
-        logger.info("    {}".format(package))
+        logger.info("    %s", package)
         try:
             create_package(
                 source=package, destination=args.dest, overwrite=args.overwrite
