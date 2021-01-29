@@ -46,7 +46,7 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
 class InplacePackage(AbsPackageCreator):
     def make_yaml(self, build_path, title_page=None):
         logger = logging.getLogger(__name__)
-        logger.debug("Making YAML for {}".format(build_path))
+        logger.debug("Making YAML for %s", build_path)
 
         yml = make_yml(
             self._source, capture_date=datetime.now(), title_page=title_page
@@ -57,7 +57,7 @@ class InplacePackage(AbsPackageCreator):
 
     def create_checksum_report(self, build_path):
         logger = logging.getLogger(__name__)
-        logger.debug("Making checksum.md5 for {}".format(build_path))
+        logger.debug("Making checksum.md5 for %s", build_path)
         checksum_report = create_checksum_report(self._source)
         with open(os.path.join(build_path, "checksum.md5"), "w") as write_file:
             write_file.write(checksum_report)
@@ -69,14 +69,14 @@ class InplacePackage(AbsPackageCreator):
             if os.path.exists(save_dest):
                 if overwrite:
                     os.remove(save_dest)
-            logger.debug("Moving {} to {}".format(item.path, save_dest))
+            logger.debug("Moving %s to %s", item.path, save_dest)
             shutil.move(item.path, save_dest)
 
 
 class NewPackage(AbsPackageCreator):
     def make_yaml(self, build_path, title_page=None):
         logger = logging.getLogger(__name__)
-        logger.debug("Making YAML for {}".format(build_path))
+        logger.debug("Making YAML for %s", build_path)
 
         yml = make_yml(
             build_path, capture_date=datetime.now(), title_page=title_page
@@ -87,7 +87,7 @@ class NewPackage(AbsPackageCreator):
 
     def create_checksum_report(self, build_path):
         logger = logging.getLogger(__name__)
-        logger.debug("Making checksum.md5 for {}".format(build_path))
+        logger.debug("Making checksum.md5 for %s", build_path)
         checksum_report = create_checksum_report(build_path)
         with open(os.path.join(build_path, "checksum.md5"), "w") as write_file:
             write_file.write(checksum_report)
@@ -95,7 +95,8 @@ class NewPackage(AbsPackageCreator):
     def copy_source(self, build_path):
         logger = logging.getLogger(__name__)
         for item in filter(lambda x: x.is_file(), os.scandir(self._source)):
-            logger.debug("Copying {} to {}".format(item.path, build_path))
+            logger.debug("Copying %s to %s", item.path, build_path)
+            # logger.debug("Copying {} to {}".format(item.path, build_path))
             shutil.copyfile(item.path, os.path.join(build_path, item.name))
 
     def deploy(self, build_path, destination=None, overwrite=False):
@@ -116,7 +117,7 @@ class NewPackage(AbsPackageCreator):
         os.makedirs(new_package_path)
 
         for item in os.scandir(build_path):
-            logger.debug("Moving {} to {}".format(item.path, new_package_path))
+            logger.debug("Moving %s to %s", item.path, new_package_path)
             shutil.move(item.path, new_package_path)
 
 
