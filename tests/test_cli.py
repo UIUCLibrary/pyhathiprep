@@ -1,7 +1,9 @@
 import argparse
-from unittest.mock import Mock
+import os
+from unittest.mock import Mock, MagicMock
 
-from pyhathiprep import cli, configure_logging
+import pyhathiprep.utils
+from pyhathiprep import cli, configure_logging, package_creater
 
 
 def test_version_exits_after_being_called(monkeypatch):
@@ -37,3 +39,18 @@ def test_main_cli_reports_search_path(tmpdir, monkeypatch):
 
     # Make sure that the path searched for is passed to the logger
     assert sample_dir.strpath in prepping_folder_log_message[1][1]
+
+
+def test_create_packages_called(tmpdir, monkeypatch):
+
+    def mock_get_packages(*args, **kwargs):
+        return [
+            os.path.join(".", "dummy")
+        ]
+
+    mock_create_package = MagicMock()
+    monkeypatch.setattr(cli, "create_package", mock_create_package)
+    monkeypatch.setattr(cli, "get_packages", mock_get_packages)
+    cli.main()
+    args = mock_create_package.call_args_list[0][1]
+    assert args['source'] == "./dummy"
