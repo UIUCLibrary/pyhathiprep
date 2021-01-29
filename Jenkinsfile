@@ -20,8 +20,8 @@ SONARQUBE_CREDENTIAL_ID = "sonartoken-pyhathiprep"
 // Versions of python that are supported
 // ----------------------------------------------------------------------------
 SUPPORTED_MAC_VERSIONS = ['3.8', '3.9']
-SUPPORTED_LINUX_VERSIONS = ['3.6', '3.7']
-SUPPORTED_WINDOWS_VERSIONS = ['3.6', '3.7']
+SUPPORTED_LINUX_VERSIONS = ['3.6', '3.7', '3.8', '3.9']
+SUPPORTED_WINDOWS_VERSIONS = ['3.6', '3.7', '3.8', '3.9']
 
 defaultParameterValues = [
     USE_SONARQUBE: false
