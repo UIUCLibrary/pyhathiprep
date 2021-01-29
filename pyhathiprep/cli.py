@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pyhathiprep
 from pyhathiprep.package_creater import create_package
 from pyhathiprep.utils import get_packages
@@ -77,7 +75,7 @@ def get_parser() -> argparse.ArgumentParser:
 
 def main(args=None):
     parser = get_parser()
-    cli_args  = parser.parse_args(args)
+    cli_args = parser.parse_args(args)
 
     logger = configure_logging.configure_logger(
         debug_mode=cli_args.debug, log_file=cli_args.log_debug
