@@ -168,7 +168,7 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
             shutil.copyfile(item.path, os.path.join(temp, item.name))
 
         # make YML
-        logger.debug("Making YAML for {}".format(temp))
+        logger.debug("Making YAML for %s", temp)
 
         yml = make_yml(
             temp, capture_date=datetime.now(), title_page=title_page)
