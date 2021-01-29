@@ -18,15 +18,13 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
     def add_pagedata(self, filename, **attributes) -> None:
         if filename in self._page_data:
             raise KeyError("{} Already exists".format(filename))
-        else:
-            self._page_data[filename] = attributes
+        self._page_data[filename] = attributes
 
     @abc.abstractmethod
     def boilerplate(self) -> typing.Dict[str, str]:
         """
         Set static items.
         """
-        pass
 
     @abc.abstractmethod
     def build(self):
