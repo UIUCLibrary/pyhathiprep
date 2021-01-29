@@ -1,19 +1,19 @@
 import os
 import io
 import abc
+import functools
 import typing
 from datetime import datetime
 import ruamel.yaml  # type: ignore
 import tzlocal  # type: ignore
-import functools
 
 
 class AbsYmlBuilder(metaclass=abc.ABCMeta):
     def __init__(self):
         self.data = dict()
         self._page_data = dict()
-        for k, v in self.boilerplate().items():
-            self.data[k] = str(v)
+        for key, value in self.boilerplate().items():
+            self.data[key] = str(value)
 
     def add_pagedata(self, filename, **attributes) -> None:
         if filename in self._page_data:
@@ -74,9 +74,9 @@ class HathiYmlBuilder(AbsYmlBuilder):
         self.data[key] = value
 
     def set_capture_date(self, date: datetime):
-        tz = tzlocal.get_localzone()
+        timezone = tzlocal.get_localzone()
         if date.tzinfo is None:
-            capture_date = tz.localize(date)
+            capture_date = timezone.localize(date)
         else:
             capture_date = date
         self.data["capture_date"] = capture_date.isoformat(timespec="seconds")

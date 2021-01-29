@@ -51,8 +51,8 @@ def calculate_md5_hash(file_path: str) -> str:
         raise ValueError("Not a valid file: '{}'".format(file_path))
 
     md5_hash = hashlib.md5()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(CHUNK_SIZE), b""):
+    with open(file_path, "rb") as file:
+        for chunk in iter(lambda: file.read(CHUNK_SIZE), b""):
             md5_hash.update(chunk)
     hash_value = md5_hash.hexdigest()
     return hash_value
@@ -61,7 +61,7 @@ def calculate_md5_hash(file_path: str) -> str:
 def create_checksum_report(path) -> str:
     report_builder = HathiChecksumReport()
 
-    for f in filter(lambda x: os.path.isfile(x.path), os.scandir(path)):
-        hash_value = calculate_md5_hash(f.path)
-        report_builder.add_entry(f.name, hash_value)
+    for file in filter(lambda x: os.path.isfile(x.path), os.scandir(path)):
+        hash_value = calculate_md5_hash(file.path)
+        report_builder.add_entry(file.name, hash_value)
     return report_builder.build()

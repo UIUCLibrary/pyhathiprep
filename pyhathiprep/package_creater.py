@@ -4,10 +4,10 @@ import tempfile
 import abc
 from datetime import datetime
 import logging
+import warnings
 from pyhathiprep import make_yml
 from pyhathiprep.utils import derive_package_prefix
 from pyhathiprep.checksum import create_checksum_report
-import warnings
 
 
 class AbsPackageCreator(metaclass=abc.ABCMeta):
@@ -52,15 +52,15 @@ class InplacePackage(AbsPackageCreator):
             self._source, capture_date=datetime.now(), title_page=title_page
         )
 
-        with open(os.path.join(build_path, "meta.yml"), "w") as w:
-            w.write(yml)
+        with open(os.path.join(build_path, "meta.yml"), "w") as write_file:
+            write_file.write(yml)
 
     def create_checksum_report(self, build_path):
         logger = logging.getLogger(__name__)
         logger.debug("Making checksum.md5 for {}".format(build_path))
         checksum_report = create_checksum_report(self._source)
-        with open(os.path.join(build_path, "checksum.md5"), "w") as w:
-            w.write(checksum_report)
+        with open(os.path.join(build_path, "checksum.md5"), "w") as write_file:
+            write_file.write(checksum_report)
 
     def deploy(self, build_path, destination=None, overwrite=False):
         logger = logging.getLogger(__name__)
@@ -82,15 +82,15 @@ class NewPackage(AbsPackageCreator):
             build_path, capture_date=datetime.now(), title_page=title_page
         )
 
-        with open(os.path.join(build_path, "meta.yml"), "w") as w:
-            w.write(yml)
+        with open(os.path.join(build_path, "meta.yml"), "w") as write_file:
+            write_file.write(yml)
 
     def create_checksum_report(self, build_path):
         logger = logging.getLogger(__name__)
         logger.debug("Making checksum.md5 for {}".format(build_path))
         checksum_report = create_checksum_report(build_path)
-        with open(os.path.join(build_path, "checksum.md5"), "w") as w:
-            w.write(checksum_report)
+        with open(os.path.join(build_path, "checksum.md5"), "w") as write_file:
+            write_file.write(checksum_report)
 
     def copy_source(self, build_path):
         logger = logging.getLogger(__name__)
