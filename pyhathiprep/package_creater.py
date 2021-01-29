@@ -164,7 +164,7 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
     with tempfile.TemporaryDirectory() as temp:
         # Copy contents to temp folder
         for item in filter(lambda x: x.is_file(), os.scandir(source)):
-            logger.debug("Copying {} to {}".format(item.path, temp))
+            logger.debug("Copying %s to %s", item.path, temp)
             shutil.copyfile(item.path, os.path.join(temp, item.name))
 
         # make YML
