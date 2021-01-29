@@ -21,10 +21,7 @@ def test_version_exits_after_being_called(monkeypatch):
 def test_main_cli_reports_search_path(tmpdir, monkeypatch):
     sample_dir = tmpdir / "sample_dir"
     sample_dir.ensure_dir()
-    args = argparse.Namespace()
-    args.debug = False
-    args.log_debug = False
-    args.source = sample_dir.strpath
+    args = [sample_dir.strpath]
     mock_logger = Mock()
 
     def mock_configure_logger(debug_mode=False, log_file=None):
