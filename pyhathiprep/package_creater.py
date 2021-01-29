@@ -184,5 +184,5 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
         # On success move everything to destination
         os.makedirs(new_package_path)
         for item in os.scandir(temp):
-            logger.debug("Moving {} to {}".format(item.path, new_package_path))
+            logger.debug("Moving %s to %s", item.path, new_package_path)
             shutil.move(item.path, new_package_path)
