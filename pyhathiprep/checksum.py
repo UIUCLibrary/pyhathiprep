@@ -1,3 +1,5 @@
+"""Generating checksum reports."""
+
 import os
 import hashlib
 import abc
@@ -10,24 +12,36 @@ CHUNK_SIZE = 2 ** 20
 
 
 class AbsChecksumBuilder(metaclass=abc.ABCMeta):
-    def __init__(self) -> None:
+    """Abstract base class for generating checksums."""
 
+    def __init__(self) -> None:
+        """Create a new builder object."""
         self._files = []  # type: typing.List[HashValue]
 
     def add_entry(self, filename: str, hash_value: str) -> None:
+        """Add Additional file to for a checksum to be calculated.
+
+        Args:
+            filename:
+            hash_value:
+
+        """
         self._files.append(HashValue(filename=filename, hash=hash_value))
 
     @abc.abstractmethod
     def build(self) -> str:
-        pass
+        """Construct a new report as a string."""
 
 
 class HathiChecksumReport(AbsChecksumBuilder):
+    """Generate a new Checksum report for Hathi."""
+
     @staticmethod
     def _format_entry(filename: str, hash_value: str) -> str:
         return "{} *{}".format(hash_value, filename)
 
     def build(self) -> str:
+        """Construct a new report as a string."""
         lines = []
         for entry in sorted(self._files, key=lambda x: x.filename):
 
@@ -39,7 +53,7 @@ class HathiChecksumReport(AbsChecksumBuilder):
 
 
 def calculate_md5_hash(file_path: str) -> str:
-    """Calculate the md5 hash value of a file
+    """Calculate the md5 hash value of a file.
 
     Args:
         file_path: Path to a file
@@ -59,6 +73,15 @@ def calculate_md5_hash(file_path: str) -> str:
 
 
 def create_checksum_report(path) -> str:
+    """Generate a checksum report.
+
+    Args:
+        path: Location of the files that should be included in the report
+
+    Returns:
+        New report as a string
+
+    """
     report_builder = HathiChecksumReport()
 
     for file in filter(lambda x: os.path.isfile(x.path), os.scandir(path)):

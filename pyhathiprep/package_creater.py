@@ -1,3 +1,5 @@
+"""Module for the creation of packages."""
+
 import os
 import shutil
 import tempfile
@@ -11,28 +13,65 @@ from pyhathiprep.checksum import create_checksum_report
 
 
 class AbsPackageCreator(metaclass=abc.ABCMeta):
+    """Base class for creating packages."""
+
     def __init__(self, source: str) -> None:
+        """Create a new package.
+
+        Args:
+            source:
+        """
         self._source = source
         self._prefix = derive_package_prefix(source)
 
     @abc.abstractmethod
     def create_checksum_report(self, build_path):
-        pass
+        """Create a checksum report.
+
+        Args:
+            build_path:
+
+        """
 
     @abc.abstractmethod
     def make_yaml(self, build_path, title_page=None):
-        pass
+        """Create a yml file.
+
+        Args:
+            build_path:
+            title_page:
+
+        """
 
     def copy_source(self, build_path):
-        pass
+        """Copy the source.
+
+        Args:
+            build_path:
+
+        """
 
     @abc.abstractmethod
     def deploy(self, build_path, destination, overwrite=False):
-        pass
+        """Put the files somewhere.
+
+        Args:
+            build_path:
+            destination:
+            overwrite:
+
+        """
 
     def generate_package(self, destination=None, overwrite=False,
                          title_page=None):
+        """Generate a new package.
 
+        Args:
+            destination:
+            overwrite:
+            title_page:
+
+        """
         with tempfile.TemporaryDirectory() as temp:
             self.copy_source(build_path=temp)
             self.make_yaml(build_path=temp, title_page=title_page)
@@ -44,7 +83,16 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
 
 
 class InplacePackage(AbsPackageCreator):
+    """Build package inplace."""
+
     def make_yaml(self, build_path, title_page=None):
+        """Create a yml file.
+
+        Args:
+            build_path:
+            title_page:
+
+        """
         logger = logging.getLogger(__name__)
         logger.debug("Making YAML for %s", build_path)
 
@@ -56,6 +104,12 @@ class InplacePackage(AbsPackageCreator):
             write_file.write(yml)
 
     def create_checksum_report(self, build_path):
+        """Create a checksum report.
+
+        Args:
+            build_path:
+
+        """
         logger = logging.getLogger(__name__)
         logger.debug("Making checksum.md5 for %s", build_path)
         checksum_report = create_checksum_report(self._source)
@@ -63,6 +117,14 @@ class InplacePackage(AbsPackageCreator):
             write_file.write(checksum_report)
 
     def deploy(self, build_path, destination=None, overwrite=False):
+        """Put the files somewhere.
+
+        Args:
+            build_path:
+            destination:
+            overwrite:
+
+        """
         logger = logging.getLogger(__name__)
         for item in os.scandir(build_path):
             save_dest = os.path.join(self._source, item.name)
@@ -74,7 +136,16 @@ class InplacePackage(AbsPackageCreator):
 
 
 class NewPackage(AbsPackageCreator):
+    """Generating a new packages."""
+
     def make_yaml(self, build_path, title_page=None):
+        """Create a yml file.
+
+        Args:
+            build_path:
+            title_page:
+
+        """
         logger = logging.getLogger(__name__)
         logger.debug("Making YAML for %s", build_path)
 
@@ -86,6 +157,12 @@ class NewPackage(AbsPackageCreator):
             write_file.write(yml)
 
     def create_checksum_report(self, build_path):
+        """Create a checksum report.
+
+        Args:
+            build_path:
+
+        """
         logger = logging.getLogger(__name__)
         logger.debug("Making checksum.md5 for %s", build_path)
         checksum_report = create_checksum_report(build_path)
@@ -93,6 +170,12 @@ class NewPackage(AbsPackageCreator):
             write_file.write(checksum_report)
 
     def copy_source(self, build_path):
+        """Copy the source.
+
+        Args:
+            build_path:
+
+        """
         logger = logging.getLogger(__name__)
         for item in filter(lambda x: x.is_file(), os.scandir(self._source)):
             logger.debug("Copying %s to %s", item.path, build_path)
@@ -100,6 +183,14 @@ class NewPackage(AbsPackageCreator):
             shutil.copyfile(item.path, os.path.join(build_path, item.name))
 
     def deploy(self, build_path, destination=None, overwrite=False):
+        """Put the files somewhere.
+
+        Args:
+            build_path:
+            destination:
+            overwrite:
+
+        """
         logger = logging.getLogger(__name__)
         if not destination:
             raise AttributeError("Missing destination")
@@ -123,8 +214,7 @@ class NewPackage(AbsPackageCreator):
 
 def create_package(source: str, destination=None, prefix=None,
                    overwrite=False) -> None:
-
-    """ Create a single package folder for Hathi
+    """Create a single package folder for Hathi.
 
     Args:
         source: Path to source files
@@ -145,7 +235,16 @@ def create_package(source: str, destination=None, prefix=None,
 
 def create_new_package(source, destination, prefix=None, overwrite=False,
                        title_page=None):
+    """Create a new package.
 
+    Args:
+        source:
+        destination:
+        prefix:
+        overwrite:
+        title_page:
+
+    """
     warnings.warn("Use NewPackage class instead", DeprecationWarning)
     logger = logging.getLogger(__name__)
     if not prefix:

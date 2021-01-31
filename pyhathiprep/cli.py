@@ -1,3 +1,5 @@
+"""Command line argument parsing."""
+
 import argparse
 import os
 import pyhathiprep
@@ -11,6 +13,15 @@ except ImportError:
 
 
 def destination_path(path):
+    """Make sure the destination is valid for the cli.
+
+    Args:
+        path: Input value from the cli
+
+    Returns:
+        Absolute file path.
+
+    """
     if not os.path.exists(path):
         raise ValueError("{} is an invalid path".format(path))
 
@@ -21,6 +32,11 @@ def destination_path(path):
 
 
 def get_parser() -> argparse.ArgumentParser:
+    """Get the cli parser.
+
+    Returns: cli parser
+
+    """
     parser = argparse.ArgumentParser(
         description="Replacement for HathiPrep script"
     )
@@ -74,6 +90,12 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def main(args=None):
+    """Run the main entry point.
+
+    Args:
+        args:
+
+    """
     parser = get_parser()
     cli_args = parser.parse_args(args)
 
