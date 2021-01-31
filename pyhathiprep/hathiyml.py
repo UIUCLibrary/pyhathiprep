@@ -1,3 +1,5 @@
+"""Generating YAML data."""
+
 import os
 import io
 import abc
@@ -9,30 +11,47 @@ import tzlocal  # type: ignore
 
 
 class AbsYmlBuilder(metaclass=abc.ABCMeta):
+    """Abstract base class for creating YML builders."""
+
     def __init__(self):
+        """Create a builder yaml class."""
         self.data = dict()
         self._page_data = dict()
         for key, value in self.boilerplate().items():
             self.data[key] = str(value)
 
     def add_pagedata(self, filename, **attributes) -> None:
+        """Add pagedata.
+
+        Args:
+            filename:
+            **attributes:
+
+        """
         if filename in self._page_data:
             raise KeyError("{} Already exists".format(filename))
         self._page_data[filename] = attributes
 
     @abc.abstractmethod
     def boilerplate(self) -> typing.Dict[str, str]:
-        """
-        Set static items.
+        """Get standard data.
+
+        Returns:
+            Dictionary of prefilled data
+
         """
 
     @abc.abstractmethod
     def build(self):
-        pass
+        """Construct the YAML data.
+
+        Returns:
+            YAML data as a string.
+        """
 
 
 def strip_date_quotes(func):
-    """ Remove quotes added around dates
+    """Remove quotes added around dates.
 
     This is a hack, that's required right now because ruamel.yaml seems to
         inconsistent about it's date formatting.
@@ -62,16 +81,37 @@ def strip_date_quotes(func):
 
 
 class HathiYmlBuilder(AbsYmlBuilder):
+    """Builder for YML data."""
+
     def boilerplate(self) -> typing.Dict[str, str]:
+        """Get standard data.
+
+        Returns:
+            Dictionary of prefilled data
+
+        """
         return {
             "capture_agent": "illinois",
             "scanner_user": "University of Illinois Digitization Services"
         }
 
     def set_data(self, key, value):
+        """Set the data value.
+
+        Args:
+            key:
+            value:
+
+        """
         self.data[key] = value
 
     def set_capture_date(self, date: datetime):
+        """Set the capture date.
+
+        Args:
+            date:
+
+        """
         timezone = tzlocal.get_localzone()
         if date.tzinfo is None:
             capture_date = timezone.localize(date)
@@ -81,6 +121,12 @@ class HathiYmlBuilder(AbsYmlBuilder):
 
     @strip_date_quotes
     def build(self):
+        """Construct the YAML data.
+
+        Returns:
+            YAML data as a string.
+
+        """
         ordered = [
             "capture_date",
             "capture_agent",
@@ -151,6 +197,16 @@ def make_yml(directory: str, title_page=None, **overrides) -> str:
 
 
 def get_images(directory, page_data_extensions=(".jp2", ".tif")):
+    """Locate image files at a location.
+
+    Args:
+        directory:
+        page_data_extensions:
+
+    Yields:
+        File paths to images
+
+    """
     for root, _, files in os.walk(directory):
         for file_ in sorted(files):
             if os.path.splitext(file_)[1] in page_data_extensions:

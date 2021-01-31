@@ -1,3 +1,5 @@
+"""Package metadata."""
+
 __title__ = 'pyhathiprep'
 __version__ = '0.1.3'
 __url__ = 'https://www.library.illinois.edu/dccdocs/pyhathiprep'

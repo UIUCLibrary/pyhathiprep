@@ -1,8 +1,20 @@
+"""Module for configuring logging."""
+
 import logging
 import sys
 
 
 def configure_logger(debug_mode=False, log_file=None) -> logging.Logger:
+    """Configure a default logger.
+
+    Args:
+        debug_mode:
+        log_file:
+
+    Returns:
+        Logger
+
+    """
     logger = logging.getLogger(__package__)
     logger.setLevel(logging.DEBUG)
 

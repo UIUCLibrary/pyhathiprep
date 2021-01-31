@@ -1,9 +1,11 @@
+"""Utility functions."""
+
 import os
 import typing
 
 
 def get_packages(root) -> typing.Iterator[str]:
-    """Find packages at a given root
+    """Find packages at a given root.
 
     Args:
         root: Root directory of the packages
@@ -17,7 +19,7 @@ def get_packages(root) -> typing.Iterator[str]:
 
 
 def derive_package_prefix(path):
-    """Derive a package prefix name based on path given
+    """Derive a package prefix name based on path given.
 
     Args:
         path:
