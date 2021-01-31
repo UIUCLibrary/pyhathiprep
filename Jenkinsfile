@@ -1000,9 +1000,6 @@ pipeline {
                 beforeOptions true
             }
             agent none
-            environment{
-                DEVPI = credentials("DS_devpi")
-            }
             options{
                 lock("pyhathiprep-devpi")
             }
@@ -1042,82 +1039,6 @@ pipeline {
                         }
                     }
                 }
-//                 stage("Test DevPi packages") {
-//                     matrix {
-//                         axes {
-//                             axis {
-//                                 name 'PYTHON_VERSION'
-//                                 values '3.7', '3.8'
-//                             }
-//                             axis {
-//                                 name 'FORMAT'
-//                                 values "wheel", 'sdist'
-//                             }
-//                             axis {
-//                                 name 'PLATFORM'
-//                                 values(
-//                                     "windows",
-//                                     "linux"
-//                                 )
-//                             }
-//                         }
-//                         excludes{
-//                              exclude {
-//                                  axis {
-//                                      name 'PLATFORM'
-//                                      values 'linux'
-//                                  }
-//                                  axis {
-//                                      name 'FORMAT'
-//                                      values 'wheel'
-//                                  }
-//                              }
-//                         }
-//                         agent none
-//                         stages{
-//                             stage("Testing DevPi Package"){
-//                                 agent {
-//                                   dockerfile {
-//                                     filename "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.devpi[FORMAT].dockerfile.filename}"
-//                                     additionalBuildArgs "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.devpi[FORMAT].dockerfile.additionalBuildArgs}"
-//                                     label "${CONFIGURATIONS[PYTHON_VERSION].os[PLATFORM].agents.devpi[FORMAT].dockerfile.label}"
-//                                   }
-//                                 }
-//                                 steps{
-//                                     script{
-//                                         if(isUnix()){
-//                                             sh(
-//                                                 label: "Checking Python version",
-//                                                 script: "python --version"
-//                                             )
-//                                             sh(
-//                                                 label: "Connecting to DevPi index",
-//                                                 script: "devpi use https://devpi.library.illinois.edu --clientdir certs && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir certs && devpi use ${env.BRANCH_NAME}_staging --clientdir certs"
-//                                             )
-//                                             sh(
-//                                                 label: "Running tests on Devpi",
-//                                                 script: "devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${CONFIGURATIONS[PYTHON_VERSION].devpiSelector[FORMAT]} --clientdir certs -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v"
-//                                             )
-//                                         } else {
-//                                             bat(
-//                                                 label: "Checking Python version",
-//                                                 script: "python --version"
-//                                             )
-//                                             bat(
-//                                                 label: "Connecting to DevPi index",
-//                                                 script: "devpi use https://devpi.library.illinois.edu --clientdir certs\\ && devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\ && devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\"
-//                                             )
-//                                             bat(
-//                                                 label: "Running tests on Devpi",
-//                                                 script: "devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${CONFIGURATIONS[PYTHON_VERSION].devpiSelector[FORMAT]} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v"
-//                                             )
-//                                         }
-//                                     }
-//                                 }
-//                             }
-//                         }
-//                     }
-//                 }
                 stage('Test DevPi packages') {
                     steps{
                         script{
@@ -1348,12 +1269,6 @@ pipeline {
                                     credentialsId: DEVPI_CONFIG.credentialsId,
 
                                 )
-//                                 sh(
-//                                     label: "Connecting to DevPi Server",
-//                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
-//                                 )
-//                                 sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
-//                                 sh "devpi remove -y ${props.Name}==${props.Version} --clientdir ${WORKSPACE}/devpi"
                             }
                        }
                     }
