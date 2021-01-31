@@ -27,6 +27,20 @@ defaultParameterValues = [
     USE_SONARQUBE: false
 ]
 
+def getDevPiStagingIndex(){
+
+    if (env.TAG_NAME?.trim()){
+        return 'tag_staging'
+    } else{
+        return "${env.BRANCH_NAME}_staging"
+    }
+}
+
+def DEVPI_CONFIG = [
+    index: getDevPiStagingIndex(),
+    server: 'https://devpi.library.illinois.edu',
+    credentialsId: 'DS_devpi',
+]
 
 def CONFIGURATIONS = [
     "3.6" : [
@@ -368,6 +382,11 @@ def get_package_name(stashName, metadataFile){
         }
     }
 }
+node(){
+    checkout scm//     tox = load('ci/jenkins/scripts/tox.groovy')
+    devpi = load('ci/jenkins/scripts/devpi.groovy')
+}
+
 def startup(){
     def SONARQUBE_CREDENTIAL_ID = SONARQUBE_CREDENTIAL_ID
     parallel(
