@@ -1,6 +1,6 @@
 # escape=`
 ARG CERTS_GENERATOR_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
-ARG PYTHON_VERSION=3.7
+ARG PYTHON_VERSION=3.9
 
 FROM ${CERTS_GENERATOR_IMAGE} as certsgen
 RUN certutil -generateSSTFromWU roots.sst
