@@ -683,6 +683,7 @@ pipeline {
                         stage('Run Sonarqube Analysis'){
                             options{
                                 lock('pyhathiprep-sonarscanner')
+                                retry(3)
                             }
                             when{
                                 equals expected: true, actual: params.USE_SONARQUBE
