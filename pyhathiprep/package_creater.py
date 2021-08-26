@@ -12,6 +12,8 @@ from pyhathiprep import make_yml
 from pyhathiprep.utils import derive_package_prefix
 from pyhathiprep.checksum import create_checksum_report
 
+MOVING_LOG_MESSAGE = "Moving %s to %s"
+
 
 class AbsPackageCreator(metaclass=abc.ABCMeta):
     """Base class for creating packages."""
@@ -156,7 +158,7 @@ class InplacePackage(AbsPackageCreator):
             if os.path.exists(save_dest):
                 if overwrite:
                     os.remove(save_dest)
-            logger.debug("Moving %s to %s", item.path, save_dest)
+            logger.debug(MOVING_LOG_MESSAGE, item.path, save_dest)
             shutil.move(item.path, save_dest)
 
 
@@ -224,7 +226,7 @@ class NewPackage(AbsPackageCreator):
         os.makedirs(new_package_path)
 
         for item in os.scandir(build_path):
-            logger.debug("Moving %s to %s", item.path, new_package_path)
+            logger.debug(MOVING_LOG_MESSAGE, item.path, new_package_path)
             shutil.move(item.path, new_package_path)
 
 
@@ -289,5 +291,5 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
         # On success move everything to destination
         os.makedirs(new_package_path)
         for item in os.scandir(temp):
-            logger.debug("Moving %s to %s", item.path, new_package_path)
+            logger.debug(MOVING_LOG_MESSAGE, item.path, new_package_path)
             shutil.move(item.path, new_package_path)
