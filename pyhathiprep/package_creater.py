@@ -170,9 +170,8 @@ class InplacePackage(AbsPackageCreator):
         logger = logging.getLogger(__name__)
         for item in os.scandir(build_path):
             save_dest = os.path.join(self._source, item.name)
-            if os.path.exists(save_dest):
-                if overwrite:
-                    os.remove(save_dest)
+            if os.path.exists(save_dest) and overwrite:
+                os.remove(save_dest)
             logger.debug(MOVING_LOG_MESSAGE, item.path, save_dest)
             shutil.move(item.path, save_dest)
 
