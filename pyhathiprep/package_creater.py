@@ -35,6 +35,21 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
         """
 
     @staticmethod
+    def generate_checksum_report(
+            source_path: str,
+            destination_path: str,
+    ):
+        logger = logging.getLogger(__name__)
+        logger.debug("Making checksum.md5 for %s", source_path)
+        checksum_report = create_checksum_report(source_path)
+        with open(
+                os.path.join(destination_path, "checksum.md5"),
+                "w",
+                encoding="utf-8"
+        ) as write_file:
+            write_file.write(checksum_report)
+
+    @staticmethod
     def generate_meta_yaml(
             source_path: str,
             destination_path: str,
@@ -121,15 +136,10 @@ class InplacePackage(AbsPackageCreator):
             build_path:
 
         """
-        logger = logging.getLogger(__name__)
-        logger.debug("Making checksum.md5 for %s", build_path)
-        checksum_report = create_checksum_report(self._source)
-        with open(
-                os.path.join(build_path, "checksum.md5"),
-                "w",
-                encoding="utf-8"
-        ) as write_file:
-            write_file.write(checksum_report)
+        self.generate_checksum_report(
+            source_path=self._source,
+            destination_path=build_path
+        )
 
     def deploy(self, build_path, destination=None, overwrite=False):
         """Put the files somewhere.
@@ -170,15 +180,10 @@ class NewPackage(AbsPackageCreator):
             build_path:
 
         """
-        logger = logging.getLogger(__name__)
-        logger.debug("Making checksum.md5 for %s", build_path)
-        checksum_report = create_checksum_report(build_path)
-        with open(
-                os.path.join(build_path, "checksum.md5"),
-                "w",
-                encoding="utf-8"
-        ) as write_file:
-            write_file.write(checksum_report)
+        self.generate_checksum_report(
+            source_path=build_path,
+            destination_path=build_path
+        )
 
     def copy_source(self, build_path):
         """Copy the source.
@@ -277,13 +282,9 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
             logger.debug("Copying %s to %s", item.path, temp)
             shutil.copyfile(item.path, os.path.join(temp, item.name))
 
-        # make YML
+        # make YML and checksum
         AbsPackageCreator.generate_meta_yaml(temp, temp, title_page)
-
-        logger.debug("Making checksum.md5 for %s", temp)
-        checksum_report = create_checksum_report(temp)
-        with open(os.path.join(temp, "checksum.md5"), "w") as write_file:
-            write_file.write(checksum_report)
+        AbsPackageCreator.generate_checksum_report(temp, temp)
 
         # On success move everything to destination
         os.makedirs(new_package_path)
