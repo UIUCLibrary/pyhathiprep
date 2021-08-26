@@ -4,12 +4,15 @@ import os
 import shutil
 import tempfile
 import abc
+import typing
 from datetime import datetime
 import logging
 import warnings
 from pyhathiprep import make_yml
 from pyhathiprep.utils import derive_package_prefix
 from pyhathiprep.checksum import create_checksum_report
+
+MOVING_LOG_MESSAGE = "Moving %s to %s"
 
 
 class AbsPackageCreator(metaclass=abc.ABCMeta):
@@ -32,6 +35,54 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
             build_path:
 
         """
+
+    @staticmethod
+    def generate_checksum_report(
+            source_path: str,
+            destination_path: str,
+    ):
+        """Generate checksum report.
+
+        Args:
+            source_path: Path to files used in checksum report.
+            destination_path: Output file path the save the report.
+
+        """
+        logger = logging.getLogger(__name__)
+        logger.debug("Making checksum.md5 for %s", source_path)
+        checksum_report = create_checksum_report(source_path)
+        with open(
+                os.path.join(destination_path, "checksum.md5"),
+                "w",
+                encoding="utf-8"
+        ) as write_file:
+            write_file.write(checksum_report)
+
+    @staticmethod
+    def generate_meta_yaml(
+            source_path: str,
+            destination_path: str,
+            title_page: typing.Optional[str]
+    ):
+        """Generate meta.yaml file.
+
+        Args:
+            source_path: path to find files
+            destination_path: path to the location to write the file
+            title_page: title page for the package
+
+        """
+        logger = logging.getLogger(__name__)
+        logger.debug("Making YAML for %s", destination_path)
+        yml = make_yml(
+            source_path, capture_date=datetime.now(), title_page=title_page
+        )
+        with open(
+                os.path.join(destination_path, "meta.yml"),
+                "w",
+                encoding="utf-8"
+        ) as write_file:
+            write_file.write(yml)
 
     @abc.abstractmethod
     def make_yaml(self, build_path, title_page=None):
@@ -93,15 +144,7 @@ class InplacePackage(AbsPackageCreator):
             title_page:
 
         """
-        logger = logging.getLogger(__name__)
-        logger.debug("Making YAML for %s", build_path)
-
-        yml = make_yml(
-            self._source, capture_date=datetime.now(), title_page=title_page
-        )
-
-        with open(os.path.join(build_path, "meta.yml"), "w") as write_file:
-            write_file.write(yml)
+        self.generate_meta_yaml(self._source, build_path, title_page)
 
     def create_checksum_report(self, build_path):
         """Create a checksum report.
@@ -110,11 +153,10 @@ class InplacePackage(AbsPackageCreator):
             build_path:
 
         """
-        logger = logging.getLogger(__name__)
-        logger.debug("Making checksum.md5 for %s", build_path)
-        checksum_report = create_checksum_report(self._source)
-        with open(os.path.join(build_path, "checksum.md5"), "w") as write_file:
-            write_file.write(checksum_report)
+        self.generate_checksum_report(
+            source_path=self._source,
+            destination_path=build_path
+        )
 
     def deploy(self, build_path, destination=None, overwrite=False):
         """Put the files somewhere.
@@ -131,7 +173,7 @@ class InplacePackage(AbsPackageCreator):
             if os.path.exists(save_dest):
                 if overwrite:
                     os.remove(save_dest)
-            logger.debug("Moving %s to %s", item.path, save_dest)
+            logger.debug(MOVING_LOG_MESSAGE, item.path, save_dest)
             shutil.move(item.path, save_dest)
 
 
@@ -146,15 +188,7 @@ class NewPackage(AbsPackageCreator):
             title_page:
 
         """
-        logger = logging.getLogger(__name__)
-        logger.debug("Making YAML for %s", build_path)
-
-        yml = make_yml(
-            build_path, capture_date=datetime.now(), title_page=title_page
-        )
-
-        with open(os.path.join(build_path, "meta.yml"), "w") as write_file:
-            write_file.write(yml)
+        self.generate_meta_yaml(build_path, build_path, title_page)
 
     def create_checksum_report(self, build_path):
         """Create a checksum report.
@@ -163,11 +197,10 @@ class NewPackage(AbsPackageCreator):
             build_path:
 
         """
-        logger = logging.getLogger(__name__)
-        logger.debug("Making checksum.md5 for %s", build_path)
-        checksum_report = create_checksum_report(build_path)
-        with open(os.path.join(build_path, "checksum.md5"), "w") as write_file:
-            write_file.write(checksum_report)
+        self.generate_checksum_report(
+            source_path=build_path,
+            destination_path=build_path
+        )
 
     def copy_source(self, build_path):
         """Copy the source.
@@ -208,7 +241,7 @@ class NewPackage(AbsPackageCreator):
         os.makedirs(new_package_path)
 
         for item in os.scandir(build_path):
-            logger.debug("Moving %s to %s", item.path, new_package_path)
+            logger.debug(MOVING_LOG_MESSAGE, item.path, new_package_path)
             shutil.move(item.path, new_package_path)
 
 
@@ -266,22 +299,12 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
             logger.debug("Copying %s to %s", item.path, temp)
             shutil.copyfile(item.path, os.path.join(temp, item.name))
 
-        # make YML
-        logger.debug("Making YAML for %s", temp)
-
-        yml = make_yml(
-            temp, capture_date=datetime.now(), title_page=title_page)
-
-        with open(os.path.join(temp, "meta.yml"), "w") as w:
-            w.write(yml)
-
-        logger.debug("Making checksum.md5 for %s", temp)
-        checksum_report = create_checksum_report(temp)
-        with open(os.path.join(temp, "checksum.md5"), "w") as write_file:
-            write_file.write(checksum_report)
+        # make YML and checksum
+        AbsPackageCreator.generate_meta_yaml(temp, temp, title_page)
+        AbsPackageCreator.generate_checksum_report(temp, temp)
 
         # On success move everything to destination
         os.makedirs(new_package_path)
         for item in os.scandir(temp):
-            logger.debug("Moving %s to %s", item.path, new_package_path)
+            logger.debug(MOVING_LOG_MESSAGE, item.path, new_package_path)
             shutil.move(item.path, new_package_path)

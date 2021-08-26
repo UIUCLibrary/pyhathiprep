@@ -113,5 +113,5 @@ def main(args=None):
                 overwrite=cli_args.overwrite
             )
 
-        except FileExistsError as e:
-            print(e)
+        except FileExistsError as error:
+            print(error)
