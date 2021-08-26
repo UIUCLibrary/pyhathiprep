@@ -41,6 +41,13 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
             source_path: str,
             destination_path: str,
     ):
+        """Generate checksum report.
+
+        Args:
+            source_path: Path to files used in checksum report.
+            destination_path: Output file path the save the report.
+
+        """
         logger = logging.getLogger(__name__)
         logger.debug("Making checksum.md5 for %s", source_path)
         checksum_report = create_checksum_report(source_path)
@@ -57,6 +64,14 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
             destination_path: str,
             title_page: typing.Optional[str]
     ):
+        """Generate meta.yaml file.
+
+        Args:
+            source_path: path to find files
+            destination_path: path to the location to write the file
+            title_page: title page for the package
+
+        """
         logger = logging.getLogger(__name__)
         logger.debug("Making YAML for %s", destination_path)
         yml = make_yml(
