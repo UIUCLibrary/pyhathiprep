@@ -100,7 +100,11 @@ class InplacePackage(AbsPackageCreator):
             self._source, capture_date=datetime.now(), title_page=title_page
         )
 
-        with open(os.path.join(build_path, "meta.yml"), "w") as write_file:
+        with open(
+                os.path.join(build_path, "meta.yml"),
+                "w",
+                encoding="utf-8"
+        ) as write_file:
             write_file.write(yml)
 
     def create_checksum_report(self, build_path):
@@ -113,7 +117,11 @@ class InplacePackage(AbsPackageCreator):
         logger = logging.getLogger(__name__)
         logger.debug("Making checksum.md5 for %s", build_path)
         checksum_report = create_checksum_report(self._source)
-        with open(os.path.join(build_path, "checksum.md5"), "w") as write_file:
+        with open(
+                os.path.join(build_path, "checksum.md5"),
+                "w",
+                encoding="utf-8"
+        ) as write_file:
             write_file.write(checksum_report)
 
     def deploy(self, build_path, destination=None, overwrite=False):
@@ -153,7 +161,11 @@ class NewPackage(AbsPackageCreator):
             build_path, capture_date=datetime.now(), title_page=title_page
         )
 
-        with open(os.path.join(build_path, "meta.yml"), "w") as write_file:
+        with open(
+                os.path.join(build_path, "meta.yml"),
+                "w",
+                encoding="utf-8"
+        ) as write_file:
             write_file.write(yml)
 
     def create_checksum_report(self, build_path):
@@ -166,7 +178,11 @@ class NewPackage(AbsPackageCreator):
         logger = logging.getLogger(__name__)
         logger.debug("Making checksum.md5 for %s", build_path)
         checksum_report = create_checksum_report(build_path)
-        with open(os.path.join(build_path, "checksum.md5"), "w") as write_file:
+        with open(
+                os.path.join(build_path, "checksum.md5"),
+                "w",
+                encoding="utf-8"
+        ) as write_file:
             write_file.write(checksum_report)
 
     def copy_source(self, build_path):
