@@ -15,8 +15,8 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
 
     def __init__(self):
         """Create a builder yaml class."""
-        self.data = dict()
-        self._page_data = dict()
+        self.data = {}
+        self._page_data = {}
         for key, value in self.boilerplate().items():
             self.data[key] = str(value)
 
@@ -138,7 +138,7 @@ class HathiYmlBuilder(AbsYmlBuilder):
         yml.indent = 4
         yml.default_flow_style = False
 
-        data = dict()
+        data = {}
 
         # Put the items require an order to them first
         for key in ordered:
@@ -188,7 +188,7 @@ def make_yml(directory: str, title_page=None, **overrides) -> str:
             builder.set_data(key, value)
 
     for image in get_images(directory):
-        attribute = dict()
+        attribute = {}
         relative_path = os.path.relpath(image, directory)
         if relative_path == title_page:
             attribute["label"] = "TITLE"
