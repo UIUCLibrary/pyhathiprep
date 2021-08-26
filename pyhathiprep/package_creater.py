@@ -4,6 +4,7 @@ import os
 import shutil
 import tempfile
 import abc
+import typing
 from datetime import datetime
 import logging
 import warnings
@@ -32,6 +33,24 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
             build_path:
 
         """
+
+    @staticmethod
+    def generate_meta_yaml(
+            source_path: str,
+            destination_path: str,
+            title_page: typing.Optional[str]
+    ):
+        logger = logging.getLogger(__name__)
+        logger.debug("Making YAML for %s", destination_path)
+        yml = make_yml(
+            source_path, capture_date=datetime.now(), title_page=title_page
+        )
+        with open(
+                os.path.join(destination_path, "meta.yml"),
+                "w",
+                encoding="utf-8"
+        ) as write_file:
+            write_file.write(yml)
 
     @abc.abstractmethod
     def make_yaml(self, build_path, title_page=None):
@@ -93,19 +112,7 @@ class InplacePackage(AbsPackageCreator):
             title_page:
 
         """
-        logger = logging.getLogger(__name__)
-        logger.debug("Making YAML for %s", build_path)
-
-        yml = make_yml(
-            self._source, capture_date=datetime.now(), title_page=title_page
-        )
-
-        with open(
-                os.path.join(build_path, "meta.yml"),
-                "w",
-                encoding="utf-8"
-        ) as write_file:
-            write_file.write(yml)
+        self.generate_meta_yaml(self._source, build_path, title_page)
 
     def create_checksum_report(self, build_path):
         """Create a checksum report.
@@ -154,19 +161,7 @@ class NewPackage(AbsPackageCreator):
             title_page:
 
         """
-        logger = logging.getLogger(__name__)
-        logger.debug("Making YAML for %s", build_path)
-
-        yml = make_yml(
-            build_path, capture_date=datetime.now(), title_page=title_page
-        )
-
-        with open(
-                os.path.join(build_path, "meta.yml"),
-                "w",
-                encoding="utf-8"
-        ) as write_file:
-            write_file.write(yml)
+        self.generate_meta_yaml(build_path, build_path, title_page)
 
     def create_checksum_report(self, build_path):
         """Create a checksum report.
@@ -283,13 +278,7 @@ def create_new_package(source, destination, prefix=None, overwrite=False,
             shutil.copyfile(item.path, os.path.join(temp, item.name))
 
         # make YML
-        logger.debug("Making YAML for %s", temp)
-
-        yml = make_yml(
-            temp, capture_date=datetime.now(), title_page=title_page)
-
-        with open(os.path.join(temp, "meta.yml"), "w") as w:
-            w.write(yml)
+        AbsPackageCreator.generate_meta_yaml(temp, temp, title_page)
 
         logger.debug("Making checksum.md5 for %s", temp)
         checksum_report = create_checksum_report(temp)
