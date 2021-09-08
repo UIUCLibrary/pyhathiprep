@@ -9,6 +9,7 @@ setup(
         "tzlocal",
         'importlib_resources;python_version<"3.7"'
     ],
+    package_data={"pyhathiprep": ["py.typed"]},
     test_suite="tests",
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
