@@ -1,5 +1,0 @@
-cx_Freeze
-wheel
-six
-appdirs
-packaging

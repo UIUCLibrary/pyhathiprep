@@ -810,54 +810,28 @@ pipeline {
                 beforeAgent true
             }
             stages{
-                stage("Building"){
-                    parallel{
-                        stage("Building Source and Wheel formats"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
-                                    label 'linux&&docker'
-                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                  }
-                            }
-                            steps{
-                                timeout(5){
-                                    sh "python -m pep517.build ."
-                                }
-                            }
-                            post{
-                                success{
-                                    archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.g,dist/*.zip", fingerprint: true
-                                }
-                                always{
-                                    stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: "PYTHON_PACKAGES"
-                                }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.zip', type: 'INCLUDE']]
-                                }
-                            }
+                stage("Building Source and Wheel formats"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
+                            label 'linux&&docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                          }
+                    }
+                    steps{
+                        timeout(5){
+                            sh "python -m pep517.build ."
                         }
-                        stage("Windows CX_Freeze MSI"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/windows/jenkins/Dockerfile'
-                                    label "windows && docker"
-                                }
-                            }
-                            steps{
-                                timeout(5){
-                                    bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ${WORKSPACE}/build/msi -d ${WORKSPACE}/dist"
-                                }
-                            }
-                            post{
-                                success{
-                                    stash includes: "dist/*.msi", name: "msi"
-                                    archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
-                                }
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.msi', type: 'INCLUDE']]
-                                }
-                            }
+                    }
+                    post{
+                        success{
+                            archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.g,dist/*.zip", fingerprint: true
+                        }
+                        always{
+                            stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: "PYTHON_PACKAGES"
+                        }
+                        cleanup{
+                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.zip', type: 'INCLUDE']]
                         }
                     }
                 }
