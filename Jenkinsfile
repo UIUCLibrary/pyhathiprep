@@ -438,16 +438,14 @@ def startup(){
     )
 }
 def get_props(){
-    stage('Reading Package Metadata'){
-        node(){
-            unstash 'DIST-INFO'
-            def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
-            def metadata = readProperties(interpolate: true, file: metadataFile.path )
-            echo """Version = ${metadata.Version}
+    node(){
+        unstash 'DIST-INFO'
+        def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
+        def metadata = readProperties(interpolate: true, file: metadataFile.path )
+        echo """Version = ${metadata.Version}
 Name = ${metadata.Name}
 """
-            return metadata
-        }
+        return metadata
     }
 }
 
