@@ -558,18 +558,13 @@ pipeline {
                                         stage('PyTest'){
                                             steps{
                                                 catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
-                                                    sh(label:"Running pytest",
-                                                       script: """mkdir -p reports/pytest/
-                                                               """
+                                                    sh(label: 'Running pytest',
+                                                       script: '''mkdir -p reports/pytest/
+                                                                  coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml
+                                                                  '''
+
                                                     )
                                                 }
-//                                                 catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
-//                                                     sh(label:"Running pytest",
-//                                                        script: """mkdir -p reports/pytest/
-//                                                                   coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest
-//                                                                """
-//                                                     )
-//                                                 }
                                             }
 //                                             post{
 //                                                 always{
