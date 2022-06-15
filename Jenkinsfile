@@ -695,10 +695,10 @@ pipeline {
                                     steps{
                                         script{
                                             def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
-                                            def props = get_props()
+                                            def newProps = get_props()
                                             sonarqube.sonarcloudSubmit(
                                                 credentialsId: 'sonarcloud-token',
-                                                projectVersion: props.Version
+                                                projectVersion: newProps.Version
                                             )
                                         }
                                     }
