@@ -695,7 +695,10 @@ pipeline {
                                     steps{
                                         script{
                                             def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
-                                            echo 'Run Sonarqube Analysis'
+                                            sonarqube.sonarcloudSubmit(
+                                                credentialsId: 'sonarcloud-token',
+                                                projectVersion: props.Version
+                                            )
                                         }
                                     }
                                 }
