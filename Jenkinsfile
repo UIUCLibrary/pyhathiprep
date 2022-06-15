@@ -568,7 +568,6 @@ pipeline {
                                             }
                                             post{
                                                 always{
-//                                                     stash includes: 'reports/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
                                                     junit 'reports/pytest/junit-pytest.xml'
                                                 }
                                             }
