@@ -13,6 +13,10 @@ def sonarcloudSubmit(args = [:]){
     args.outputJson = args.outputJson ? args.outputJson: "reports/sonar-report.json"
     withSonarQubeEnv(installationName:'sonarcloud', credentialsId: args.credentialsId) {
         echo "args = ${args}"
+        echo "${props.Version}"
+        echo "${env.BUILD_TAG}"
+        echo "${env.CHANGE_ID}"
+        echo "${env.CHANGE_TARGET}"
         def command = 'ls'
 //         if (env.CHANGE_ID){
 //             command = "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET} -Dsonar.cfamily.cache.enabled=false -Dsonar.cfamily.threads=\$(grep -c ^processor /proc/cpuinfo) -Dsonar.cfamily.build-wrapper-output=build/build_wrapper_output_directory"
