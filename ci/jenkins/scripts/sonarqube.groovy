@@ -13,9 +13,9 @@ def sonarcloudSubmit(args = [:]){
     args.outputJson = args.outputJson ? args.outputJson: "reports/sonar-report.json"
     def buildString = args['buildString'] ? args['buildString']: env.BUILD_TAG
     def isPullRequest = args['pullRequest'] ? true: false
+    def projectVersion = args.projectVersion
     withSonarQubeEnv(installationName:'sonarcloud', credentialsId: args.credentialsId) {
         echo "args = ${args}"
-        def projectVersion = args.version
 
         if (isPullRequest == true){
             def pullRequestKey = args.pullRequest.source
