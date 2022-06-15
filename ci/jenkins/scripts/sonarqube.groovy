@@ -11,9 +11,11 @@ def get_sonarqube_unresolved_issues(report_task_file){
 
 def sonarcloudSubmit(args = [:]){
     args.outputJson = args.outputJson ? args.outputJson: "reports/sonar-report.json"
+    def buildString = args['buildString'] ? args['buildString']: env.BUILD_TAG
+    def isPullRequest = args['pullRequest'] ? true: false
     withSonarQubeEnv(installationName:'sonarcloud', credentialsId: args.credentialsId) {
         echo "args = ${args}"
-        def projectVersion = props.Version
+        def projectVersion = args.version
 
         if (isPullRequest == true){
             def pullRequestKey = args.pullRequest.source
