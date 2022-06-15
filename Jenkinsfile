@@ -555,8 +555,9 @@ pipeline {
                                 }
                                 stage('Run Tests'){
                                     parallel {
-//                                         stage('PyTest'){
-//                                             steps{
+                                        stage('PyTest'){
+                                            steps{
+                                                echo 'Running pytest'
 //                                                 catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
 //                                                     sh(label:"Running pytest",
 //                                                        script: """mkdir -p reports/pytest/
@@ -564,14 +565,14 @@ pipeline {
 //                                                                """
 //                                                     )
 //                                                 }
-//                                             }
+                                            }
 //                                             post{
 //                                                 always{
 //                                                     stash includes: 'reports/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
 //                                                     junit 'reports/pytest/junit-pytest.xml'
 //                                                 }
 //                                             }
-//                                         }
+                                        }
                                         stage("Documentation"){
                                             steps{
                                                 sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest"
