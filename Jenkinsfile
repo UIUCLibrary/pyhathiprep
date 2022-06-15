@@ -670,6 +670,14 @@ pipeline {
                                             )
                                         }
                                     }
+                                    post {
+                                        always{
+                                            node(''){
+                                                unstash 'sonarqube artifacts'
+                                                recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             post{
