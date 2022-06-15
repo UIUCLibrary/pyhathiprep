@@ -548,6 +548,11 @@ pipeline {
                                 }
                             }
                             stages{
+                                stage('Setting up Tests'){
+                                    steps{
+                                        sh('mkdir -p reports/')
+                                    }
+                                }
                                 stage("Run Tests"){
                                     parallel {
                                         stage("PyTest"){
