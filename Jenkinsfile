@@ -546,6 +546,7 @@ pipeline {
                                     filename 'ci/docker/python/linux/jenkins/Dockerfile'
                                     label "linux && docker && x86"
                                     additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                    args '--mount source=sonar-cache-tyko,target=/opt/sonar/.sonar/cache'
                                 }
                             }
                             stages{
@@ -683,81 +684,93 @@ pipeline {
                                         }
                                     }
                                 }
-                            }
-                        }
-                        stage('Run Sonarqube Analysis'){
-                            options{
-                                lock('pyhathiprep-sonarscanner')
-                                retry(3)
-                            }
-                            when{
-                                equals expected: true, actual: params.USE_SONARQUBE
-                                beforeAgent true
-                                beforeOptions true
-                            }
-                            steps{
-                                script{
-                                    def sonarqube
-                                    node(){
-                                        checkout scm
-                                        sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
+                                stage('Run Sonarqube Analysis'){
+                                    options{
+                                        lock('pyhathiprep-sonarscanner')
+                                        retry(3)
                                     }
-                                    def stashes = [
-                                        'COVERAGE_REPORT_DATA',
-                                        'PYTEST_UNIT_TEST_RESULTS',
-                                        'PYLINT_REPORT',
-                                        'FLAKE8_REPORT'
-                                    ]
-                                    def sonarqubeConfig = [
-                                        installationName: 'sonarcloud',
-                                        credentialsId: SONARQUBE_CREDENTIAL_ID,
-                                    ]
-                                    def agent = [
-                                            dockerfile: [
-                                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                                label: 'linux && docker && x86',
-                                                additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                args: '--mount source=sonar-cache-hathiprep,target=/home/user/.sonar/cache',
-                                            ]
-                                        ]
-                                    if (env.CHANGE_ID){
-                                        sonarqube.submitToSonarcloud(
-                                            agent: agent,
-                                            reportStashes: stashes,
-                                            artifactStash: 'sonarqube artifacts',
-                                            sonarqube: sonarqubeConfig,
-                                            pullRequest: [
-                                                source: env.CHANGE_ID,
-                                                destination: env.BRANCH_NAME,
-                                            ],
-                                            package: [
-                                                version: props.Version,
-                                                name: props.Name
-                                            ],
-                                        )
-                                    } else {
-                                        sonarqube.submitToSonarcloud(
-                                            agent: agent,
-                                            reportStashes: stashes,
-                                            artifactStash: 'sonarqube artifacts',
-                                            sonarqube: sonarqubeConfig,
-                                            package: [
-                                                version: props.Version,
-                                                name: props.Name
-                                            ]
-                                        )
+                                    when{
+                                        equals expected: true, actual: params.USE_SONARQUBE
                                     }
-                                }
-                            }
-                            post {
-                                always{
-                                    node(''){
-                                        unstash 'sonarqube artifacts'
-                                        recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                                    steps{
+                                        echo 'Run Sonarqube Analysis'
                                     }
                                 }
                             }
                         }
+//                         stage('Run Sonarqube Analysis'){
+//                             options{
+//                                 lock('pyhathiprep-sonarscanner')
+//                                 retry(3)
+//                             }
+//                             when{
+//                                 equals expected: true, actual: params.USE_SONARQUBE
+//                                 beforeAgent true
+//                                 beforeOptions true
+//                             }
+//                             steps{
+//                                 script{
+//                                     def sonarqube
+//                                     node(){
+//                                         checkout scm
+//                                         sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
+//                                     }
+//                                     def stashes = [
+//                                         'COVERAGE_REPORT_DATA',
+//                                         'PYTEST_UNIT_TEST_RESULTS',
+//                                         'PYLINT_REPORT',
+//                                         'FLAKE8_REPORT'
+//                                     ]
+//                                     def sonarqubeConfig = [
+//                                         installationName: 'sonarcloud',
+//                                         credentialsId: SONARQUBE_CREDENTIAL_ID,
+//                                     ]
+//                                     def agent = [
+//                                             dockerfile: [
+//                                                 filename: 'ci/docker/python/linux/jenkins/Dockerfile',
+//                                                 label: 'linux && docker && x86',
+//                                                 additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+//                                                 args: '--mount source=sonar-cache-hathiprep,target=/home/user/.sonar/cache',
+//                                             ]
+//                                         ]
+//                                     if (env.CHANGE_ID){
+//                                         sonarqube.submitToSonarcloud(
+//                                             agent: agent,
+//                                             reportStashes: stashes,
+//                                             artifactStash: 'sonarqube artifacts',
+//                                             sonarqube: sonarqubeConfig,
+//                                             pullRequest: [
+//                                                 source: env.CHANGE_ID,
+//                                                 destination: env.BRANCH_NAME,
+//                                             ],
+//                                             package: [
+//                                                 version: props.Version,
+//                                                 name: props.Name
+//                                             ],
+//                                         )
+//                                     } else {
+//                                         sonarqube.submitToSonarcloud(
+//                                             agent: agent,
+//                                             reportStashes: stashes,
+//                                             artifactStash: 'sonarqube artifacts',
+//                                             sonarqube: sonarqubeConfig,
+//                                             package: [
+//                                                 version: props.Version,
+//                                                 name: props.Name
+//                                             ]
+//                                         )
+//                                     }
+//                                 }
+//                             }
+//                             post {
+//                                 always{
+//                                     node(''){
+//                                         unstash 'sonarqube artifacts'
+//                                         recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+//                                     }
+//                                 }
+//                             }
+//                         }
                     }
                 }
                 stage("Run Tox Test") {
