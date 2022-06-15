@@ -438,16 +438,14 @@ def startup(){
     )
 }
 def get_props(){
-    stage('Reading Package Metadata'){
-        node(){
-            unstash 'DIST-INFO'
-            def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
-            def metadata = readProperties(interpolate: true, file: metadataFile.path )
-            echo """Version = ${metadata.Version}
+    node(){
+        unstash 'DIST-INFO'
+        def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
+        def metadata = readProperties(interpolate: true, file: metadataFile.path )
+        echo """Version = ${metadata.Version}
 Name = ${metadata.Name}
 """
-            return metadata
-        }
+        return metadata
     }
 }
 
@@ -546,33 +544,31 @@ pipeline {
                                     filename 'ci/docker/python/linux/jenkins/Dockerfile'
                                     label "linux && docker && x86"
                                     additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                    args '--mount source=sonar-cache-tyko,target=/opt/sonar/.sonar/cache'
                                 }
                             }
                             stages{
-                                stage("Run Tests"){
+                                stage('Setting up Tests'){
+                                    steps{
+                                        sh('mkdir -p reports/')
+                                    }
+                                }
+                                stage('Run Tests'){
                                     parallel {
-                                        stage("PyTest"){
+                                        stage('PyTest'){
                                             steps{
                                                 catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
-                                                    sh(label:"Running pytest",
-                                                       script: """mkdir -p reports/pytest/
-                                                                  coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest
-                                                               """
+                                                    sh(label: 'Running pytest',
+                                                       script: '''mkdir -p reports/pytest/
+                                                                  coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml
+                                                                  '''
+
                                                     )
                                                 }
                                             }
                                             post{
                                                 always{
-                                                    stash includes: 'reports/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
                                                     junit 'reports/pytest/junit-pytest.xml'
-                                                }
-                                                cleanup{
-                                                    cleanWs(
-                                                        deleteDirs: true,
-                                                        patterns: [
-                                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                                        ]
-                                                    )
                                                 }
                                             }
                                         }
@@ -595,15 +591,6 @@ pipeline {
                                                 always {
                                                     recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
                                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                                                }
-                                                cleanup{
-                                                    cleanWs(
-                                                        deleteDirs: true,
-                                                        patterns: [
-                                                            [pattern: 'reports/mypy/', type: 'INCLUDE'],
-                                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                                        ]
-                                                    )
                                                 }
                                             }
                                         }
@@ -649,9 +636,6 @@ pipeline {
                                                     stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
                                                     recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
                                                 }
-                                                cleanup{
-                                                    cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
-                                                }
                                             }
                                         }
                                     }
@@ -669,92 +653,48 @@ pipeline {
                                                             ],
                                                         sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                                         }
-                                        cleanup{
-                                            cleanWs(
-                                                deleteDirs: true,
-                                                patterns: [
-                                                    [pattern: "dist/", type: 'INCLUDE'],
-                                                    [pattern: 'build/', type: 'INCLUDE'],
-                                                    [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
-                                                    [pattern: 'reports/', type: 'INCLUDE'],
-                                                    [pattern: 'logs/', type: 'INCLUDE']
-                                                    ]
+                                    }
+                                }
+                                stage('Run Sonarqube Analysis'){
+                                    options{
+                                        lock('pyhathiprep-sonarscanner')
+                                        retry(3)
+                                    }
+                                    when{
+                                        equals expected: true, actual: params.USE_SONARQUBE
+                                    }
+                                    steps{
+                                        script{
+                                            def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
+                                            def newProps = get_props()
+                                            sonarqube.sonarcloudSubmit(
+                                                credentialsId: SONARQUBE_CREDENTIAL_ID,
+                                                projectVersion: newProps.Version
                                             )
+                                        }
+                                    }
+                                    post {
+                                        always{
+                                            recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                         }
                                     }
                                 }
                             }
-                        }
-                        stage('Run Sonarqube Analysis'){
-                            options{
-                                lock('pyhathiprep-sonarscanner')
-                                retry(3)
-                            }
-                            when{
-                                equals expected: true, actual: params.USE_SONARQUBE
-                                beforeAgent true
-                                beforeOptions true
-                            }
-                            steps{
-                                script{
-                                    def sonarqube
-                                    node(){
-                                        checkout scm
-                                        sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
-                                    }
-                                    def stashes = [
-                                        'COVERAGE_REPORT_DATA',
-                                        'PYTEST_UNIT_TEST_RESULTS',
-                                        'PYLINT_REPORT',
-                                        'FLAKE8_REPORT'
-                                    ]
-                                    def sonarqubeConfig = [
-                                        installationName: 'sonarcloud',
-                                        credentialsId: SONARQUBE_CREDENTIAL_ID,
-                                    ]
-                                    def agent = [
-                                            dockerfile: [
-                                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                                label: 'linux && docker && x86',
-                                                additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                args: '--mount source=sonar-cache-hathiprep,target=/home/user/.sonar/cache',
+                            post{
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: "dist/", type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE'],
+                                            [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
+                                            [pattern: 'reports/', type: 'INCLUDE'],
+                                            [pattern: 'logs/', type: 'INCLUDE'],
+                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
+
                                             ]
-                                        ]
-                                    if (env.CHANGE_ID){
-                                        sonarqube.submitToSonarcloud(
-                                            agent: agent,
-                                            reportStashes: stashes,
-                                            artifactStash: 'sonarqube artifacts',
-                                            sonarqube: sonarqubeConfig,
-                                            pullRequest: [
-                                                source: env.CHANGE_ID,
-                                                destination: env.BRANCH_NAME,
-                                            ],
-                                            package: [
-                                                version: props.Version,
-                                                name: props.Name
-                                            ],
-                                        )
-                                    } else {
-                                        sonarqube.submitToSonarcloud(
-                                            agent: agent,
-                                            reportStashes: stashes,
-                                            artifactStash: 'sonarqube artifacts',
-                                            sonarqube: sonarqubeConfig,
-                                            package: [
-                                                version: props.Version,
-                                                name: props.Name
-                                            ]
-                                        )
-                                    }
-                                }
-                            }
-                            post {
-                                always{
-                                    node(''){
-                                        unstash 'sonarqube artifacts'
-                                        recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                                    }
+                                    )
                                 }
                             }
                         }
