@@ -693,7 +693,10 @@ pipeline {
                                         equals expected: true, actual: params.USE_SONARQUBE
                                     }
                                     steps{
-                                        echo 'Run Sonarqube Analysis'
+                                        script{
+                                            def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
+                                            echo 'Run Sonarqube Analysis'
+                                        }
                                     }
                                 }
                             }
