@@ -13,25 +13,30 @@ def sonarcloudSubmit(args = [:]){
     args.outputJson = args.outputJson ? args.outputJson: "reports/sonar-report.json"
     withSonarQubeEnv(installationName:'sonarcloud', credentialsId: args.credentialsId) {
         echo "args = ${args}"
-        echo "${props.Version}"
-        echo "${env.BUILD_TAG}"
-        echo "${env.CHANGE_ID}"
-        echo "${env.CHANGE_TARGET}"
-        def command = 'ls'
-//         if (env.CHANGE_ID){
-//             command = "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET} -Dsonar.cfamily.cache.enabled=false -Dsonar.cfamily.threads=\$(grep -c ^processor /proc/cpuinfo) -Dsonar.cfamily.build-wrapper-output=build/build_wrapper_output_directory"
-//         } else {
-//             command = "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME} -Dsonar.cfamily.cache.enabled=false -Dsonar.cfamily.threads=\$(grep -c ^processor /proc/cpuinfo) -Dsonar.cfamily.build-wrapper-output=build/build_wrapper_output_directory"
-//         }
-        sh command
+        def projectVersion = props.Version
+
+        if (isPullRequest == true){
+            def pullRequestKey = args.pullRequest.source
+            def pullRequestBase = args.pullRequest.destination
+            sh(
+                label: "Running Sonar Scanner",
+                script:"sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.pullrequest.key=${pullRequestKey} -Dsonar.pullrequest.base=${pullRequestBase}"
+                )
+        } else {
+            def branchName =  args['branchName'] ? args['branchName']: env.BRANCH_NAME
+            sh(
+                label: "Running Sonar Scanner",
+                script: "sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.branch.name=${branchName}"
+                )
+        }
     }
-//     timeout(time: 1, unit: 'HOURS') {
-//          def sonarqube_result = waitForQualityGate(abortPipeline: false)
-//          if (sonarqube_result.status != 'OK') {
-//              unstable "SonarQube quality gate: ${sonarqube_result.status}"
-//          }
-//          def outstandingIssues = get_sonarqube_unresolved_issues('.scannerwork/report-task.txt')
-//          writeJSON file: args.outputJson, json: outstandingIssues
-//      }
+    timeout(time: 1, unit: 'HOURS') {
+         def sonarqube_result = waitForQualityGate(abortPipeline: false)
+         if (sonarqube_result.status != 'OK') {
+             unstable "SonarQube quality gate: ${sonarqube_result.status}"
+         }
+         def outstandingIssues = get_sonarqube_unresolved_issues('.scannerwork/report-task.txt')
+         writeJSON file: args.outputJson, json: outstandingIssues
+     }
 }
 return this
