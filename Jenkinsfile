@@ -1231,7 +1231,7 @@ pipeline {
             }
             post{
                 success{
-                    node('linux && docker && x86') {
+                    node('linux && docker && devpi-access') {
                         checkout scm
                         script{
                             if (!env.TAG_NAME?.trim()){
