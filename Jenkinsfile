@@ -557,14 +557,14 @@ pipeline {
                                     parallel {
                                         stage('PyTest'){
                                             steps{
-                                                echo 'Running pytest'
-//                                                 catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
+                                                catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
+                                                    echo 'Running pytest'
 //                                                     sh(label:"Running pytest",
 //                                                        script: """mkdir -p reports/pytest/
 //                                                                   coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest
 //                                                                """
 //                                                     )
-//                                                 }
+                                                }
                                             }
 //                                             post{
 //                                                 always{
