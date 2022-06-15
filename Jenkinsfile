@@ -567,14 +567,6 @@ pipeline {
                                                     stash includes: 'reports/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
                                                     junit 'reports/pytest/junit-pytest.xml'
                                                 }
-                                                cleanup{
-                                                    cleanWs(
-                                                        deleteDirs: true,
-                                                        patterns: [
-                                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                                        ]
-                                                    )
-                                                }
                                             }
                                         }
                                         stage("Documentation"){
@@ -596,15 +588,6 @@ pipeline {
                                                 always {
                                                     recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
                                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                                                }
-                                                cleanup{
-                                                    cleanWs(
-                                                        deleteDirs: true,
-                                                        patterns: [
-                                                            [pattern: 'reports/mypy/', type: 'INCLUDE'],
-                                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                                        ]
-                                                    )
                                                 }
                                             }
                                         }
@@ -650,9 +633,6 @@ pipeline {
                                                     stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
                                                     recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
                                                 }
-                                                cleanup{
-                                                    cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
-                                                }
                                             }
                                         }
                                     }
@@ -669,18 +649,6 @@ pipeline {
                                                             coberturaAdapter('reports/coverage.xml')
                                                             ],
                                                         sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                                        }
-                                        cleanup{
-                                            cleanWs(
-                                                deleteDirs: true,
-                                                patterns: [
-                                                    [pattern: "dist/", type: 'INCLUDE'],
-                                                    [pattern: 'build/', type: 'INCLUDE'],
-                                                    [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
-                                                    [pattern: 'reports/', type: 'INCLUDE'],
-                                                    [pattern: 'logs/', type: 'INCLUDE']
-                                                    ]
-                                            )
                                         }
                                     }
                                 }
@@ -702,6 +670,23 @@ pipeline {
                                             )
                                         }
                                     }
+                                }
+                            }
+                            post{
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: "dist/", type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE'],
+                                            [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
+                                            [pattern: 'reports/', type: 'INCLUDE'],
+                                            [pattern: 'logs/', type: 'INCLUDE'],
+                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
+
+                                            ]
+                                    )
                                 }
                             }
                         }
