@@ -566,12 +566,12 @@ pipeline {
                                                     )
                                                 }
                                             }
-//                                             post{
-//                                                 always{
+                                            post{
+                                                always{
 //                                                     stash includes: 'reports/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
-//                                                     junit 'reports/pytest/junit-pytest.xml'
-//                                                 }
-//                                             }
+                                                    junit 'reports/pytest/junit-pytest.xml'
+                                                }
+                                            }
                                         }
                                         stage("Documentation"){
                                             steps{
