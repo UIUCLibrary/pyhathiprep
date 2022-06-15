@@ -13,13 +13,13 @@ def sonarcloudSubmit(args = [:]){
     args.outputJson = args.outputJson ? args.outputJson: "reports/sonar-report.json"
     withSonarQubeEnv(installationName:'sonarcloud', credentialsId: args.credentialsId) {
         echo "args = ${args}"
-//         def command
+        def command = 'ls'
 //         if (env.CHANGE_ID){
 //             command = "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET} -Dsonar.cfamily.cache.enabled=false -Dsonar.cfamily.threads=\$(grep -c ^processor /proc/cpuinfo) -Dsonar.cfamily.build-wrapper-output=build/build_wrapper_output_directory"
 //         } else {
 //             command = "sonar-scanner -Dsonar.projectVersion=${props.Version} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME} -Dsonar.cfamily.cache.enabled=false -Dsonar.cfamily.threads=\$(grep -c ^processor /proc/cpuinfo) -Dsonar.cfamily.build-wrapper-output=build/build_wrapper_output_directory"
 //         }
-//         sh command
+        sh command
     }
 //     timeout(time: 1, unit: 'HOURS') {
 //          def sonarqube_result = waitForQualityGate(abortPipeline: false)
