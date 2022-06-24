@@ -468,9 +468,11 @@ pipeline {
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
+                                    [pattern: 'venv/', type: 'INCLUDE'],
                                     [pattern: 'dist/', type: 'INCLUDE']
                                 ]
                             )
+                            sh 'ls -la'
                         }
                     }
                 }
