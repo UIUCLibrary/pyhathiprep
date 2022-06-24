@@ -1,3 +1,4 @@
+-r requirements.txt
 mypy
 wheel
 sphinx
@@ -7,3 +8,5 @@ tox
 lxml
 coverage
 flake8
+build
+pylint

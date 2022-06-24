@@ -8,7 +8,7 @@ RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
     pip install wheel
 
-COPY requirements.txt requirements-dev.txt ci/docker/python/share/requirements-ci.txt /requirements/
+COPY requirements.txt requirements-dev.txt requirements-ci.txt /requirements/
 
 RUN pip wheel --wheel-dir=/wheels \
         -r /requirements/requirements.txt \
@@ -17,16 +17,10 @@ RUN pip wheel --wheel-dir=/wheels \
     rm -rf  /root/.cache
 
 FROM python:${PYTHON_VERSION}
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-
-RUN groupadd -g $GROUP_ID user && \
-    useradd -u $USER_ID -s /bin/sh -m -d /home/user -g user user
-
 RUN apt update -y && apt install -y libgl1-mesa-glx
 
 COPY --from=wheel_builder /wheels /wheels/
-COPY requirements.txt requirements-dev.txt ci/docker/python/share/requirements-ci.txt /requirements/
+COPY requirements.txt requirements-dev.txt requirements-ci.txt /requirements/
 
 RUN pip install --no-index --find-links=/wheels \
     -r /requirements/requirements.txt \
