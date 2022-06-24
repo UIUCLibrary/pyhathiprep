@@ -1,8 +1,0 @@
-coverage
-devpi-client
-flake8
-lxml
-paramiko
-pep517
-pylint
-twine
