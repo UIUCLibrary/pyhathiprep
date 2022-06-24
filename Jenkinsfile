@@ -442,14 +442,19 @@ pipeline {
             stages{
                 stage("Building Source and Wheel formats"){
                     agent {
-                        dockerfile {
-                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
-                            label 'linux && docker && x86'
+                        docker{
+                            image 'python'
+                            label 'linux && docker'
                           }
                     }
                     steps{
                         timeout(5){
-                            sh "python -m pep517.build ."
+                            sh(label: 'Build Python Package',
+                               script: '''python -m venv venv --upgrade-deps
+                                          venv/bin/pip install build
+                                          venv/bin/python -m build .
+                                          '''
+                                )
                         }
                     }
                     post{
@@ -460,7 +465,12 @@ pipeline {
                             stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: "PYTHON_PACKAGES"
                         }
                         cleanup{
-                            cleanWs deleteDirs: true, patterns: [[pattern: 'dist/*.whl,dist/*.zip', type: 'INCLUDE']]
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'dist/', type: 'INCLUDE']
+                                ]
+                            )
                         }
                     }
                 }
