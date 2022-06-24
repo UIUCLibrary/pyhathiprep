@@ -5,16 +5,6 @@ import org.ds.*
 
 SONARQUBE_CREDENTIAL_ID = "sonartoken-pyhathiprep"
 
-// CONFIGURATIONS = [
-//     '3.6': [
-//         test_docker_image: "python:3.6-windowsservercore",
-//         tox_env: "py36"
-//         ],
-//     "3.7": [
-//         test_docker_image: "python:3.7",
-//         tox_env: "py37"
-//         ]
-// ]
 
 // ============================================================================
 // Versions of python that are supported
@@ -47,312 +37,6 @@ DEVPI_CONFIG = [
     server: 'https://devpi.library.illinois.edu',
     credentialsId: 'DS_devpi',
 ]
-
-def CONFIGURATIONS = [
-    "3.6" : [
-        os: [
-            windows:[
-                agents: [
-                    build: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/windows/jenkins/Dockerfile',
-                            label: 'windows && docker && x86',
-                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
-                        ]
-                    ],
-                    test:[
-                        wheel: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6',
-                                baseImage: "python:3.6-windowsservercore"
-                            ]
-                        ],
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/windows/build/msvc/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
-                            ]
-                        ]
-                    ],
-                    devpi: [
-                        wheel: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
-                            ]
-                        ],
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.6'
-                            ]
-                        ]
-                    ]
-                ],
-                pkgRegex: [
-                    wheel: "*cp36*.whl",
-                    sdist: "*.zip"
-                ]
-            ],
-            linux: [
-                agents: [
-                    build: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                            label: 'linux && docker && x86',
-                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        ]
-                    ],
-                    test: [
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                label: 'linux && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                            ]
-                        ]
-                    ],
-                    devpi: [
-                        whl: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                label: 'linux && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                            ]
-                        ],
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                label: 'linux && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.6 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                            ]
-                        ]
-                    ]
-                ],
-                pkgRegex: [
-                    wheel: "*cp36*.whl",
-                    sdist: "*.zip"
-                ]
-            ]
-        ],
-        tox_env: "py36",
-        devpiSelector: [
-            sdist: "zip",
-            wheel: "36.*whl",
-        ],
-        pkgRegex: [
-            wheel: "*cp36*.whl",
-            sdist: "*.zip"
-        ]
-    ],
-    "3.7" : [
-        os: [
-            windows: [
-                agents: [
-                    build: [
-                        dockerfile: [
-                            filename: 'ci/docker/windows/build/msvc/Dockerfile',
-                            label: 'windows && docker && x86',
-                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                        ]
-                    ],
-                    test: [
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/windows/build/msvc/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                            ]
-                        ],
-                        wheel: [
-                            dockerfile: [
-                                filename: 'ci/docker/windows/build/test/msvc/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                            ]
-                        ]
-                    ],
-                    devpi: [
-                        wheel: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                            ]
-                        ],
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.7'
-                            ]
-                        ]
-                    ]
-                ],
-                pkgRegex: [
-                    wheel: "*cp37*.whl",
-                    sdist: "*.zip"
-                ]
-            ],
-            linux: [
-                agents: [
-                    build: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                            label: 'linux && docker && x86',
-                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        ]
-                    ],
-                    test: [
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                label: 'linux && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                            ]
-                        ]
-                    ],
-                    devpi: [
-                        wheel: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                label: 'linux && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                            ]
-                        ],
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                label: 'linux && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.7 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                            ]
-                        ]
-                    ]
-                ],
-                pkgRegex: [
-                    wheel: "*cp37*.whl",
-                    sdist: "*.zip"
-                ]
-            ]
-        ],
-        tox_env: "py37",
-        devpiSelector: [
-            sdist: "zip",
-            wheel: "37.*whl",
-        ],
-        pkgRegex: [
-            wheel: "*cp37*.whl",
-            sdist: "*.zip"
-        ]
-    ],
-    "3.8" : [
-        os: [
-            windows: [
-                agents: [
-                    build: [
-                        dockerfile: [
-                            filename: 'ci/docker/windows/build/msvc/Dockerfile',
-                            label: 'windows && docker && x86',
-                            additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                        ]
-                    ],
-                    test: [
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/windows/build/msvc/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                            ]
-                        ],
-                        wheel: [
-                            dockerfile: [
-                                filename: 'ci/docker/windows/build/test/msvc/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                            ]
-                        ]
-                    ],
-                    devpi: [
-                        wheel: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                            ]
-                        ],
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/windows/jenkins/Dockerfile',
-                                label: 'windows && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_DOCKER_IMAGE_BASE=python:3.8'
-                            ]
-                        ]
-                    ]
-
-                ],
-                pkgRegex: [
-                    wheel: "*cp38*.whl",
-                    sdist: "*.zip"
-                ]
-            ],
-            linux: [
-                agents: [
-                    build: [
-                        dockerfile: [
-                            filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                            label: 'linux && docker && x86',
-                            additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        ]
-                    ],
-                    test: [
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                label: 'linux && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                            ]
-                        ]
-                    ],
-                    devpi: [
-                        wheel: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                label: 'linux && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                            ]
-                        ],
-                        sdist: [
-                            dockerfile: [
-                                filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-                                label: 'linux && docker && x86',
-                                additionalBuildArgs: '--build-arg PYTHON_VERSION=3.8 --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                            ]
-                        ]
-                    ]
-                ],
-                pkgRegex: [
-                    wheel: "*cp38*.whl",
-                    sdist: "*.zip"
-                ]
-            ]
-        ],
-        tox_env: "py38",
-        devpiSelector: [
-            sdist: "zip",
-            wheel: "38.*whl",
-        ],
-        pkgRegex: [
-            wheel: "*cp38*.whl",
-            sdist: "*.zip"
-        ]
-    ],
-]
-
 
 def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUsername, devpiPassword){
     script {
@@ -470,12 +154,11 @@ pipeline {
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
     }
     stages {
-        stage("Building") {
+        stage('Building') {
             agent {
                 dockerfile {
                     filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                    label "linux && docker && x86"
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                    label 'linux && docker && x86'
                 }
             }
             stages{
@@ -542,9 +225,8 @@ pipeline {
                             agent {
                                 dockerfile {
                                     filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                                    label "linux && docker && x86"
-                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                    args '--mount source=sonar-cache-tyko,target=/opt/sonar/.sonar/cache'
+                                    label 'linux && docker && x86'
+                                    args '--mount source=sonar-cache-pyhathiprep,target=/opt/sonar/.sonar/cache'
                                 }
                             }
                             stages{
@@ -755,7 +437,6 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux && docker && x86'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
                     }
                     steps{
@@ -939,7 +620,6 @@ pipeline {
                 stage('Uploading to DevPi Staging'){
                     agent {
                         dockerfile {
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                             filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux && docker && devpi-access'
                         }
@@ -1149,7 +829,6 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux && docker && devpi-access'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
                     }
                     input {
@@ -1175,7 +854,7 @@ pipeline {
                         checkout scm
                         script{
                             if (!env.TAG_NAME?.trim()){
-                                docker.build("pyhathiprep:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                                docker.build("pyhathiprep:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile .').inside{
                                     devpi.pushPackageToIndex(
                                         pkgName: props.Name,
                                         pkgVersion: props.Version,
@@ -1192,7 +871,7 @@ pipeline {
                 cleanup{
                     node('linux && docker && x86') {
                        script{
-                            docker.build("pyhathiprep:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("pyhathiprep:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile .').inside{
                                 devpi.removePackage(
                                     pkgName: props.Name,
                                     pkgVersion: props.Version,
@@ -1214,7 +893,6 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label "linux && docker && x86"
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                         }
                     }
                     when{
@@ -1314,7 +992,6 @@ pipeline {
                         dockerfile {
                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label "linux && docker && x86"
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                         }
                     }
                     options{
