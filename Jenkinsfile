@@ -449,12 +449,14 @@ pipeline {
                     }
                     steps{
                         timeout(5){
-                            sh(label: 'Build Python Package',
-                               script: '''python -m venv venv --upgrade-deps
-                                          venv/bin/pip install build
-                                          venv/bin/python -m build .
-                                          '''
-                                )
+                            withEnv(['PIP_NO_CACHE_DIR=off']) {
+                                sh(label: 'Build Python Package',
+                                   script: '''python -m venv venv --upgrade-deps
+                                              venv/bin/pip install build
+                                              venv/bin/python -m build .
+                                              '''
+                                    )
+                            }
                         }
                     }
                     post{
@@ -473,7 +475,6 @@ pipeline {
                                     [pattern: 'dist/', type: 'INCLUDE']
                                 ]
                             )
-                            sh 'ls -la'
                         }
                     }
                 }
