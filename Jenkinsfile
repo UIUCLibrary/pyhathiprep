@@ -468,6 +468,7 @@ pipeline {
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
+                                    [pattern: '**/__pycache__/', type: 'INCLUDE'],
                                     [pattern: 'venv/', type: 'INCLUDE'],
                                     [pattern: 'dist/', type: 'INCLUDE']
                                 ]
