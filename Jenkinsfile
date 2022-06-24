@@ -180,11 +180,13 @@ pipeline {
                     }
                     steps {
                         timeout(5){
-                            sh(label:"Building docs on ${env.NODE_NAME}",
-                               script: """mkdir -p logs
-                                       python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log
-                                       """
-                               )
+                            catchError(buildResult: 'SUCCESS', message: 'Building Sphinx found issues', stageResult: 'UNSTABLE') {
+                                sh(label:"Building docs on ${env.NODE_NAME}",
+                                   script: """mkdir -p logs
+                                           python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                           """
+                                   )
+                               }
                         }
                     }
                     post{
@@ -256,7 +258,7 @@ pipeline {
                                         }
                                         stage("Documentation"){
                                             steps{
-                                                sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest"
+                                                sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest --warning-is-error --keep-going"
                                             }
                                         }
                                         stage("MyPy"){
