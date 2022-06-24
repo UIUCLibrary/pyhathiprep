@@ -1,0 +1,6 @@
+-r requirements.txt
+-r requirements-dev.txt
+devpi-client
+paramiko
+pep517
+twine

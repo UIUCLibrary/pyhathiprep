@@ -9,3 +9,4 @@ lxml
 coverage
 flake8
 build
+pylint

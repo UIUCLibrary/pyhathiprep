@@ -8,7 +8,7 @@ RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
     pip install wheel
 
-COPY requirements.txt requirements-dev.txt ci/docker/python/share/requirements-ci.txt /requirements/
+COPY requirements.txt requirements-dev.txt requirements-ci.txt /requirements/
 
 RUN pip wheel --wheel-dir=/wheels \
         -r /requirements/requirements.txt \
@@ -20,7 +20,7 @@ FROM python:${PYTHON_VERSION}
 RUN apt update -y && apt install -y libgl1-mesa-glx
 
 COPY --from=wheel_builder /wheels /wheels/
-COPY requirements.txt requirements-dev.txt ci/docker/python/share/requirements-ci.txt /requirements/
+COPY requirements.txt requirements-dev.txt requirements-ci.txt /requirements/
 
 RUN pip install --no-index --find-links=/wheels \
     -r /requirements/requirements.txt \
