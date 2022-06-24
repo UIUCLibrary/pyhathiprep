@@ -283,7 +283,7 @@ pipeline {
                                         }
                                         stage("Run Pylint Static Analysis") {
                                             steps{
-                                                withEnv(['PYLINTHOME=.']) {
+                                                withEnv(['PYLINTHOME=.pylint_cache']) {
                                                     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
                                                         sh(label: "Running pylint",
                                                             script: '''pylint pyhathiprep -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
@@ -300,7 +300,6 @@ pipeline {
                                             }
                                             post{
                                                 always{
-                                                    sh 'ls -la'
                                                     recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
                                                     stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
                                                 }
@@ -377,9 +376,11 @@ pipeline {
                                             [pattern: 'logs/', type: 'INCLUDE'],
                                             [pattern: '.mypy_cache/', type: 'INCLUDE'],
                                             [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                            [pattern: '.pylint_cache/', type: 'INCLUDE'],
 
                                             ]
                                     )
+                                    sh 'ls -la'
                                 }
                             }
                         }
