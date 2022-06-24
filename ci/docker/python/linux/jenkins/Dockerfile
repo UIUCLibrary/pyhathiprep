@@ -17,12 +17,6 @@ RUN pip wheel --wheel-dir=/wheels \
     rm -rf  /root/.cache
 
 FROM python:${PYTHON_VERSION}
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-
-RUN groupadd -g $GROUP_ID user && \
-    useradd -u $USER_ID -s /bin/sh -m -d /home/user -g user user
-
 RUN apt update -y && apt install -y libgl1-mesa-glx
 
 COPY --from=wheel_builder /wheels /wheels/
