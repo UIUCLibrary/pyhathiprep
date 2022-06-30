@@ -891,7 +891,7 @@ pipeline {
                     }
                 }
                 cleanup{
-                    node('linux && docker && x86') {
+                    node('linux && docker && x86 && devpi-access') {
                        script{
                             docker.build("pyhathiprep:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile .').inside{
                                 devpi.removePackage(
