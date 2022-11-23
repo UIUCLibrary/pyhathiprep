@@ -123,18 +123,32 @@ def startup(){
         ]
     )
 }
+
 def get_props(){
-    node(){
-        unstash 'DIST-INFO'
-        def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
-        def metadata = readProperties(interpolate: true, file: metadataFile.path )
-        echo """Version = ${metadata.Version}
-Name = ${metadata.Name}
-"""
-        return metadata
+    stage('Reading Package Metadata'){
+        node() {
+            try{
+                unstash 'DIST-INFO'
+                def metadataFile = findFiles(excludes: '', glob: '*.dist-info/METADATA')[0]
+                def package_metadata = readProperties interpolate: true, file: metadataFile.path
+                echo """Metadata:
+
+    Name      ${package_metadata.Name}
+    Version   ${package_metadata.Version}
+    """
+                return package_metadata
+            } finally {
+                cleanWs(
+                    patterns: [
+                            [pattern: '*.dist-info/**', type: 'INCLUDE'],
+                        ],
+                    notFailBuild: true,
+                    deleteDirs: true
+                )
+            }
+        }
     }
 }
-
 
 startup()
 def props = get_props()
@@ -176,10 +190,7 @@ pipeline {
                     }
                 }
                 stage("Building Sphinx Documentation"){
-                    environment{
-                        PKG_NAME = get_package_name("DIST-INFO", "pyhathiprep.dist-info/METADATA")
-                        PKG_VERSION = get_package_version("DIST-INFO", "pyhathiprep.dist-info/METADATA")
-                    }
+
                     steps {
                         timeout(5){
                             catchError(buildResult: 'SUCCESS', message: 'Building Sphinx found issues', stageResult: 'UNSTABLE') {
@@ -199,7 +210,7 @@ pipeline {
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             script{
-                                def DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
+                                def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
                                 zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
                                 stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
                             }
@@ -642,7 +653,7 @@ pipeline {
                 stage('Uploading to DevPi Staging'){
                     agent {
                         dockerfile {
-                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/python/linux/tox/Dockerfile'
                             label 'linux && docker && devpi-access'
                         }
                     }
@@ -858,8 +869,9 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/python/linux/tox/Dockerfile'
                             label 'linux && docker && devpi-access'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                           }
                     }
                     input {
@@ -885,7 +897,7 @@ pipeline {
                         checkout scm
                         script{
                             if (!env.TAG_NAME?.trim()){
-                                docker.build("pyhathiprep:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile .').inside{
+                                docker.build("pyhathiprep:devpi",'-f ./ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                     devpi.pushPackageToIndex(
                                         pkgName: props.Name,
                                         pkgVersion: props.Version,
@@ -902,7 +914,7 @@ pipeline {
                 cleanup{
                     node('linux && docker && x86 && devpi-access') {
                        script{
-                            docker.build("pyhathiprep:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile .').inside{
+                            docker.build("pyhathiprep:devpi",'-f ./ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 devpi.removePackage(
                                     pkgName: props.Name,
                                     pkgVersion: props.Version,
