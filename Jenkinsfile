@@ -123,18 +123,32 @@ def startup(){
         ]
     )
 }
+
 def get_props(){
-    node(){
-        unstash 'DIST-INFO'
-        def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
-        def metadata = readProperties(interpolate: true, file: metadataFile.path )
-        echo """Version = ${metadata.Version}
-Name = ${metadata.Name}
-"""
-        return metadata
+    stage('Reading Package Metadata'){
+        node() {
+            try{
+                unstash 'DIST-INFO'
+                def metadataFile = findFiles(excludes: '', glob: '*.dist-info/METADATA')[0]
+                def package_metadata = readProperties interpolate: true, file: metadataFile.path
+                echo """Metadata:
+
+    Name      ${package_metadata.Name}
+    Version   ${package_metadata.Version}
+    """
+                return package_metadata
+            } finally {
+                cleanWs(
+                    patterns: [
+                            [pattern: '*.dist-info/**', type: 'INCLUDE'],
+                        ],
+                    notFailBuild: true,
+                    deleteDirs: true
+                )
+            }
+        }
     }
 }
-
 
 startup()
 def props = get_props()
