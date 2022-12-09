@@ -68,6 +68,7 @@ SHELL ["cmd", "/S", "/C" ]
 ARG PIP_INDEX_URL
 ARG PIP_EXTRA_INDEX_URL
 COPY requirements.txt  requirements-dev.txt requirements-ci.txt c:/requirements/
+COPY requirements c:/requirements/requirements
 ENV PY_PYTHON=3.7
 RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
@@ -80,6 +81,7 @@ SHELL ["cmd", "/S", "/C" ]
 ARG PIP_INDEX_URL
 ARG PIP_EXTRA_INDEX_URL
 COPY requirements.txt  requirements-dev.txt requirements-ci.txt c:/requirements/
+COPY requirements c:/requirements/requirements
 ENV PY_PYTHON=3.8
 RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
@@ -93,6 +95,7 @@ SHELL ["cmd", "/S", "/C" ]
 ARG PIP_INDEX_URL
 ARG PIP_EXTRA_INDEX_URL
 COPY requirements.txt  requirements-dev.txt requirements-ci.txt c:/requirements/
+COPY requirements c:/requirements/requirements
 ENV PY_PYTHON=3.9
 RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
@@ -105,6 +108,7 @@ SHELL ["cmd", "/S", "/C" ]
 ARG PIP_INDEX_URL
 ARG PIP_EXTRA_INDEX_URL
 COPY requirements.txt  requirements-dev.txt requirements-ci.txt c:/requirements/
+COPY requirements c:/requirements/requirements
 ENV PY_PYTHON=3.10
 RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
@@ -123,7 +127,7 @@ COPY --from=WHEEL_BUilDER_PY39 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUilDER_PY310 c:/wheels/ c:/wheels/
 
 ENV PIP_FIND_LINKS=c:\wheels
-
-RUN python -m pip install pip --upgrade ; pip install tox devpi-client
+COPY requirements requirements
+RUN python -m pip install pip --upgrade ; pip install pip install -r requirements/requirements_tox.txt devpi-client
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate

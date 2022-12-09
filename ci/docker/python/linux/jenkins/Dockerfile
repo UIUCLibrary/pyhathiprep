@@ -9,6 +9,7 @@ RUN python -m pip install --upgrade pip &&  \
     pip install wheel
 
 COPY requirements.txt requirements-dev.txt requirements-ci.txt /requirements/
+COPY requirements/ /requirements/requirements/
 
 RUN pip wheel --wheel-dir=/wheels \
         -r /requirements/requirements.txt \
@@ -21,6 +22,7 @@ RUN apt update -y && apt install -y libgl1-mesa-glx
 
 COPY --from=wheel_builder /wheels /wheels/
 COPY requirements.txt requirements-dev.txt requirements-ci.txt /requirements/
+COPY requirements/ /requirements/requirements/
 
 RUN pip install --no-index --find-links=/wheels \
     -r /requirements/requirements.txt \
