@@ -4,7 +4,7 @@ wheel
 sphinx
 pytest
 pytest-runner
-tox
+-r requirements/requirements_tox.txt
 lxml
 coverage
 flake8
