@@ -173,6 +173,14 @@ pipeline {
                             label 'linux && docker && x86'
                         }
                     }
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.RUN_CHECKS
+                            equals expected: true, actual: params.DEPLOY_DEVPI
+                            equals expected: true, actual: params.DEPLOY_DOCS
+                        }
+                        beforeAgent true
+                    }
                     stages{
                         stage("Building Python Package"){
                             steps {
