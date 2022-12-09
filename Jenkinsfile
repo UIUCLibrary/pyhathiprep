@@ -156,275 +156,287 @@ pipeline {
         booleanParam(name: "DEPLOY_DOCS", defaultValue: false, description: "Update online documentation")
     }
     stages {
-        stage('Building') {
-            agent {
-                dockerfile {
-                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                    label 'linux && docker && x86'
-                }
-            }
-            stages{
-                stage("Building Python Package"){
-                    steps {
-                        timeout(5){
-                            sh(label: "Building Python package",
-                                script: """ mkdir -p logs
-                                python setup.py build -b build  | tee logs/build.log
-                                """
-                                )
-                        }
-                    }
-                }
-                stage("Building Sphinx Documentation"){
-                    environment{
-                        PKG_NAME = get_package_name("DIST-INFO", "pyhathiprep.dist-info/METADATA")
-                        PKG_VERSION = get_package_version("DIST-INFO", "pyhathiprep.dist-info/METADATA")
-                    }
-                    steps {
-                        timeout(5){
-                            catchError(buildResult: 'SUCCESS', message: 'Building Sphinx found issues', stageResult: 'UNSTABLE') {
-                                sh(label:"Building docs on ${env.NODE_NAME}",
-                                   script: """mkdir -p logs
-                                           python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
-                                           """
-                                   )
-                               }
-                        }
-                    }
-                    post{
-                        always {
-                            recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
-                            archiveArtifacts artifacts: 'logs/build_sphinx.log'
-                        }
-                        success{
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            script{
-                                def DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
-                                zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
-                            }
-                        }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: "dist/", type: 'INCLUDE'],
-                                    [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: 'logs/', type: 'INCLUDE']
-                                    ]
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        stage("Checks"){
+        stage('Building and Testing'){
             when{
-                equals expected: true, actual: params.RUN_CHECKS
+                anyOf{
+                    equals expected: true, actual: params.RUN_CHECKS
+                    equals expected: true, actual: params.TEST_RUN_TOX
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    equals expected: true, actual: params.DEPLOY_DOCS
+                }
             }
             stages{
-                stage("Code Quality"){
+                stage('Building') {
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                            label 'linux && docker && x86'
+                        }
+                    }
                     stages{
-                        stage("Testing"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                                    label 'linux && docker && x86'
-                                    args '--mount source=sonar-cache-pyhathiprep,target=/opt/sonar/.sonar/cache'
+                        stage("Building Python Package"){
+                            steps {
+                                timeout(5){
+                                    sh(label: "Building Python package",
+                                        script: """ mkdir -p logs
+                                        python setup.py build -b build  | tee logs/build.log
+                                        """
+                                        )
                                 }
                             }
-                            stages{
-                                stage('Setting up Tests'){
-                                    steps{
-                                        sh('mkdir -p reports/')
-                                    }
-                                }
-                                stage('Run Tests'){
-                                    parallel {
-                                        stage('PyTest'){
-                                            steps{
-                                                catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
-                                                    sh(label: 'Running pytest',
-                                                       script: '''mkdir -p reports/pytest/
-                                                                  coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml
-                                                                  '''
-
-                                                    )
-                                                }
-                                            }
-                                            post{
-                                                always{
-                                                    junit 'reports/pytest/junit-pytest.xml'
-                                                }
-                                            }
-                                        }
-                                        stage("Documentation"){
-                                            steps{
-                                                sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest --warning-is-error --keep-going"
-                                            }
-                                        }
-                                        stage("MyPy"){
-                                            steps{
-                                                catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
-                                                    sh (label: "Running MyPy",
-                                                        script: """mkdir -p reports/mypy
-                                                                   mkdir -p logs
-                                                                   mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log"""
-                                                        )
-                                                }
-                                            }
-                                            post{
-                                                always {
-                                                    recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
-                                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                                                }
-                                            }
-                                        }
-                                        stage('Task Scanner'){
-                                            steps{
-                                                recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'pyhathiprep/**/*.py', normalTags: 'TODO')])
-                                            }
-                                        }
-                                        stage("Run Pylint Static Analysis") {
-                                            steps{
-                                                withEnv(['PYLINTHOME=.pylint_cache']) {
-                                                    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-                                                        sh(label: "Running pylint",
-                                                            script: '''pylint pyhathiprep -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
-                                                                       '''
-
-                                                        )
-                                                    }
-                                                    sh(
-                                                        script: 'pylint pyhathiprep -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
-                                                        label: "Running pylint for sonarqube",
-                                                        returnStatus: true
-                                                    )
-                                                    }
-                                            }
-                                            post{
-                                                always{
-                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-                                                    stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
-                                                }
-                                            }
-                                        }
-                                        stage("Run Flake8 Static Analysis") {
-                                            steps{
-                                                catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
-                                                    sh(label: "Running flake8",
-                                                       script: """mkdir -p logs
-                                                                  flake8 pyhathiprep --tee --output-file=logs/flake8.log
-                                                                  """
-                                                     )
-                                                }
-                                            }
-                                            post {
-                                                always {
-                                                    stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
-                                                    recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
-                                                }
-                                            }
-                                        }
-                                    }
-                                    post{
-                                        always{
-                                            sh(label: "Combining Coverage data",
-                                               script: """coverage combine
-                                                          coverage xml -o reports/coverage.xml
-                                                          coverage html -d reports/coverage
-                                                       """
-                                            )
-                                            stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
-                                            publishCoverage adapters: [
-                                                            coberturaAdapter('reports/coverage.xml')
-                                                            ],
-                                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                                        }
-                                    }
-                                }
-                                stage('Run Sonarqube Analysis'){
-                                    options{
-                                        lock('pyhathiprep-sonarscanner')
-                                        retry(3)
-                                    }
-                                    when{
-                                        equals expected: true, actual: params.USE_SONARQUBE
-                                    }
-                                    steps{
-                                        script{
-                                            def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
-                                            def newProps = get_props()
-                                            sonarqube.sonarcloudSubmit(
-                                                credentialsId: SONARQUBE_CREDENTIAL_ID,
-                                                projectVersion: newProps.Version
-                                            )
-                                        }
-                                    }
-                                    post {
-                                        always{
-                                            recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                                        }
-                                    }
+                        }
+                        stage("Building Sphinx Documentation"){
+                            environment{
+                                PKG_NAME = get_package_name("DIST-INFO", "pyhathiprep.dist-info/METADATA")
+                                PKG_VERSION = get_package_version("DIST-INFO", "pyhathiprep.dist-info/METADATA")
+                            }
+                            steps {
+                                timeout(5){
+                                    catchError(buildResult: 'SUCCESS', message: 'Building Sphinx found issues', stageResult: 'UNSTABLE') {
+                                        sh(label:"Building docs on ${env.NODE_NAME}",
+                                           script: """mkdir -p logs
+                                                   python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                                   """
+                                           )
+                                       }
                                 }
                             }
                             post{
+                                always {
+                                    recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
+                                    archiveArtifacts artifacts: 'logs/build_sphinx.log'
+                                }
+                                success{
+                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                                    script{
+                                        def DOC_ZIP_FILENAME = "${env.PKG_NAME}-${env.PKG_VERSION}.doc.zip"
+                                        zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                                        stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                                    }
+                                }
                                 cleanup{
                                     cleanWs(
                                         deleteDirs: true,
                                         patterns: [
                                             [pattern: "dist/", type: 'INCLUDE'],
                                             [pattern: 'build/', type: 'INCLUDE'],
-                                            [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
-                                            [pattern: 'reports/', type: 'INCLUDE'],
-                                            [pattern: 'logs/', type: 'INCLUDE'],
-                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                            [pattern: '.pylint_cache/', type: 'INCLUDE'],
-
+                                            [pattern: 'logs/', type: 'INCLUDE']
                                             ]
                                     )
-                                    sh 'ls -la'
                                 }
                             }
                         }
                     }
                 }
-                stage("Run Tox Test") {
+                stage("Checks"){
                     when{
-                        equals expected: true, actual: params.TEST_RUN_TOX
+                        equals expected: true, actual: params.RUN_CHECKS
                     }
-                     steps {
-                        script{
-                            def tox
-                            node(){
-                                checkout scm
-                                tox = load("ci/jenkins/scripts/tox.groovy")
-                            }
-                            def windowsJobs = [:]
-                            def linuxJobs = [:]
-                            stage("Scanning Tox Environments"){
-                                parallel(
-                                    "Linux":{
-                                        linuxJobs = tox.getToxTestsParallel(
-                                                envNamePrefix: "Tox Linux",
-                                                label: "linux && docker && x86",
-                                                dockerfile: "ci/docker/python/linux/tox/Dockerfile",
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                    stages{
+                        stage("Code Quality"){
+                            stages{
+                                stage("Testing"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                                            label 'linux && docker && x86'
+                                            args '--mount source=sonar-cache-pyhathiprep,target=/opt/sonar/.sonar/cache'
+                                        }
+                                    }
+                                    stages{
+                                        stage('Setting up Tests'){
+                                            steps{
+                                                sh('mkdir -p reports/')
+                                            }
+                                        }
+                                        stage('Run Tests'){
+                                            parallel {
+                                                stage('PyTest'){
+                                                    steps{
+                                                        catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
+                                                            sh(label: 'Running pytest',
+                                                               script: '''mkdir -p reports/pytest/
+                                                                          coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml
+                                                                          '''
+
+                                                            )
+                                                        }
+                                                    }
+                                                    post{
+                                                        always{
+                                                            junit 'reports/pytest/junit-pytest.xml'
+                                                        }
+                                                    }
+                                                }
+                                                stage("Documentation"){
+                                                    steps{
+                                                        sh "coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest --warning-is-error --keep-going"
+                                                    }
+                                                }
+                                                stage("MyPy"){
+                                                    steps{
+                                                        catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
+                                                            sh (label: "Running MyPy",
+                                                                script: """mkdir -p reports/mypy
+                                                                           mkdir -p logs
+                                                                           mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log"""
+                                                                )
+                                                        }
+                                                    }
+                                                    post{
+                                                        always {
+                                                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
+                                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                                        }
+                                                    }
+                                                }
+                                                stage('Task Scanner'){
+                                                    steps{
+                                                        recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'pyhathiprep/**/*.py', normalTags: 'TODO')])
+                                                    }
+                                                }
+                                                stage("Run Pylint Static Analysis") {
+                                                    steps{
+                                                        withEnv(['PYLINTHOME=.pylint_cache']) {
+                                                            catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                                                sh(label: "Running pylint",
+                                                                    script: '''pylint pyhathiprep -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
+                                                                               '''
+
+                                                                )
+                                                            }
+                                                            sh(
+                                                                script: 'pylint pyhathiprep -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
+                                                                label: "Running pylint for sonarqube",
+                                                                returnStatus: true
+                                                            )
+                                                            }
+                                                    }
+                                                    post{
+                                                        always{
+                                                            recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                            stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
+                                                        }
+                                                    }
+                                                }
+                                                stage("Run Flake8 Static Analysis") {
+                                                    steps{
+                                                        catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
+                                                            sh(label: "Running flake8",
+                                                               script: """mkdir -p logs
+                                                                          flake8 pyhathiprep --tee --output-file=logs/flake8.log
+                                                                          """
+                                                             )
+                                                        }
+                                                    }
+                                                    post {
+                                                        always {
+                                                            stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
+                                                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            post{
+                                                always{
+                                                    sh(label: "Combining Coverage data",
+                                                       script: """coverage combine
+                                                                  coverage xml -o reports/coverage.xml
+                                                                  coverage html -d reports/coverage
+                                                               """
+                                                    )
+                                                    stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
+                                                    publishCoverage adapters: [
+                                                                    coberturaAdapter('reports/coverage.xml')
+                                                                    ],
+                                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                                                }
+                                            }
+                                        }
+                                        stage('Run Sonarqube Analysis'){
+                                            options{
+                                                lock('pyhathiprep-sonarscanner')
+                                                retry(3)
+                                            }
+                                            when{
+                                                equals expected: true, actual: params.USE_SONARQUBE
+                                            }
+                                            steps{
+                                                script{
+                                                    def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
+                                                    def newProps = get_props()
+                                                    sonarqube.sonarcloudSubmit(
+                                                        credentialsId: SONARQUBE_CREDENTIAL_ID,
+                                                        projectVersion: newProps.Version
+                                                    )
+                                                }
+                                            }
+                                            post {
+                                                always{
+                                                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                                                }
+                                            }
+                                        }
+                                    }
+                                    post{
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                patterns: [
+                                                    [pattern: "dist/", type: 'INCLUDE'],
+                                                    [pattern: 'build/', type: 'INCLUDE'],
+                                                    [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
+                                                    [pattern: 'reports/', type: 'INCLUDE'],
+                                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                                    [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                                    [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                                    [pattern: '.pylint_cache/', type: 'INCLUDE'],
+
+                                                    ]
                                             )
-                                    },
-                                    "Windows":{
-                                        windowsJobs = tox.getToxTestsParallel(
-                                                envNamePrefix: "Tox Windows",
-                                                label: 'windows && docker && x86',
-                                                dockerfile: "ci/docker/python/windows/tox/Dockerfile",
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
-                                            )
-                                    },
-                                    failFast: true
-                                )
+                                            sh 'ls -la'
+                                        }
+                                    }
+                                }
                             }
-                            parallel(windowsJobs + linuxJobs)
+                        }
+                        stage("Run Tox Test") {
+                            when{
+                                equals expected: true, actual: params.TEST_RUN_TOX
+                            }
+                             steps {
+                                script{
+                                    def tox
+                                    node(){
+                                        checkout scm
+                                        tox = load("ci/jenkins/scripts/tox.groovy")
+                                    }
+                                    def windowsJobs = [:]
+                                    def linuxJobs = [:]
+                                    stage("Scanning Tox Environments"){
+                                        parallel(
+                                            "Linux":{
+                                                linuxJobs = tox.getToxTestsParallel(
+                                                        envNamePrefix: "Tox Linux",
+                                                        label: "linux && docker && x86",
+                                                        dockerfile: "ci/docker/python/linux/tox/Dockerfile",
+                                                        dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                    )
+                                            },
+                                            "Windows":{
+                                                windowsJobs = tox.getToxTestsParallel(
+                                                        envNamePrefix: "Tox Windows",
+                                                        label: 'windows && docker && x86',
+                                                        dockerfile: "ci/docker/python/windows/tox/Dockerfile",
+                                                        dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    )
+                                            },
+                                            failFast: true
+                                        )
+                                    }
+                                    parallel(windowsJobs + linuxJobs)
+                                }
+                            }
                         }
                     }
                 }
