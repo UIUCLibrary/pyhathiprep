@@ -587,10 +587,10 @@ pipeline {
 
                             def macTests = [:]
                             SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
-                                macTests["Mac - Python ${pythonVersion}: sdist"] = {
+                                macTests["Mac x86_64- Python ${pythonVersion}: sdist"] = {
                                     packages.testPkg(
                                             agent: [
-                                                label: "mac && python${pythonVersion}",
+                                                label: "mac && python${pythonVersion} && x86_64",
                                             ],
                                             glob: 'dist/*.tar.gz,dist/*.zip',
                                             stash: 'PYTHON_PACKAGES',
@@ -613,10 +613,10 @@ pipeline {
 
                                         )
                                 }
-                                macTests["Mac - Python ${pythonVersion}: wheel"] = {
+                                macTests["Mac x86_64 - Python ${pythonVersion}: wheel"] = {
                                     packages.testPkg(
                                             agent: [
-                                                label: "mac && python${pythonVersion}",
+                                                label: "mac && python${pythonVersion} && x86_64",
                                             ],
                                             glob: 'dist/*.whl',
                                             stash: 'PYTHON_PACKAGES',
