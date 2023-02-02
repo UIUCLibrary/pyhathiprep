@@ -14,7 +14,8 @@ COPY requirements/ /requirements/requirements/
 RUN pip wheel --wheel-dir=/wheels \
         -r /requirements/requirements.txt \
         -r /requirements/requirements-dev.txt \
-        -r /requirements/requirements-ci.txt && \
+        -r /requirements/requirements-ci.txt \
+        -r /requirements/requirements/requirements-devpi.txt && \
     rm -rf  /root/.cache
 
 FROM python:${PYTHON_VERSION}
@@ -27,7 +28,8 @@ COPY requirements/ /requirements/requirements/
 RUN pip install --no-index --find-links=/wheels \
     -r /requirements/requirements.txt \
     -r /requirements/requirements-dev.txt \
-    -r /requirements/requirements-ci.txt
+    -r /requirements/requirements-ci.txt \
+    -r /requirements/requirements/requirements-devpi.txt
 
 ENV PIP_FIND_LINKS=/wheels
 ENV PIP_NO_CACHE_DIR=1
