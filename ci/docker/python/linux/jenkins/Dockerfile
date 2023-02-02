@@ -4,30 +4,35 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
 ARG PIP_INDEX_URL
 
-RUN python -m pip install --upgrade pip &&  \
-    pip install setuptools && \
-    pip install wheel
+RUN python -m pip install  --no-cache-dir --upgrade pip &&  \
+    pip install --no-cache-dir setuptools && \
+    pip install --no-cache-dir wheel
 
 COPY requirements.txt requirements-dev.txt requirements-ci.txt /requirements/
 COPY requirements/ /requirements/requirements/
 
-RUN pip wheel --wheel-dir=/wheels \
+RUN pip wheel --wheel-dir=/wheels --no-cache-dir \
         -r /requirements/requirements.txt \
         -r /requirements/requirements-dev.txt \
-        -r /requirements/requirements-ci.txt && \
+        -r /requirements/requirements-ci.txt \
+        -r /requirements/requirements/requirements-devpi.txt && \
     rm -rf  /root/.cache
 
 FROM python:${PYTHON_VERSION}
-RUN apt update -y && apt install -y libgl1-mesa-glx
+RUN apt-get update -y &&  \
+    apt-get install -y --no-install-recommends libgl1-mesa-glx && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=wheel_builder /wheels /wheels/
 COPY requirements.txt requirements-dev.txt requirements-ci.txt /requirements/
 COPY requirements/ /requirements/requirements/
 
-RUN pip install --no-index --find-links=/wheels \
+RUN pip install --no-index  --no-cache-dir --find-links=/wheels \
     -r /requirements/requirements.txt \
     -r /requirements/requirements-dev.txt \
-    -r /requirements/requirements-ci.txt
+    -r /requirements/requirements-ci.txt \
+    -r /requirements/requirements/requirements-devpi.txt
 
 ENV PIP_FIND_LINKS=/wheels
 ENV PIP_NO_CACHE_DIR=1
