@@ -9,9 +9,9 @@ SONARQUBE_CREDENTIAL_ID = "sonartoken-pyhathiprep"
 // ============================================================================
 // Versions of python that are supported
 // ----------------------------------------------------------------------------
-SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10']
-SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9', '3.10']
-SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9', '3.10']
+SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
+SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9', '3.10', '3.11']
+SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9', '3.10', '3.11']
 
 PYPI_SERVERS = [
     'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_public/',
@@ -589,10 +589,10 @@ pipeline {
 
                             def macTests = [:]
                             SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
-                                macTests["Mac - Python ${pythonVersion}: sdist"] = {
+                                macTests["Mac x86_64- Python ${pythonVersion}: sdist"] = {
                                     packages.testPkg(
                                             agent: [
-                                                label: "mac && python${pythonVersion}",
+                                                label: "mac && python${pythonVersion} && x86_64",
                                             ],
                                             glob: 'dist/*.tar.gz,dist/*.zip',
                                             stash: 'PYTHON_PACKAGES',
@@ -615,10 +615,10 @@ pipeline {
 
                                         )
                                 }
-                                macTests["Mac - Python ${pythonVersion}: wheel"] = {
+                                macTests["Mac x86_64 - Python ${pythonVersion}: wheel"] = {
                                     packages.testPkg(
                                             agent: [
-                                                label: "mac && python${pythonVersion}",
+                                                label: "mac && python${pythonVersion} && x86_64",
                                             ],
                                             glob: 'dist/*.whl',
                                             stash: 'PYTHON_PACKAGES',
