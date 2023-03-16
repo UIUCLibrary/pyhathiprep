@@ -545,7 +545,8 @@ pipeline {
                                             ],
                                             glob: 'dist/*.tar.gz,dist/*.zip',
                                             stash: 'PYTHON_PACKAGES',
-                                            pythonVersion: pythonVersion
+                                            pythonVersion: pythonVersion,
+                                            retry: 3
                                         )
                                     }
                                     windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
@@ -560,7 +561,8 @@ pipeline {
                                             ],
                                             glob: 'dist/*.whl',
                                             stash: 'PYTHON_PACKAGES',
-                                            pythonVersion: pythonVersion
+                                            pythonVersion: pythonVersion,
+                                            retry: 3
                                         )
                                     }
                                 }
@@ -588,7 +590,8 @@ pipeline {
                                             ],
                                             glob: 'dist/*.tar.gz',
                                             stash: 'PYTHON_PACKAGES',
-                                            pythonVersion: pythonVersion
+                                            pythonVersion: pythonVersion,
+                                            retry: 3
                                         )
                                     }
                                     linuxTests["Linux ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
@@ -603,7 +606,8 @@ pipeline {
                                             ],
                                             glob: 'dist/*.whl',
                                             stash: 'PYTHON_PACKAGES',
-                                            pythonVersion: pythonVersion
+                                            pythonVersion: pythonVersion,
+                                            retry: 3
                                         )
                                     }
                                 }
