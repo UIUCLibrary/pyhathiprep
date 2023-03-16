@@ -443,7 +443,8 @@ pipeline {
                                                 envNamePrefix: "Tox Linux",
                                                 label: "linux && docker && x86",
                                                 dockerfile: "ci/docker/python/linux/tox/Dockerfile",
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                dockerRunArgs: '-v pipcache_pyhathiprep:/.cache/pip'
                                             )
                                     },
                                     "Windows":{
@@ -451,7 +452,8 @@ pipeline {
                                                 envNamePrefix: "Tox Windows",
                                                 label: 'windows && docker && x86',
                                                 dockerfile: "ci/docker/python/windows/tox/Dockerfile",
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                                                dockerRunArgs: '-v pipcache_pyhathiprep:c:/users/containeradministrator/appdata/local/pip'
                                             )
                                     },
                                     failFast: true
@@ -531,7 +533,8 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker && x86',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                                                    args: '-v pipcache_pyhathiprep:c:/users/containeradministrator/appdata/local/pip'
                                                 ]
                                             ],
                                             glob: 'dist/*.tar.gz,dist/*.zip',
@@ -545,7 +548,8 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker && x86',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                                                    args: '-v pipcache_pyhathiprep:c:/users/containeradministrator/appdata/local/pip'
                                                 ]
                                             ],
                                             glob: 'dist/*.whl',
@@ -563,7 +567,8 @@ pipeline {
                                             dockerfile: [
                                                 label: 'linux && docker && x86',
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                args: '-v pipcache_pyhathiprep:/.cache/pip'
                                             ]
                                         ],
                                         glob: 'dist/*.tar.gz',
@@ -577,7 +582,8 @@ pipeline {
                                             dockerfile: [
                                                 label: 'linux && docker && x86',
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                args: '-v pipcache_pyhathiprep:/.cache/pip'
                                             ]
                                         ],
                                         glob: 'dist/*.whl',
