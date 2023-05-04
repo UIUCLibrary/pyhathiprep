@@ -97,6 +97,12 @@ def startup(){
                     }
                 }
             },
+            'Enable Git Forensics': {
+                node(){
+                    checkout scm
+                    mineRepository()
+                }
+            },
             'Getting Distribution Info': {
                 node('linux && docker && x86') {
                     timeout(2){
