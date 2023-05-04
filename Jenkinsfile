@@ -286,6 +286,7 @@ pipeline {
                                                             sh(label: 'Running pytest',
                                                                script: '''mkdir -p reports/pytest/
                                                                           coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml
+
                                                                           '''
 
                                                             )
@@ -299,7 +300,7 @@ pipeline {
                                                 }
                                                 stage('Documentation'){
                                                     steps{
-                                                        sh 'coverage run --parallel-mode --source=pyhathiprep setup.py build_sphinx --source-dir=docs/source --build-dir=build/docs --builder=doctest --warning-is-error --keep-going'
+                                                        sh 'coverage run --parallel-mode --source=pyhathiprep -m sphinx docs/source build/docs -b=doctest -W --keep-going'
                                                     }
                                                 }
                                                 stage('MyPy'){

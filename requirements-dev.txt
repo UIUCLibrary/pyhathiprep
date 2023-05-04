@@ -1,7 +1,7 @@
 -r requirements.txt
 mypy
 wheel
-sphinx<7.0
+sphinx
 pytest
 pytest-runner
 -r requirements/requirements_tox.txt
