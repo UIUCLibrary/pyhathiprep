@@ -759,14 +759,14 @@ pipeline {
                                     macArchitectures.add('m1')
                                 }
                                 macArchitectures.each{ processorArchitecture ->
-                                    macPackages["Test Python ${pythonVersion}: wheel Mac ${macArchitectures}"] = {
+                                    macPackages["Test Python ${pythonVersion}: wheel Mac ${processorArchitecture}"] = {
                                         withEnv([
                                             'PATH+EXTRA=./venv/bin'
 
                                         ]) {
                                             devpi.testDevpiPackage(
                                                 agent: [
-                                                    label: "mac && python${pythonVersion} && devpi-access && ${macArchitectures}"
+                                                    label: "mac && python${pythonVersion} && devpi-access && ${processorArchitecture}"
                                                 ],
                                                 devpi: [
                                                     index: DEVPI_CONFIG.stagingIndex,
@@ -798,13 +798,13 @@ pipeline {
                                             )
                                         }
                                     }
-                                    macPackages["Test Python ${pythonVersion}: sdist Mac ${macArchitectures}"]= {
+                                    macPackages["Test Python ${pythonVersion}: sdist Mac ${processorArchitecture}"]= {
                                         withEnv([
                                             'PATH+EXTRA=./venv/bin'
                                         ]) {
                                             devpi.testDevpiPackage(
                                                 agent: [
-                                                    label: "mac && python${pythonVersion} && devpi-access && ${macArchitectures}"
+                                                    label: "mac && python${pythonVersion} && devpi-access && ${processorArchitecture}"
                                                 ],
                                                 devpi: [
                                                     index: DEVPI_CONFIG.stagingIndex,
