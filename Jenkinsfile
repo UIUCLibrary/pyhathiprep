@@ -1,8 +1,5 @@
 #!groovy
 
-SONARQUBE_CREDENTIAL_ID = 'sonartoken-pyhathiprep'
-
-
 // ============================================================================
 // Versions of python that are supported
 // ----------------------------------------------------------------------------
@@ -77,23 +74,9 @@ node(){
 }
 
 def startup(){
-    def SONARQUBE_CREDENTIAL_ID = SONARQUBE_CREDENTIAL_ID
     parallel(
         [
             failFast: true,
-            'Checking sonarqube Settings': {
-                node(){
-                    try{
-                        withCredentials([string(credentialsId: SONARQUBE_CREDENTIAL_ID, variable: 'dddd')]) {
-                            echo 'Found credentials for sonarqube'
-                        }
-                        defaultParameterValues.USE_SONARQUBE = true
-                    } catch(e){
-                        echo "Setting defaultValue for USE_SONARQUBE to false. Reason: ${e}"
-                        defaultParameterValues.USE_SONARQUBE = false
-                    }
-                }
-            },
             'Enable Git Forensics': {
                 node(){
                     checkout scm
@@ -163,7 +146,8 @@ pipeline {
     agent none
     parameters {
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
-        booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
+        booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
+        credentials(name: 'SONARCLOUD_TOKEN', credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl', defaultValue: 'sonarcloud_token', required: false)
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
         booleanParam(name: 'BUILD_PACKAGES', defaultValue: false, description: 'Build Python packages')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test packages')
@@ -387,14 +371,27 @@ pipeline {
                                                 retry(3)
                                             }
                                             when{
-                                                equals expected: true, actual: params.USE_SONARQUBE
+                                                allOf{
+                                                    equals expected: true, actual: params.USE_SONARQUBE
+                                                    expression{
+                                                        try{
+                                                            withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'dddd')]) {
+                                                                echo 'Found credentials for sonarqube'
+                                                            }
+                                                        } catch(e){
+                                                            echo 'Skipping due to invalid credentials for sonarqube'
+                                                            return false
+                                                        }
+                                                        return true
+                                                    }
+                                                }
                                             }
                                             steps{
                                                 script{
                                                     def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
                                                     def newProps = get_props()
                                                     sonarqube.sonarcloudSubmit(
-                                                        credentialsId: SONARQUBE_CREDENTIAL_ID,
+                                                        credentialsId: params.SONARCLOUD_TOKEN,
                                                         projectVersion: newProps.Version
                                                     )
                                                 }
