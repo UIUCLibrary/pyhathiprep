@@ -1,10 +1,4 @@
 #!groovy
-@Library('ds-utils@v0.1.0') // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
-import org.ds.*
-@Library(['devpi', 'PythonHelpers']) _
-
-SONARQUBE_CREDENTIAL_ID = 'sonartoken-pyhathiprep'
-
 
 // ============================================================================
 // Versions of python that are supported
@@ -13,16 +7,14 @@ SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 SUPPORTED_LINUX_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 SUPPORTED_WINDOWS_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 
-PYPI_SERVERS = [
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_public/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
-    ]
-
-defaultParameterValues = [
-    USE_SONARQUBE: false
-]
-
+def getPypiConfig() {
+    node(){
+        configFileProvider([configFile(fileId: 'pypi_config', variable: 'CONFIG_FILE')]) {
+            def config = readJSON( file: CONFIG_FILE)
+            return config['deployment']['indexes']
+        }
+    }
+}
 
 def getDevpiConfig() {
     node(){
@@ -80,23 +72,9 @@ node(){
 }
 
 def startup(){
-    def SONARQUBE_CREDENTIAL_ID = SONARQUBE_CREDENTIAL_ID
     parallel(
         [
             failFast: true,
-            'Checking sonarqube Settings': {
-                node(){
-                    try{
-                        withCredentials([string(credentialsId: SONARQUBE_CREDENTIAL_ID, variable: 'dddd')]) {
-                            echo 'Found credentials for sonarqube'
-                        }
-                        defaultParameterValues.USE_SONARQUBE = true
-                    } catch(e){
-                        echo "Setting defaultValue for USE_SONARQUBE to false. Reason: ${e}"
-                        defaultParameterValues.USE_SONARQUBE = false
-                    }
-                }
-            },
             'Enable Git Forensics': {
                 node(){
                     checkout scm
@@ -166,7 +144,8 @@ pipeline {
     agent none
     parameters {
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
-        booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
+        booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
+        credentials(name: 'SONARCLOUD_TOKEN', credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl', defaultValue: 'sonarcloud_token', required: false)
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
         booleanParam(name: 'BUILD_PACKAGES', defaultValue: false, description: 'Build Python packages')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test packages')
@@ -178,7 +157,6 @@ pipeline {
         booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
         booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
-        string(name: 'URL_SUBFOLDER', defaultValue: 'pyhathiprep', description: 'The directory that the docs should be saved under')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
     }
     stages {
@@ -390,14 +368,27 @@ pipeline {
                                                 retry(3)
                                             }
                                             when{
-                                                equals expected: true, actual: params.USE_SONARQUBE
+                                                allOf{
+                                                    equals expected: true, actual: params.USE_SONARQUBE
+                                                    expression{
+                                                        try{
+                                                            withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'dddd')]) {
+                                                                echo 'Found credentials for sonarqube'
+                                                            }
+                                                        } catch(e){
+                                                            echo 'Skipping due to invalid credentials for sonarqube'
+                                                            return false
+                                                        }
+                                                        return true
+                                                    }
+                                                }
                                             }
                                             steps{
                                                 script{
                                                     def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
                                                     def newProps = get_props()
                                                     sonarqube.sonarcloudSubmit(
-                                                        credentialsId: SONARQUBE_CREDENTIAL_ID,
+                                                        credentialsId: params.SONARCLOUD_TOKEN,
                                                         projectVersion: newProps.Version
                                                     )
                                                 }
@@ -417,12 +408,17 @@ pipeline {
                                                     [pattern: 'dist/', type: 'INCLUDE'],
                                                     [pattern: 'build/', type: 'INCLUDE'],
                                                     [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
+                                                    [pattern: '.scannerwork', type: 'INCLUDE'],
+                                                    [pattern: '?/', type: 'INCLUDE'],
                                                     [pattern: 'reports/', type: 'INCLUDE'],
                                                     [pattern: 'logs/', type: 'INCLUDE'],
                                                     [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                                    [pattern: '.coverage', type: 'INCLUDE'],
+                                                    [pattern: 'coverage/', type: 'INCLUDE'],
+                                                    [pattern: 'coverage-sources.zip', type: 'INCLUDE'],
                                                     [pattern: '.pytest_cache/', type: 'INCLUDE'],
                                                     [pattern: '.pylint_cache/', type: 'INCLUDE'],
-
+                                                    [pattern: '**/__pycache__/', type: 'INCLUDE'],
                                                     ]
                                             )
                                             sh 'ls -la'
@@ -1044,7 +1040,7 @@ pipeline {
                         message 'Upload to pypi server?'
                         parameters {
                             choice(
-                                choices: PYPI_SERVERS,
+                                choices: getPypiConfig(),
                                 description: 'Url to the pypi index to upload python packages.',
                                 name: 'SERVER_URL'
                             )
