@@ -1,7 +1,4 @@
 #!groovy
-@Library('ds-utils@v0.1.0') // Uses library from https://github.com/UIUCLibrary/Jenkins_utils
-import org.ds.*
-@Library(['devpi', 'PythonHelpers']) _
 
 SONARQUBE_CREDENTIAL_ID = 'sonartoken-pyhathiprep'
 
