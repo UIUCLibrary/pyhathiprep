@@ -159,7 +159,6 @@ pipeline {
         booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
         booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
-        string(name: 'URL_SUBFOLDER', defaultValue: 'pyhathiprep', description: 'The directory that the docs should be saved under')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
     }
     stages {
@@ -411,12 +410,17 @@ pipeline {
                                                     [pattern: 'dist/', type: 'INCLUDE'],
                                                     [pattern: 'build/', type: 'INCLUDE'],
                                                     [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
+                                                    [pattern: '.scannerwork', type: 'INCLUDE'],
+                                                    [pattern: '?/', type: 'INCLUDE'],
                                                     [pattern: 'reports/', type: 'INCLUDE'],
                                                     [pattern: 'logs/', type: 'INCLUDE'],
                                                     [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                                    [pattern: '.coverage', type: 'INCLUDE'],
+                                                    [pattern: 'coverage/', type: 'INCLUDE'],
+                                                    [pattern: 'coverage-sources.zip', type: 'INCLUDE'],
                                                     [pattern: '.pytest_cache/', type: 'INCLUDE'],
                                                     [pattern: '.pylint_cache/', type: 'INCLUDE'],
-
+                                                    [pattern: '**/__pycache__/', type: 'INCLUDE'],
                                                     ]
                                             )
                                             sh 'ls -la'
