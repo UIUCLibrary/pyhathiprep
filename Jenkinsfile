@@ -644,7 +644,7 @@ pipeline {
                                                         label:'Install Tox',
                                                         script: '''python3 -m venv venv
                                                                    venv/bin/pip install pip --upgrade
-                                                                   venv/bin/pip install -r requirements/requirements_tox.txt
+                                                                   venv/bin/pip install -r requirements/requirements-tox.txt
                                                                    '''
                                                     )
                                                 },
@@ -669,7 +669,7 @@ pipeline {
                                                         label:'Install Tox',
                                                         script: '''python3 -m venv venv
                                                                    venv/bin/pip install pip --upgrade
-                                                                   venv/bin/pip install -r requirements/requirements_tox.txt
+                                                                   venv/bin/pip install -r requirements/requirements-tox.txt
                                                                    '''
                                                     )
                                                 },
@@ -782,7 +782,7 @@ pipeline {
                                                             label:'Installing Devpi client',
                                                             script: '''python3 -m venv venv
                                                                         venv/bin/python -m pip install pip --upgrade
-                                                                        venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
+                                                                        venv/bin/python -m pip install devpi_client -r requirements/requirements-tox.txt
                                                                         '''
                                                         )
                                                     },
@@ -820,7 +820,7 @@ pipeline {
                                                             label:'Installing Devpi client',
                                                             script: '''python3 -m venv venv
                                                                         venv/bin/python -m pip install pip --upgrade
-                                                                        venv/bin/python -m pip install devpi_client -r requirements/requirements_tox.txt
+                                                                        venv/bin/python -m pip install devpi_client -r requirements/requirements-tox.txt
                                                                         '''
                                                         )
                                                     },

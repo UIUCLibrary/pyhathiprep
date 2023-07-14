@@ -1,40 +1,35 @@
 ARG PYTHON_VERSION=3.10
-FROM python:${PYTHON_VERSION} as wheel_builder
+ARG PIP_FIND_LINKS=/wheels
+FROM python:${PYTHON_VERSION} as base_python
+
+FROM base_python as wheel_builder
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
 ARG PIP_INDEX_URL
-
 RUN python -m pip install  --no-cache-dir --upgrade pip &&  \
     pip install --no-cache-dir setuptools && \
     pip install --no-cache-dir wheel
 
-COPY requirements.txt requirements-dev.txt requirements-ci.txt /requirements/
+COPY requirements-ci.txt /requirements/
 COPY requirements/ /requirements/requirements/
 
-RUN pip wheel --wheel-dir=/wheels --no-cache-dir \
-        -r /requirements/requirements.txt \
-        -r /requirements/requirements-dev.txt \
-        -r /requirements/requirements-ci.txt \
-        -r /requirements/requirements/requirements-devpi.txt && \
-    rm -rf  /root/.cache
+ARG PIP_FIND_LINKS
+RUN mkdir -p ${PIP_FIND_LINKS} &&  \
+    pip wheel --wheel-dir=${PIP_FIND_LINKS} --no-cache-dir -r /requirements/requirements-ci.txt
 
-FROM python:${PYTHON_VERSION}
+FROM base_python
 RUN apt-get update -y &&  \
     apt-get install -y --no-install-recommends libgl1-mesa-glx && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=wheel_builder /wheels /wheels/
-COPY requirements.txt requirements-dev.txt requirements-ci.txt /requirements/
-COPY requirements/ /requirements/requirements/
+ARG PIP_FIND_LINKS
+COPY --from=wheel_builder ${PIP_FIND_LINKS} ${PIP_FIND_LINKS}/
+COPY --from=wheel_builder /requirements /requirements/
+ARG PIP_FIND_LINKS
+RUN pip install --no-index  --no-cache-dir --find-links=${PIP_FIND_LINKS} -r /requirements/requirements-ci.txt
 
-RUN pip install --no-index  --no-cache-dir --find-links=/wheels \
-    -r /requirements/requirements.txt \
-    -r /requirements/requirements-dev.txt \
-    -r /requirements/requirements-ci.txt \
-    -r /requirements/requirements/requirements-devpi.txt
 
-ENV PIP_FIND_LINKS=/wheels
 ENV PIP_NO_CACHE_DIR=1
 
 ENV SONAR_SCANNER_VERSION=4.7.0.2747
