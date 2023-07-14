@@ -1,5 +1,5 @@
 ARG PIP_DOWNLOAD_CACHE=/.cache/pip
-FROM ubuntu:20.04 as wheel_builder_base
+FROM ubuntu:20.04
 COPY ci/docker/python/linux/tox/apt-packages.txt /tmp/
 
 RUN apt-get update && \
@@ -10,11 +10,11 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-FROM wheel_builder_base
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
-COPY requirements/ /tmp/requirements
-RUN pip3 install --no-cache-dir -r /tmp/requirements/requirements_tox.txt -r /tmp/requirements/requirements-devpi.txt
+COPY requirements/ /tmp/python_requirements/requirements/
+COPY requirements-ci.txt /tmp/python_requirements
+RUN python3 -m pip install pip --upgrade && pip3 install --no-cache-dir -r /tmp/python_requirements/requirements-ci.txt
 ARG PIP_DOWNLOAD_CACHE
 RUN mkdir -p ${PIP_DOWNLOAD_CACHE} && \
     chmod -R 777 ${PIP_DOWNLOAD_CACHE}
