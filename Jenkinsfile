@@ -775,6 +775,7 @@ pipeline {
                                                     version: props.Version,
                                                     selector: 'whl'
                                                 ],
+                                                retries: 2,
                                                 test:[
                                                     setup: {
                                                         checkout scm
@@ -813,6 +814,7 @@ pipeline {
                                                     version: props.Version,
                                                     selector: 'tar.gz'
                                                 ],
+                                                retries: 2,
                                                 test:[
                                                     setup: {
                                                         checkout scm
@@ -851,6 +853,7 @@ pipeline {
                                                 server: DEVPI_CONFIG.server,
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
                                             ],
+                                            retries: 2,
                                             package:[
                                                 name: props.Name,
                                                 version: props.Version,
@@ -875,6 +878,7 @@ pipeline {
                                                 server: DEVPI_CONFIG.server,
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
                                             ],
+                                            retries: 2,
                                             package:[
                                                 name: props.Name,
                                                 version: props.Version,
@@ -903,6 +907,7 @@ pipeline {
                                             server: DEVPI_CONFIG.server,
                                             credentialsId: DEVPI_CONFIG.credentialsId,
                                         ],
+                                        retries: 2,
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -927,6 +932,7 @@ pipeline {
                                             server: DEVPI_CONFIG.server,
                                             credentialsId: DEVPI_CONFIG.credentialsId,
                                         ],
+                                        retries: 2,
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
