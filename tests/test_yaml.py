@@ -1,5 +1,6 @@
 import itertools
 import shutil
+import time
 
 import pytz
 import tzlocal
@@ -115,3 +116,9 @@ pagedata:
     if errors:
         pytest.fail("".join(errors))
 
+
+def test_set_capture_data_sets_value_in_data():
+    builder = HathiYmlBuilder()
+    assert 'capture_date' not in builder.data
+    builder.set_capture_date(datetime.now())
+    assert builder.data['capture_date'] is not None
