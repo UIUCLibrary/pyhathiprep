@@ -8,3 +8,7 @@ coverage
 flake8
 build
 pylint
+ruamel.yaml
+pytz
+tzlocal<5.0
+setuptools>=30.3.0

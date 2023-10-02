@@ -6,7 +6,7 @@ setup(
     install_requires=[
         "ruamel.yaml",
         "pytz",
-        "tzlocal",
+        "tzlocal<5.0",
         'importlib_resources;python_version<"3.7"'
     ],
     package_data={"pyhathiprep": ["py.typed"]},
