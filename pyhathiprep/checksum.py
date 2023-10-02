@@ -16,7 +16,7 @@ class AbsChecksumBuilder(metaclass=abc.ABCMeta):
 
     def __init__(self) -> None:
         """Create a new builder object."""
-        self._files = []  # type: typing.List[HashValue]
+        self._files: typing.List[HashValue] = []
 
     def add_entry(self, filename: str, hash_value: str) -> None:
         """Add Additional file to for a checksum to be calculated.

@@ -5,9 +5,15 @@ import io
 import abc
 import functools
 import typing
+from typing import Dict
 from datetime import datetime
-import ruamel.yaml  # type: ignore
-import tzlocal  # type: ignore
+import ruamel.yaml
+import tzlocal
+
+try:
+    from typing import ParamSpec
+except ImportError:
+    from typing_extensions import ParamSpec  # type: ignore
 
 
 class AbsYmlBuilder(metaclass=abc.ABCMeta):
@@ -20,7 +26,7 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
         for key, value in self.boilerplate().items():
             self.data[key] = str(value)
 
-    def add_pagedata(self, filename, **attributes) -> None:
+    def add_pagedata(self, filename: str, **attributes) -> None:
         """Add pagedata.
 
         Args:
@@ -29,11 +35,11 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
 
         """
         if filename in self._page_data:
-            raise KeyError("{} Already exists".format(filename))
+            raise KeyError(f"{filename} Already exists")
         self._page_data[filename] = attributes
 
     @abc.abstractmethod
-    def boilerplate(self) -> typing.Dict[str, str]:
+    def boilerplate(self) -> Dict[str, str]:
         """Get standard data.
 
         Returns:
@@ -42,7 +48,7 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def build(self):
+    def build(self) -> str:
         """Construct the YAML data.
 
         Returns:
@@ -50,11 +56,16 @@ class AbsYmlBuilder(metaclass=abc.ABCMeta):
         """
 
 
-def strip_date_quotes(func):
+Param = ParamSpec("Param")
+
+
+def strip_date_quotes(
+        func: typing.Callable[Param, str]
+) -> typing.Callable[Param, str]:
     """Remove quotes added around dates.
 
     This is a hack, that's required right now because ruamel.yaml seems to
-        inconsistent about it's date formatting.
+        inconsistent about its date formatting.
 
     Args:
         func:
@@ -63,7 +74,7 @@ def strip_date_quotes(func):
 
     """
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs) -> str:
         yml_data = func(*args, **kwargs)
         cleaned_lines = []
         for line in yml_data.splitlines(keepends=True):
@@ -83,7 +94,7 @@ def strip_date_quotes(func):
 class HathiYmlBuilder(AbsYmlBuilder):
     """Builder for YML data."""
 
-    def boilerplate(self) -> typing.Dict[str, str]:
+    def boilerplate(self) -> Dict[str, str]:
         """Get standard data.
 
         Returns:
@@ -105,7 +116,7 @@ class HathiYmlBuilder(AbsYmlBuilder):
         """
         self.data[key] = value
 
-    def set_capture_date(self, date: datetime):
+    def set_capture_date(self, date: datetime) -> None:
         """Set the capture date.
 
         Args:
@@ -120,7 +131,7 @@ class HathiYmlBuilder(AbsYmlBuilder):
         self.data["capture_date"] = capture_date.isoformat(timespec="seconds")
 
     @strip_date_quotes
-    def build(self):
+    def build(self) -> str:
         """Construct the YAML data.
 
         Returns:
@@ -162,7 +173,11 @@ class HathiYmlBuilder(AbsYmlBuilder):
         return yml_str
 
 
-def make_yml(directory: str, title_page=None, **overrides) -> str:
+def make_yml(
+        directory: str,
+        title_page: typing.Optional[str] = None,
+        **overrides
+) -> str:
     """
     Create the data for HathiTrust YAML file from a given directory.
 
@@ -196,7 +211,10 @@ def make_yml(directory: str, title_page=None, **overrides) -> str:
     return builder.build()
 
 
-def get_images(directory, page_data_extensions=(".jp2", ".tif")):
+def get_images(
+        directory: str,
+        page_data_extensions=(".jp2", ".tif")
+) -> typing.Iterator[str]:
     """Locate image files at a location.
 
     Args:

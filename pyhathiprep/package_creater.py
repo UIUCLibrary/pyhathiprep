@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import abc
 import typing
+from typing import Optional
 from datetime import datetime
 import logging
 import warnings
@@ -28,7 +29,7 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
         self._prefix = derive_package_prefix(source)
 
     @abc.abstractmethod
-    def create_checksum_report(self, build_path):
+    def create_checksum_report(self, build_path: str) -> None:
         """Create a checksum report.
 
         Args:
@@ -40,7 +41,7 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
     def generate_checksum_report(
             source_path: str,
             destination_path: str,
-    ):
+    ) -> None:
         """Generate checksum report.
 
         Args:
@@ -63,7 +64,7 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
             source_path: str,
             destination_path: str,
             title_page: typing.Optional[str]
-    ):
+    ) -> None:
         """Generate meta.yaml file.
 
         Args:
@@ -85,7 +86,12 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
             write_file.write(yml)
 
     @abc.abstractmethod
-    def make_yaml(self, build_path, title_page=None):
+    def make_yaml(
+            self,
+            build_path: str,
+            title_page: Optional[str] = None
+    ) -> None:
+
         """Create a yml file.
 
         Args:
@@ -94,7 +100,7 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
 
         """
 
-    def copy_source(self, build_path):
+    def copy_source(self, build_path: str) -> None:
         """Copy the source.
 
         Args:
@@ -103,7 +109,12 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def deploy(self, build_path, destination, overwrite=False):
+    def deploy(
+            self,
+            build_path: str,
+            destination: Optional[str] = None,
+            overwrite: bool = False
+    ) -> None:
         """Put the files somewhere.
 
         Args:
@@ -113,8 +124,12 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
 
         """
 
-    def generate_package(self, destination=None, overwrite=False,
-                         title_page=None):
+    def generate_package(
+            self,
+            destination: Optional[str] = None,
+            overwrite: bool = False,
+            title_page: Optional[str] = None
+    ) -> None:
         """Generate a new package.
 
         Args:
@@ -136,7 +151,11 @@ class AbsPackageCreator(metaclass=abc.ABCMeta):
 class InplacePackage(AbsPackageCreator):
     """Build package inplace."""
 
-    def make_yaml(self, build_path, title_page=None):
+    def make_yaml(
+            self,
+            build_path: str,
+            title_page: Optional[str] = None
+    ) -> None:
         """Create a yml file.
 
         Args:
@@ -146,7 +165,7 @@ class InplacePackage(AbsPackageCreator):
         """
         self.generate_meta_yaml(self._source, build_path, title_page)
 
-    def create_checksum_report(self, build_path):
+    def create_checksum_report(self, build_path: str) -> None:
         """Create a checksum report.
 
         Args:
@@ -158,7 +177,12 @@ class InplacePackage(AbsPackageCreator):
             destination_path=build_path
         )
 
-    def deploy(self, build_path, destination=None, overwrite=False):
+    def deploy(
+            self,
+            build_path: str,
+            destination: Optional[str] = None,
+            overwrite: bool = False
+    ) -> None:
         """Put the files somewhere.
 
         Args:
@@ -179,7 +203,11 @@ class InplacePackage(AbsPackageCreator):
 class NewPackage(AbsPackageCreator):
     """Generating a new packages."""
 
-    def make_yaml(self, build_path, title_page=None):
+    def make_yaml(
+            self,
+            build_path: str,
+            title_page: Optional[str] = None
+    ) -> None:
         """Create a yml file.
 
         Args:
@@ -189,7 +217,7 @@ class NewPackage(AbsPackageCreator):
         """
         self.generate_meta_yaml(build_path, build_path, title_page)
 
-    def create_checksum_report(self, build_path):
+    def create_checksum_report(self, build_path: str) -> None:
         """Create a checksum report.
 
         Args:
@@ -201,7 +229,7 @@ class NewPackage(AbsPackageCreator):
             destination_path=build_path
         )
 
-    def copy_source(self, build_path):
+    def copy_source(self, build_path: str) -> None:
         """Copy the source.
 
         Args:
@@ -214,7 +242,12 @@ class NewPackage(AbsPackageCreator):
             # logger.debug("Copying {} to {}".format(item.path, build_path))
             shutil.copyfile(item.path, os.path.join(build_path, item.name))
 
-    def deploy(self, build_path, destination=None, overwrite=False):
+    def deploy(
+            self,
+            build_path: str,
+            destination: Optional[str] = None,
+            overwrite: bool = False
+    ) -> None:
         """Put the files somewhere.
 
         Args:
@@ -244,8 +277,12 @@ class NewPackage(AbsPackageCreator):
             shutil.move(item.path, new_package_path)
 
 
-def create_package(source: str, destination=None, prefix=None,
-                   overwrite=False) -> None:
+def create_package(
+        source: str,
+        destination: Optional[str] = None,
+        prefix: Optional[str] = None,
+        overwrite: bool = False
+) -> None:
     """Create a single package folder for Hathi.
 
     Args:
