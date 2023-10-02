@@ -11,4 +11,6 @@ pylint
 ruamel.yaml
 pytz
 tzlocal<5.0
+types-tzlocal<5.0
 setuptools>=30.3.0
+typing-extensions;python_version<"3.10"

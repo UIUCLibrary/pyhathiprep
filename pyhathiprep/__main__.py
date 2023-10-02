@@ -25,7 +25,7 @@ def main(args=None, test_suite=None):
                     return pytest.main(args)
             sys.exit(test_suite())
         except ImportError as error:
-            print("Unable to run tests. Reason {}".format(error),
+            print(f"Unable to run tests. Reason {error}",
                   file=sys.stderr)
             sys.exit(1)
     else:

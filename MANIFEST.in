@@ -2,7 +2,8 @@
 include LICENSE tox.ini README.rst requirements.txt requirements-dev.txt
 include docs/make.bat docs/Makefile
 
-
+include requirements/*.txt
+exclude requirements/requirements-devpi.txt requirements/requirements-ci.txt requirements/requirements-ci-freeze.txt
 recursive-include docs/source *
 recursive-include tests *.py
 recursive-exclude * __pycache__
