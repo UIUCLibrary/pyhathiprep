@@ -1,10 +1,10 @@
 # escape=`
-
+ARG PIPX_HOME=c:\pipx
 
 ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
-FROM ${FROM_IMAGE} as base_image
+FROM ${FROM_IMAGE} AS base_image
 
-FROM base_image as certsgen
+FROM base_image AS certsgen
 RUN certutil -generateSSTFromWU roots.sst
 
 FROM base_image
@@ -61,6 +61,11 @@ ARG PIP_INDEX_URL
 COPY requirements-ci.txt c:/python_requirments/
 COPY requirements/ c:/python_requirments/requirements
 RUN python -m pip install pip --upgrade ; pip install -r c:/python_requirments/requirements-ci.txt
+
+RUN py -3 -m pip install --no-cache-dir pipx ; `
+    py -3 -m pipx ensurepath
+RUN py -3 -m pipx install 'devpi-client<7.0'
+
 
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate
