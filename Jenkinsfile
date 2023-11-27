@@ -989,7 +989,8 @@ pipeline {
                         checkout scm
                         script{
                             if (!env.TAG_NAME?.trim()){
-                                docker.build('pyhathiprep:devpi','-f ./ci/docker/deploy/devpi/deploy/Dockerfile .').inside{
+                                def dockerImage = docker.build('pyhathiprep:devpi','-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .')
+                                dockerImage.inside{
                                     devpi.pushPackageToIndex(
                                         pkgName: props.Name,
                                         pkgVersion: props.Version,
@@ -999,6 +1000,7 @@ pipeline {
                                         credentialsId: DEVPI_CONFIG.credentialsId
                                     )
                                 }
+                                sh script: "docker image rm --no-prune ${dockerImage.imageName()}"
                             }
                         }
                     }
@@ -1006,7 +1008,8 @@ pipeline {
                 cleanup{
                     node('linux && docker && x86 && devpi-access') {
                        script{
-                            docker.build('pyhathiprep:devpi','-f ./ci/docker/deploy/devpi/deploy/Dockerfile .').inside{
+                            def dockerImage = docker.build('pyhathiprep:devpi','-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .')
+                            dockerImage.inside{
                                 devpi.removePackage(
                                     pkgName: props.Name,
                                     pkgVersion: props.Version,
@@ -1016,6 +1019,7 @@ pipeline {
 
                                 )
                             }
+                            sh script: "docker image rm --no-prune ${dockerImage.imageName()}"
                        }
                     }
                 }

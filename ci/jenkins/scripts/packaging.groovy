@@ -5,6 +5,15 @@ def getNodeLabel(agent){
     }
     return label
 }
+def getDockerRuntimeArgs(agent){
+    def args
+    if (agent.containsKey("dockerfile")){
+        if (agent.dockerfile.containsKey("args")){
+            return agent.dockerfile.args
+        }
+    }
+    return ""
+}
 def getToxEnv(args){
     try{
         def pythonVersion = args.pythonVersion.replace(".", "")
@@ -28,18 +37,34 @@ def getAgent(args){
 
     if (args.agent.containsKey("dockerfile")){
         def nodeLabel = getNodeLabel(args.agent)
+        def dockerArgs = getDockerRuntimeArgs(args.agent)
         return { inner ->
             node(nodeLabel){
                 ws{
                     checkout scm
                     def dockerImage
-                    def dockerImageName = "${currentBuild.fullProjectName}_${getToxEnv(args)}".replaceAll("-", "_").replaceAll('/', "_").replaceAll(' ', "").toLowerCase()
+                    def dockerImageName = "${currentBuild.fullProjectName}_${getToxEnv(args)}_${UUID.randomUUID().toString()}".replaceAll("-", "_").replaceAll('/', "_").replaceAll(' ', "").toLowerCase()
                     lock("docker build-${env.NODE_NAME}"){
                         dockerImage = docker.build(dockerImageName, "-f ${args.agent.dockerfile.filename} ${args.agent.dockerfile.additionalBuildArgs} .")
                     }
-                    def dockerRunArgs = args.agent.dockerfile.get('args', '')
-                    dockerImage.inside(dockerRunArgs){
-                        inner()
+                    try{
+                        dockerImage.inside(dockerArgs){
+                            inner()
+                        }
+                    } finally{
+                        if(isUnix()){
+                            sh(
+                                label: "Untagging Docker Image used to run tox",
+                                script: "docker image rm --no-prune ${dockerImage.imageName()}",
+                                returnStatus: true
+                            )
+                        } else {
+                            powershell(
+                                label: "Untagging Docker Image used to run tox",
+                                script: "docker image rm --no-prune ${dockerImage.imageName()}",
+                                returnStatus: true
+                            )
+                        }
                     }
                 }
             }
@@ -55,10 +80,9 @@ def testPkg(args = [:]){
         unstash "${args.stash}"
     }
     def teardown =  args['testTeardown'] ? args['testTeardown']: {}
-    def retries = args.containsKey('retry') ? args.retry : 1
-
+    def retryTimes = args['retryTimes'] ? args['retryTimes']: 1
     def agentRunner = getAgent(args)
-    retry(retries){
+    retry(retryTimes){
         agentRunner {
             setup()
             try{
