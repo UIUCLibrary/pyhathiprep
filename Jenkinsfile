@@ -82,25 +82,27 @@ def startup(){
                 }
             },
             'Getting Distribution Info': {
-                node('linux && docker && x86') {
-                    timeout(2){
-                        ws{
-                            checkout scm
-                            try{
-                                docker.image('python').inside {
-                                    withEnv(['PIP_NO_CACHE_DIR=off']) {
-                                        sh(
-                                           label: 'Running setup.py with dist_info',
-                                           script: '''python --version
-                                                      python setup.py dist_info
-                                                   '''
-                                        )
+                retry(3){
+                    node('linux && docker && x86') {
+                        timeout(2){
+                            ws{
+                                checkout scm
+                                try{
+                                    docker.image('python').inside {
+                                        withEnv(['PIP_NO_CACHE_DIR=off']) {
+                                            sh(
+                                               label: 'Running setup.py with dist_info',
+                                               script: '''python --version
+                                                          python setup.py dist_info
+                                                       '''
+                                            )
+                                        }
+                                        stash includes: '*.dist-info/**', name: 'DIST-INFO'
+                                        archiveArtifacts artifacts: '*.dist-info/**'
                                     }
-                                    stash includes: '*.dist-info/**', name: 'DIST-INFO'
-                                    archiveArtifacts artifacts: '*.dist-info/**'
+                                } finally{
+                                    deleteDir()
                                 }
-                            } finally{
-                                deleteDir()
                             }
                         }
                     }
