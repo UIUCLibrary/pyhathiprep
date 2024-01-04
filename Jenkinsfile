@@ -1,4 +1,8 @@
-#!groovy
+library identifier: 'JenkinsPythonHelperLibrary@2024.1.1', retriever: modernSCM(
+  [$class: 'GitSCMSource',
+   remote: 'https://github.com/UIUCLibrary/JenkinsPythonHelperLibrary.git',
+   ])
+
 
 // ============================================================================
 // Versions of python that are supported
@@ -437,19 +441,19 @@ pipeline {
                     }
                      steps {
                         script{
-                            def tox = fileLoader.fromGit(
-                                                    'tox',
-                                                    'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
-                                                    '8',
-                                                    null,
-                                                    ''
-                                                )
+//                            def tox = fileLoader.fromGit(
+//                                                    'tox',
+//                                                    'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
+//                                                    '8',
+//                                                    null,
+//                                                    ''
+//                                                )
                             def windowsJobs = [:]
                             def linuxJobs = [:]
                             stage('Scanning Tox Environments'){
                                 parallel(
                                     'Linux':{
-                                        linuxJobs = tox.getToxTestsParallel(
+                                        linuxJobs = getToxTestsParallel(
                                                 envNamePrefix: 'Tox Linux',
                                                 label: 'linux && docker && x86',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
@@ -459,7 +463,7 @@ pipeline {
                                             )
                                     },
                                     'Windows':{
-                                        windowsJobs = tox.getToxTestsParallel(
+                                        windowsJobs = getToxTestsParallel(
                                                 envNamePrefix: 'Tox Windows',
                                                 label: 'windows && docker && x86',
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
@@ -532,16 +536,11 @@ pipeline {
                     }
                     steps{
                         script{
-                            def packages
-                            node(){
-                                checkout scm
-                                packages = load('ci/jenkins/scripts/packaging.groovy')
-                            }
-                        def windowsTests = [:]
+                            def windowsTests = [:]
                             SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
                                 if(params.INCLUDE_WINDOWS_X86_64 == true){
                                     windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
-                                        packages.testPkg(
+                                        testPythonPkg(
                                             agent: [
                                                 dockerfile: [
                                                     label: 'windows && docker && x86',
@@ -550,14 +549,20 @@ pipeline {
                                                     args: '-v pipcache_pyhathiprep:c:/users/containeradministrator/appdata/local/pip'
                                                 ]
                                             ],
-                                            glob: 'dist/*.tar.gz,dist/*.zip',
-                                            stash: 'PYTHON_PACKAGES',
-                                            pythonVersion: pythonVersion,
-                                            retryTimes: 3
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'PYTHON_PACKAGES'
+                                            },
+                                            testCommand: {
+                                                findFiles(glob: 'dist/*.tar.gz,dist/*.zip').each{
+                                                    bat(label: 'Running Tox', script: "tox --workdir %TEMP%\\tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')} -v")
+                                                }
+                                            },
+                                            retries: 3
                                         )
                                     }
                                     windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
-                                        packages.testPkg(
+                                        testPythonPkg(
                                             agent: [
                                                 dockerfile: [
                                                     label: 'windows && docker && x86',
@@ -566,15 +571,21 @@ pipeline {
                                                     args: '-v pipcache_pyhathiprep:c:/users/containeradministrator/appdata/local/pip'
                                                 ]
                                             ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'PYTHON_PACKAGES',
-                                            pythonVersion: pythonVersion,
-                                            retryTimes: 3
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'PYTHON_PACKAGES'
+                                            },
+                                            testCommand: {
+                                                 findFiles(glob: 'dist/*.whl').each{
+                                                     powershell(label: 'Running Tox', script: "tox --installpkg ${it.path} --workdir \$env:TEMP\\tox  -e py${pythonVersion.replace('.', '')}")
+                                                 }
+
+                                            },
+                                            retries: 3
                                         )
                                     }
                                 }
                             }
-
                             def linuxTests = [:]
                             SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
                                 def architectures = []
@@ -586,7 +597,7 @@ pipeline {
                                 }
                                 architectures.each{ processorArchitecture ->
                                     linuxTests["Linux ${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
-                                        packages.testPkg(
+                                        testPythonPkg(
                                             agent: [
                                                 dockerfile: [
                                                     label: "linux && docker && ${processorArchitecture}",
@@ -595,14 +606,23 @@ pipeline {
                                                     args: '-v pipcache_pyhathiprep:/.cache/pip'
                                                 ]
                                             ],
-                                            glob: 'dist/*.tar.gz',
-                                            stash: 'PYTHON_PACKAGES',
-                                            pythonVersion: pythonVersion,
-                                            retryTimes: 3
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'PYTHON_PACKAGES'
+                                            },
+                                            testCommand: {
+                                                findFiles(glob: 'dist/*.tar.gz').each{
+                                                    sh(
+                                                        label: 'Running Tox',
+                                                        script: "tox --installpkg ${it.path} --workdir /tmp/tox -e py${pythonVersion.replace('.', '')}"
+                                                        )
+                                                }
+                                            },
+                                            retries: 3
                                         )
                                     }
                                     linuxTests["Linux ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
-                                        packages.testPkg(
+                                        testPythonPkg(
                                             agent: [
                                                 dockerfile: [
                                                     label: "linux && docker && ${processorArchitecture}",
@@ -611,10 +631,21 @@ pipeline {
                                                     args: '-v pipcache_pyhathiprep:/.cache/pip'
                                                 ]
                                             ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'PYTHON_PACKAGES',
-                                            pythonVersion: pythonVersion,
-                                            retryTimes: 3
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'PYTHON_PACKAGES'
+                                            },
+                                            testCommand: {
+                                                findFiles(glob: 'dist/*.whl').each{
+                                                    timeout(5){
+                                                        sh(
+                                                            label: 'Running Tox',
+                                                            script: "tox --installpkg ${it.path} --workdir /tmp/tox -e py${pythonVersion.replace('.', '')}"
+                                                            )
+                                                    }
+                                                }
+                                            },
+                                            retries: 3
                                         )
                                     }
                                 }
@@ -631,14 +662,10 @@ pipeline {
                                 }
                                 macArchitectures.each{ processorArchitecture ->
                                     macTests["Mac ${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
-                                        packages.testPkg(
+                                        testPythonPkg(
                                                 agent: [
                                                     label: "mac && python${pythonVersion} && ${processorArchitecture}",
                                                 ],
-                                                glob: 'dist/*.tar.gz,dist/*.zip',
-                                                stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion,
-                                                toxExec: 'venv/bin/tox',
                                                 testSetup: {
                                                     checkout scm
                                                     unstash 'PYTHON_PACKAGES'
@@ -650,20 +677,25 @@ pipeline {
                                                                    '''
                                                     )
                                                 },
-                                                testTeardown: {
-                                                    sh 'rm -r venv/'
-                                                }
+                                                testCommand: {
+                                                    findFiles(glob: 'dist/*.tar.gz').each{
+                                                        sh(label: 'Running Tox',
+                                                           script: "./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}"
+                                                        )
+                                                    }
+                                                },
+                                                post:[
+                                                    cleanup: {
+                                                        sh 'rm -r venv/'
+                                                    }
+                                                ]
                                             )
                                     }
                                     macTests["Mac ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
-                                        packages.testPkg(
+                                        testPythonPkg(
                                                 agent: [
                                                     label: "mac && python${pythonVersion} && ${processorArchitecture}",
                                                 ],
-                                                glob: 'dist/*.whl',
-                                                stash: 'PYTHON_PACKAGES',
-                                                pythonVersion: pythonVersion,
-                                                toxExec: 'venv/bin/tox',
                                                 testSetup: {
                                                     checkout scm
                                                     unstash 'PYTHON_PACKAGES'
@@ -675,9 +707,18 @@ pipeline {
                                                                    '''
                                                     )
                                                 },
-                                                testTeardown: {
-                                                    sh 'rm -r venv/'
-                                                }
+                                                testCommand: {
+                                                    findFiles(glob: 'dist/*.whl').each{
+                                                        sh(label: 'Running Tox',
+                                                           script: "./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}"
+                                                        )
+                                                    }
+                                                },
+                                                post:[
+                                                    cleanup: {
+                                                        sh 'rm -r venv/'
+                                                    }
+                                                ]
 
                                             )
                                     }
@@ -1060,20 +1101,11 @@ pipeline {
                     }
                     steps{
                         unstash 'PYTHON_PACKAGES'
-                        script{
-                            def pypi = fileLoader.fromGit(
-                                    'pypi',
-                                    'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
-                                    '2',
-                                    null,
-                                    ''
-                                )
-                            pypi.pypiUpload(
+                        pypiUpload(
                                 credentialsId: 'jenkins-nexus',
                                 repositoryUrl: SERVER_URL,
                                 glob: 'dist/*'
-                                )
-                        }
+                        )
                     }
                     post{
                         cleanup{
