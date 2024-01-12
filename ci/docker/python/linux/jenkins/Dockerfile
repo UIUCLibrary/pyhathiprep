@@ -11,12 +11,12 @@ RUN python -m pip install  --no-cache-dir --upgrade pip &&  \
     pip install --no-cache-dir setuptools && \
     pip install --no-cache-dir wheel
 
-COPY requirements-ci.txt /requirements/
+COPY requirements-dev.txt /requirements/
 COPY requirements/ /requirements/requirements/
 
 ARG PIP_FIND_LINKS
 RUN mkdir -p ${PIP_FIND_LINKS} &&  \
-    pip wheel --wheel-dir=${PIP_FIND_LINKS} --no-cache-dir -r /requirements/requirements-ci.txt
+    pip wheel --wheel-dir=${PIP_FIND_LINKS} --no-cache-dir -r /requirements/requirements-dev.txt
 
 #==============================================================================
 FROM base_python AS SONAR_BUILDER
@@ -46,7 +46,7 @@ COPY --from=wheel_builder ${PIP_FIND_LINKS} ${PIP_FIND_LINKS}/
 COPY --from=wheel_builder /requirements /requirements/
 
 ENV PIP_NO_CACHE_DIR=1
-RUN pip install --no-index  --no-cache-dir --find-links=${PIP_FIND_LINKS} -r /requirements/requirements-ci.txt
+RUN pip install --no-index  --no-cache-dir --find-links=${PIP_FIND_LINKS} -r /requirements/requirements-dev.txt
 
 COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
 ARG SONAR_SCANNER_VERSION

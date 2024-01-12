@@ -15,8 +15,8 @@ RUN apt-get update && \
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 COPY requirements/ /tmp/python_requirements/requirements/
-COPY requirements-ci.txt /tmp/python_requirements
-RUN python3 -m pip install pip --upgrade && python3 -m pip install --no-cache-dir -r /tmp/python_requirements/requirements-ci.txt
+COPY requirements-dev.txt /tmp/python_requirements
+RUN python3 -m pip install pip --upgrade && python3 -m pip install --no-cache-dir -r /tmp/python_requirements/requirements-dev.txt
 ARG PIP_DOWNLOAD_CACHE
 RUN mkdir -p ${PIP_DOWNLOAD_CACHE} && \
     chmod -R 777 ${PIP_DOWNLOAD_CACHE}
