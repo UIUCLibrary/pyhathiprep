@@ -663,6 +663,7 @@ pipeline {
                                                 agent: [
                                                     label: "mac && python${pythonVersion} && ${processorArchitecture}",
                                                 ],
+                                                retries: 3,
                                                 testSetup: {
                                                     checkout scm
                                                     unstash 'PYTHON_PACKAGES'
@@ -693,6 +694,7 @@ pipeline {
                                                 agent: [
                                                     label: "mac && python${pythonVersion} && ${processorArchitecture}",
                                                 ],
+                                                retries: 3,
                                                 testSetup: {
                                                     checkout scm
                                                     unstash 'PYTHON_PACKAGES'
