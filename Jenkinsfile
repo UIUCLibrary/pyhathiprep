@@ -183,6 +183,9 @@ pipeline {
                             label 'linux && docker && x86'
                         }
                     }
+                    options {
+                        retry(conditions: [agent()], count: 2)
+                    }
                     when{
                         anyOf{
                             equals expected: true, actual: params.RUN_CHECKS
