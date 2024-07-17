@@ -459,6 +459,7 @@ pipeline {
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                                                 dockerRunArgs: '-v pipcache_pyhathiprep:/.cache/pip',
+                                                verbosity: 1,
                                                 retry: 2
                                             )
                                     },
@@ -469,6 +470,7 @@ pipeline {
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
                                                 dockerRunArgs: '-v pipcache_pyhathiprep:c:/users/containeradministrator/appdata/local/pip',
+                                                verbosity: 1,
                                                 retry: 2
                                             )
                                     },
