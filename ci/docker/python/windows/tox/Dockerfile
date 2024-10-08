@@ -64,7 +64,6 @@ RUN python -m pip install pip --upgrade ; pip install -r c:/python_requirments/r
 
 RUN py -3 -m pip install --no-cache-dir pipx ; `
     py -3 -m pipx ensurepath
-RUN py -3 -m pipx install 'devpi-client<7.0'
 
 
 WORKDIR C:/src
