@@ -402,47 +402,48 @@ pipeline {
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
-                     steps {
-                        script{
-//                            def tox = fileLoader.fromGit(
-//                                                    'tox',
-//                                                    'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
-//                                                    '8',
-//                                                    null,
-//                                                    ''
-//                                                )
-                            def windowsJobs = [:]
-                            def linuxJobs = [:]
-                            stage('Scanning Tox Environments'){
-                                parallel(
-                                    'Linux':{
-                                        linuxJobs = getToxTestsParallel(
-                                                envNamePrefix: 'Tox Linux',
-                                                label: 'linux && docker && x86',
-                                                dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                dockerRunArgs: '-v pipcache_pyhathiprep:/.cache/pip',
-                                                verbosity: 1,
-                                                retry: 2
-                                            )
-                                    },
-                                    'Windows':{
-                                        windowsJobs = getToxTestsParallel(
-                                                envNamePrefix: 'Tox Windows',
-                                                label: 'windows && docker && x86',
-                                                dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
-                                                dockerRunArgs: '-v pipcache_pyhathiprep:c:/users/containeradministrator/appdata/local/pip',
-                                                verbosity: 1,
-                                                retry: 2
-                                            )
-                                    },
-                                    failFast: true
-                                )
-                            }
-                            parallel(windowsJobs + linuxJobs)
-                        }
-                    }
+                     parallel{
+                         stage('Linux'){
+                             when{
+                                 expression {return nodesByLabel('linux && docker && x86').size() > 0}
+                             }
+                             steps{
+                                 script{
+                                     parallel(
+                                         getToxTestsParallel(
+                                             envNamePrefix: 'Tox Linux',
+                                             label: 'linux && docker && x86',
+                                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
+                                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                             dockerRunArgs: '-v pipcache_pyhathiprep:/.cache/pip',
+                                             verbosity: 1,
+                                             retry: 2
+                                         )
+                                     )
+                                 }
+                             }
+                         }
+                         stage('Windows'){
+                             when{
+                                 expression {return nodesByLabel('windows && docker && x86').size() > 0}
+                             }
+                             steps{
+                                 script{
+                                     parallel(
+                                         getToxTestsParallel(
+                                             envNamePrefix: 'Tox Windows',
+                                             label: 'windows && docker && x86',
+                                             dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
+                                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                                             dockerRunArgs: '-v pipcache_pyhathiprep:c:/users/containeradministrator/appdata/local/pip',
+                                             verbosity: 1,
+                                             retry: 2
+                                         )
+                                     )
+                                 }
+                             }
+                         }
+                     }
                 }
             }
         }
