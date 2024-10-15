@@ -20,27 +20,6 @@ def getPypiConfig() {
     }
 }
 
-def get_package_version(stashName, metadataFile){
-    ws {
-        unstash "${stashName}"
-        script{
-            def props = readProperties interpolate: true, file: "${metadataFile}"
-            deleteDir()
-            return props.Version
-        }
-    }
-}
-
-def get_package_name(stashName, metadataFile){
-    ws {
-        unstash "${stashName}"
-        script{
-            def props = readProperties interpolate: true, file: "${metadataFile}"
-            deleteDir()
-            return props.Name
-        }
-    }
-}
 
 def startup(){
     parallel(
@@ -52,66 +31,10 @@ def startup(){
                     mineRepository()
                 }
             },
-            'Getting Distribution Info': {
-                retry(3){
-                    node('linux && docker && x86') {
-                        timeout(2){
-                            ws{
-                                checkout scm
-                                try{
-                                    docker.image('python').inside {
-                                        withEnv(['PIP_NO_CACHE_DIR=off']) {
-                                            sh(
-                                               label: 'Running setup.py with dist_info',
-                                               script: '''python --version
-                                                          python setup.py dist_info
-                                                       '''
-                                            )
-                                        }
-                                        stash includes: '*.dist-info/**', name: 'DIST-INFO'
-                                        archiveArtifacts artifacts: '*.dist-info/**'
-                                    }
-                                } finally{
-                                    deleteDir()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         ]
     )
 }
-def get_props(){
-    stage('Reading Package Metadata'){
-        node() {
-            try{
-                unstash 'DIST-INFO'
-                def metadataFile = findFiles(excludes: '', glob: '*.dist-info/METADATA')[0]
-                def package_metadata = readProperties interpolate: true, file: metadataFile.path
-                echo """Metadata:
-
-Name      ${package_metadata.Name}
-Version   ${package_metadata.Version}
-"""
-                return package_metadata
-            } finally {
-                cleanWs(
-                    patterns: [
-                            [pattern: '*.dist-info/**', type: 'INCLUDE'],
-                        ],
-                    notFailBuild: true,
-                    deleteDirs: true
-                )
-            }
-        }
-    }
-}
-
-
 startup()
-def props = get_props()
-
 
 pipeline {
     agent none
@@ -189,8 +112,9 @@ pipeline {
                                 success{
                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                                     script{
-                                        zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
-                                        stash includes: "dist/${props.Name}-${props.Version}.doc.zip,build/docs/html/**", name: 'DOCS_ARCHIVE'
+                                        def props = readTOML( file: 'pyproject.toml')['project']
+                                        zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.name}-${props.version}.doc.zip"
+                                        stash includes: "dist/${props.name}-${props.version}.doc.zip,build/docs/html/**", name: 'DOCS_ARCHIVE'
                                     }
                                 }
                                 cleanup{
@@ -355,10 +279,9 @@ pipeline {
                                             steps{
                                                 script{
                                                     def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
-                                                    def newProps = get_props()
                                                     sonarqube.sonarcloudSubmit(
                                                         credentialsId: params.SONARCLOUD_TOKEN,
-                                                        projectVersion: newProps.Version
+                                                        projectVersion: readTOML( file: 'pyproject.toml')['project'].version
                                                     )
                                                 }
                                             }
