@@ -68,7 +68,6 @@ pipeline {
             stages{
                 stage('Building and Running Test Metrics'){
                     stages{
-
                         stage('Building') {
                             agent {
                                 docker{
@@ -305,6 +304,7 @@ pipeline {
                                                     }
                                                     environment{
                                                         VERSION="${readTOML( file: 'pyproject.toml')['project'].version}"
+                                                        SONAR_USER_HOME='/tmp/sonar'
                                                     }
                                                     when{
                                                         allOf{
