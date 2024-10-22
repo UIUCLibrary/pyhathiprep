@@ -103,7 +103,7 @@ pipeline {
                                                               venv/bin/pip install uv
                                                               . ./venv/bin/activate
                                                               mkdir -p logs
-                                                              uvx --from sphinx --with-editable . --with-requirements requirements-dev.txt sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                                              uvx --python 3.12 --from sphinx --with-editable . --with-requirements requirements-dev.txt sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
                                                               rm -rf ./venv
                                                            '''
                                                    )
