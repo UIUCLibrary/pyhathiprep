@@ -573,6 +573,7 @@ pipeline {
                             sh(
                                 label: 'Package',
                                 script: '''python3 -m venv venv && venv/bin/pip install uv
+                                           trap "rm -rf venv" EXIT
                                            . ./venv/bin/activate
                                            uv build
                                         '''
@@ -794,6 +795,7 @@ pipeline {
                         withEnv(
                             [
                                 "TWINE_REPOSITORY_URL=${SERVER_URL}",
+                                'UV_INDEX_STRATEGY=unsafe-best-match'
                             ]
                         ){
                             withCredentials(
@@ -807,9 +809,10 @@ pipeline {
                                     sh(
                                         label: 'Uploading to pypi',
                                         script: '''python3 -m venv venv
+                                                   trap "rm -rf venv" EXIT
                                                    . ./venv/bin/activate
                                                    pip install uv
-                                                   UV_INDEX_STRATEGY=unsafe-best-match uvx twine --installpkg upload --disable-progress-bar --non-interactive dist/*
+                                                   uvx --with-requirements=requirements-dev.txt twine --installpkg upload --disable-progress-bar --non-interactive dist/*
                                                 '''
                                     )
                             }
