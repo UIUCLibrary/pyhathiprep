@@ -22,9 +22,9 @@ jobs:
           cache-dependency-path: requirements-dev.txt
       - name: Install requirements
         run: |
-          pip install wheel
-          pip install -r requirements-dev.txt
+          pip install uv
       - name: Run tox
-        run: tox -e py -vvv
+        run: uvx tox -e py -vvv
         env:
+          UV_PYTHON: ${{matrix.python-version}}
           PIP_EXTRA_INDEX_URL: ${{vars.PIP_EXTRA_INDEX_URL}}
