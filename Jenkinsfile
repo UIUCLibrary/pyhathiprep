@@ -66,311 +66,320 @@ pipeline {
                 }
             }
             stages{
-                stage('Building') {
-                    agent {
-                        docker{
-                            image 'python'
-                            label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
-                            args '--mount source=python-tmp-pyhathiprep,target=/tmp'
-                        }
-                    }
-                    environment{
-                        PIP_CACHE_DIR='/tmp/pipcache'
-                        UV_INDEX_STRATEGY='unsafe-best-match'
-                        UV_TOOL_DIR='/tmp/uvtools'
-                        UV_PYTHON_INSTALL_DIR='/tmp/uvpython'
-                        UV_CACHE_DIR='/tmp/uvcache'
-                    }
-                    options {
-                        retry(conditions: [agent()], count: 2)
-                    }
-                    when{
-                        anyOf{
-                            equals expected: true, actual: params.RUN_CHECKS
-                            equals expected: true, actual: params.DEPLOY_DOCS
-                        }
-                        beforeAgent true
-                    }
+                stage('Building and Running Test Metrics'){
                     stages{
-                        stage('Building Sphinx Documentation'){
-                            steps {
-                                timeout(5){
-                                    catchError(buildResult: 'SUCCESS', message: 'Building Sphinx found issues', stageResult: 'UNSTABLE') {
-                                        sh(label:"Building docs on ${env.NODE_NAME}",
-                                           script: '''python3 -m venv venv && venv/bin/pip install uv
-                                                      . ./venv/bin/activate
-                                                      uv pip install -r requirements-dev.txt
-                                                      uv pip install -e .
-                                                      mkdir -p logs
-                                                      python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
-                                                   '''
-                                           )
-                                       }
+
+                        stage('Building') {
+                            agent {
+                                docker{
+                                    image 'python'
+                                    label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
+                                    args '--mount source=python-tmp-pyhathiprep,target=/tmp'
                                 }
                             }
-                            post{
-                                always {
-                                    recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
-                                    archiveArtifacts artifacts: 'logs/build_sphinx.log'
-                                }
-                                success{
-                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                                    script{
-                                        def props = readTOML( file: 'pyproject.toml')['project']
-                                        zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.name}-${props.version}.doc.zip"
-                                        stash includes: "dist/${props.name}-${props.version}.doc.zip,build/docs/html/**", name: 'DOCS_ARCHIVE'
-                                    }
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        patterns: [
-                                            [pattern: 'dist/', type: 'INCLUDE'],
-                                            [pattern: 'build/', type: 'INCLUDE'],
-                                            [pattern: 'logs/', type: 'INCLUDE']
-                                            ]
-                                    )
-                                }
+                            environment{
+                                PIP_CACHE_DIR='/tmp/pipcache'
+                                UV_INDEX_STRATEGY='unsafe-best-match'
+                                UV_TOOL_DIR='/tmp/uvtools'
+                                UV_PYTHON_INSTALL_DIR='/tmp/uvpython'
+                                UV_CACHE_DIR='/tmp/uvcache'
                             }
-                        }
-                    }
-                }
-                stage('Checks'){
-                    when{
-                        equals expected: true, actual: params.RUN_CHECKS
-                    }
-                    stages{
-                        stage('Code Quality'){
+                            options {
+                                retry(conditions: [agent()], count: 2)
+                            }
+                            when{
+                                anyOf{
+                                    equals expected: true, actual: params.RUN_CHECKS
+                                    equals expected: true, actual: params.DEPLOY_DOCS
+                                }
+                                beforeAgent true
+                            }
                             stages{
-                                stage('Testing'){
-                                    environment{
-                                        PIP_CACHE_DIR='/tmp/pipcache'
-                                        UV_INDEX_STRATEGY='unsafe-best-match'
-                                        UV_TOOL_DIR='/tmp/uvtools'
-                                        UV_PYTHON_INSTALL_DIR='/tmp/uvpython'
-                                        UV_CACHE_DIR='/tmp/uvcache'
-                                    }
-                                    agent {
-                                        docker{
-                                            image 'python'
-                                            label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
-                                            args '--mount source=python-tmp-pyhathiprep,target=/tmp'
+                                stage('Building Sphinx Documentation'){
+                                    steps {
+                                        timeout(5){
+                                            catchError(buildResult: 'SUCCESS', message: 'Building Sphinx found issues', stageResult: 'UNSTABLE') {
+                                                sh(label:"Building docs on ${env.NODE_NAME}",
+                                                   script: '''python3 -m venv venv
+                                                              venv/bin/pip install uv
+                                                              . ./venv/bin/activate
+                                                              mkdir -p logs
+                                                              uvx --from sphinx --with-editable . --with-requirements requirements-dev.txt sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                                              rm -rf ./venv
+                                                           '''
+                                                   )
+                                               }
                                         }
                                     }
-                                    stages{
-                                        stage('Setup Testing Environment'){
-                                            steps{
-                                                sh(
-                                                    label: 'Create virtual environment',
-                                                    script: '''python3 -m venv bootstrap_uv
-                                                               bootstrap_uv/bin/pip install uv
-                                                               bootstrap_uv/bin/uv venv --python 3.12  venv
-                                                               . ./venv/bin/activate
-                                                               bootstrap_uv/bin/uv pip install uv
-                                                               rm -rf bootstrap_uv
-                                                               uv pip install -r requirements-dev.txt
-                                                               '''
-                                                           )
-                                                sh(
-                                                    label: 'Install package in development mode',
-                                                    script: '''. ./venv/bin/activate
-                                                               uv pip install -e .
-                                                            '''
-                                                    )
+                                    post{
+                                        always {
+                                            recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
+                                            archiveArtifacts artifacts: 'logs/build_sphinx.log'
+                                        }
+                                        success{
+                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                                            script{
+                                                def props = readTOML( file: 'pyproject.toml')['project']
+                                                zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.name}-${props.version}.doc.zip"
+                                                stash includes: "dist/${props.name}-${props.version}.doc.zip,build/docs/html/**", name: 'DOCS_ARCHIVE'
                                             }
                                         }
-                                        stage('Run Tests'){
-                                            parallel {
-                                                stage('PyTest'){
-                                                    steps{
-                                                        catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
-                                                            sh(label: 'Running pytest',
-                                                               script: '''. ./venv/bin/activate
-                                                                          mkdir -p reports/pytest/
-                                                                          coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml
-
-                                                                          '''
-
-                                                            )
-                                                        }
-                                                    }
-                                                    post{
-                                                        always{
-                                                            junit 'reports/pytest/junit-pytest.xml'
-                                                        }
-                                                    }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                patterns: [
+                                                    [pattern: 'venv/', type: 'INCLUDE'],
+                                                    [pattern: 'dist/', type: 'INCLUDE'],
+                                                    [pattern: 'build/', type: 'INCLUDE'],
+                                                    [pattern: 'logs/', type: 'INCLUDE']
+                                                    ]
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        stage('Checks'){
+                            when{
+                                equals expected: true, actual: params.RUN_CHECKS
+                            }
+                            stages{
+                                stage('Code Quality'){
+                                    environment{
+                                        UV_PYTHON = '3.12'
+                                    }
+                                    stages{
+                                        stage('Testing'){
+                                            environment{
+                                                PIP_CACHE_DIR='/tmp/pipcache'
+                                                UV_INDEX_STRATEGY='unsafe-best-match'
+                                                UV_TOOL_DIR='/tmp/uvtools'
+                                                UV_PYTHON_INSTALL_DIR='/tmp/uvpython'
+                                                UV_CACHE_DIR='/tmp/uvcache'
+                                            }
+                                            agent {
+                                                docker{
+                                                    image 'python'
+                                                    label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
+                                                    args '--mount source=python-tmp-pyhathiprep,target=/tmp'
                                                 }
-                                                stage('Documentation'){
+                                            }
+                                            stages{
+                                                stage('Setup Testing Environment'){
                                                     steps{
-                                                        sh '''. ./venv/bin/activate
-                                                              coverage run --parallel-mode --source=pyhathiprep -m sphinx docs/source build/docs -b=doctest -W --keep-going
-                                                           '''
-                                                    }
-                                                }
-                                                stage('MyPy'){
-                                                    steps{
-                                                        catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
-                                                            sh (label: 'Running MyPy',
-                                                                script: '''. ./venv/bin/activate
-                                                                           mkdir -p reports/mypy
-                                                                           mkdir -p logs
-                                                                           mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log
-                                                                        '''
-                                                                )
-                                                        }
-                                                    }
-                                                    post{
-                                                        always {
-                                                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
-                                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                                                        }
-                                                    }
-                                                }
-                                                stage('Task Scanner'){
-                                                    steps{
-                                                        recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'pyhathiprep/**/*.py', normalTags: 'TODO')])
-                                                    }
-                                                }
-                                                stage('Run Pylint Static Analysis') {
-                                                    steps{
-                                                        withEnv(['PYLINTHOME=.pylint_cache']) {
-                                                            catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-                                                                sh(label: 'Running pylint',
-                                                                    script: '''. ./venv/bin/activate
-                                                                               pylint pyhathiprep -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
-                                                                            '''
-
-                                                                )
-                                                            }
-                                                            sh(
-                                                                script: '''. ./venv/bin/activate
-                                                                           pylint pyhathiprep -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt
-                                                                        ''',
-                                                                label: 'Running pylint for sonarqube',
-                                                                returnStatus: true
-                                                            )
-                                                            }
-                                                    }
-                                                    post{
-                                                        always{
-                                                            recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-                                                            stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
-                                                        }
-                                                    }
-                                                }
-                                                stage('Run Flake8 Static Analysis') {
-                                                    steps{
-                                                        catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
-                                                            sh(label: 'Running flake8',
-                                                               script: '''. ./venv/bin/activate
-                                                                          mkdir -p logs
-                                                                          flake8 pyhathiprep --tee --output-file=logs/flake8.log
+                                                        sh(
+                                                            label: 'Create virtual environment',
+                                                            script: '''python3 -m venv bootstrap_uv
+                                                                       bootstrap_uv/bin/pip install uv
+                                                                       bootstrap_uv/bin/uv venv venv
+                                                                       . ./venv/bin/activate
+                                                                       bootstrap_uv/bin/uv pip install uv
+                                                                       rm -rf bootstrap_uv
+                                                                       uv pip install -r requirements-dev.txt
                                                                        '''
-                                                             )
+                                                                   )
+                                                        sh(
+                                                            label: 'Install package in development mode',
+                                                            script: '''. ./venv/bin/activate
+                                                                       uv pip install -e .
+                                                                    '''
+                                                            )
+                                                    }
+                                                }
+                                                stage('Run Tests'){
+                                                    parallel {
+                                                        stage('PyTest'){
+                                                            steps{
+                                                                catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
+                                                                    sh(label: 'Running pytest',
+                                                                       script: '''. ./venv/bin/activate
+                                                                                  mkdir -p reports/pytest/
+                                                                                  coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml
+
+                                                                                  '''
+
+                                                                    )
+                                                                }
+                                                            }
+                                                            post{
+                                                                always{
+                                                                    junit 'reports/pytest/junit-pytest.xml'
+                                                                }
+                                                            }
+                                                        }
+                                                        stage('Documentation'){
+                                                            steps{
+                                                                sh '''. ./venv/bin/activate
+                                                                      coverage run --parallel-mode --source=pyhathiprep -m sphinx docs/source build/docs -b=doctest -W --keep-going
+                                                                   '''
+                                                            }
+                                                        }
+                                                        stage('MyPy'){
+                                                            steps{
+                                                                catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
+                                                                    sh (label: 'Running MyPy',
+                                                                        script: '''. ./venv/bin/activate
+                                                                                   mkdir -p reports/mypy
+                                                                                   mkdir -p logs
+                                                                                   mypy -p pyhathiprep --html-report reports/mypy/mypy_html > logs/mypy.log
+                                                                                '''
+                                                                        )
+                                                                }
+                                                            }
+                                                            post{
+                                                                always {
+                                                                    recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
+                                                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                                                }
+                                                            }
+                                                        }
+                                                        stage('Task Scanner'){
+                                                            steps{
+                                                                recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'pyhathiprep/**/*.py', normalTags: 'TODO')])
+                                                            }
+                                                        }
+                                                        stage('Run Pylint Static Analysis') {
+                                                            steps{
+                                                                withEnv(['PYLINTHOME=.pylint_cache']) {
+                                                                    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                                                        sh(label: 'Running pylint',
+                                                                            script: '''. ./venv/bin/activate
+                                                                                       pylint pyhathiprep -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
+                                                                                    '''
+
+                                                                        )
+                                                                    }
+                                                                    sh(
+                                                                        script: '''. ./venv/bin/activate
+                                                                                   pylint pyhathiprep -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt
+                                                                                ''',
+                                                                        label: 'Running pylint for sonarqube',
+                                                                        returnStatus: true
+                                                                    )
+                                                                    }
+                                                            }
+                                                            post{
+                                                                always{
+                                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                                    stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
+                                                                }
+                                                            }
+                                                        }
+                                                        stage('Run Flake8 Static Analysis') {
+                                                            steps{
+                                                                catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
+                                                                    sh(label: 'Running flake8',
+                                                                       script: '''. ./venv/bin/activate
+                                                                                  mkdir -p logs
+                                                                                  flake8 pyhathiprep --tee --output-file=logs/flake8.log
+                                                                               '''
+                                                                     )
+                                                                }
+                                                            }
+                                                            post {
+                                                                always {
+                                                                    stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
+                                                                    recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    post{
+                                                        always{
+                                                            sh(label: 'Combining Coverage data',
+                                                               script: '''. ./venv/bin/activate
+                                                                          coverage combine
+                                                                          coverage xml -o reports/coverage.xml
+                                                                          coverage html -d reports/coverage
+                                                                       '''
+                                                            )
+                                                            stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
+                                                            recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
+                                                        }
+                                                    }
+                                                }
+                                                stage('Run Sonarqube Analysis'){
+                                                    options{
+                                                        lock('pyhathiprep-sonarscanner')
+                                                        retry(3)
+                                                    }
+                                                    environment{
+                                                        VERSION="${readTOML( file: 'pyproject.toml')['project'].version}"
+                                                    }
+                                                    when{
+                                                        allOf{
+                                                            equals expected: true, actual: params.USE_SONARQUBE
+                                                            expression{
+                                                                try{
+                                                                    withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'dddd')]) {
+                                                                        echo 'Found credentials for sonarqube'
+                                                                    }
+                                                                } catch(e){
+                                                                    echo 'Skipping due to invalid credentials for sonarqube'
+                                                                    return false
+                                                                }
+                                                                return true
+                                                            }
+                                                        }
+                                                    }
+                                                    steps{
+                                                        script{
+                                                            withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
+                                                                def sourceInstruction
+                                                                if (env.CHANGE_ID){
+                                                                    sourceInstruction = '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME'
+                                                                } else{
+                                                                    sourceInstruction = '-Dsonar.branch.name=$BRANCH_NAME'
+                                                                }
+                                                                sh(
+                                                                    label: 'Running Sonar Scanner',
+                                                                    script: """. ./venv/bin/activate
+                                                                                uv tool run pysonar-scanner -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}
+                                                                            """
+                                                                )
+                                                            }
+                                                            timeout(time: 1, unit: 'HOURS') {
+                                                                def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                                                                if (sonarqube_result.status != 'OK') {
+                                                                    unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                                                                }
+                                                                def outstandingIssues = get_sonarqube_unresolved_issues('.scannerwork/report-task.txt')
+                                                                writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+                                                            }
+                                                            milestone label: 'sonarcloud'
                                                         }
                                                     }
                                                     post {
-                                                        always {
-                                                            stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
-                                                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                                        always{
+                                                            recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                                         }
                                                     }
                                                 }
                                             }
                                             post{
-                                                always{
-                                                    sh(label: 'Combining Coverage data',
-                                                       script: '''. ./venv/bin/activate
-                                                                  coverage combine
-                                                                  coverage xml -o reports/coverage.xml
-                                                                  coverage html -d reports/coverage
-                                                               '''
+                                                cleanup{
+                                                    cleanWs(
+                                                        deleteDirs: true,
+                                                        patterns: [
+                                                            [pattern: 'dist/', type: 'INCLUDE'],
+                                                            [pattern: 'build/', type: 'INCLUDE'],
+                                                            [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
+                                                            [pattern: '.scannerwork', type: 'INCLUDE'],
+                                                            [pattern: '?/', type: 'INCLUDE'],
+                                                            [pattern: 'reports/', type: 'INCLUDE'],
+                                                            [pattern: 'logs/', type: 'INCLUDE'],
+                                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                                            [pattern: '.coverage', type: 'INCLUDE'],
+                                                            [pattern: 'coverage/', type: 'INCLUDE'],
+                                                            [pattern: 'coverage-sources.zip', type: 'INCLUDE'],
+                                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                                            [pattern: '.pylint_cache/', type: 'INCLUDE'],
+                                                            [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                                            ]
                                                     )
-                                                    stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
-                                                    recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
+                                                    sh 'ls -la'
                                                 }
                                             }
-                                        }
-                                        stage('Run Sonarqube Analysis'){
-                                            options{
-                                                lock('pyhathiprep-sonarscanner')
-                                                retry(3)
-                                            }
-                                            environment{
-                                                VERSION="${readTOML( file: 'pyproject.toml')['project'].version}"
-                                            }
-                                            when{
-                                                allOf{
-                                                    equals expected: true, actual: params.USE_SONARQUBE
-                                                    expression{
-                                                        try{
-                                                            withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'dddd')]) {
-                                                                echo 'Found credentials for sonarqube'
-                                                            }
-                                                        } catch(e){
-                                                            echo 'Skipping due to invalid credentials for sonarqube'
-                                                            return false
-                                                        }
-                                                        return true
-                                                    }
-                                                }
-                                            }
-                                            steps{
-                                                script{
-                                                    withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
-                                                        def sourceInstruction
-                                                        if (env.CHANGE_ID){
-                                                            sourceInstruction = '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME'
-                                                        } else{
-                                                            sourceInstruction = '-Dsonar.branch.name=$BRANCH_NAME'
-                                                        }
-                                                        sh(
-                                                            label: 'Running Sonar Scanner',
-                                                            script: """. ./venv/bin/activate
-                                                                        uv tool run pysonar-scanner -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}
-                                                                    """
-                                                        )
-                                                    }
-                                                    timeout(time: 1, unit: 'HOURS') {
-                                                        def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                                                        if (sonarqube_result.status != 'OK') {
-                                                            unstable "SonarQube quality gate: ${sonarqube_result.status}"
-                                                        }
-                                                        def outstandingIssues = get_sonarqube_unresolved_issues('.scannerwork/report-task.txt')
-                                                        writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
-                                                    }
-                                                    milestone label: 'sonarcloud'
-                                                }
-                                            }
-                                            post {
-                                                always{
-                                                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                                                }
-                                            }
-                                        }
-                                    }
-                                    post{
-                                        cleanup{
-                                            cleanWs(
-                                                deleteDirs: true,
-                                                patterns: [
-                                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                                    [pattern: 'build/', type: 'INCLUDE'],
-                                                    [pattern: 'pyhathiprep.egg-info/', type: 'INCLUDE'],
-                                                    [pattern: '.scannerwork', type: 'INCLUDE'],
-                                                    [pattern: '?/', type: 'INCLUDE'],
-                                                    [pattern: 'reports/', type: 'INCLUDE'],
-                                                    [pattern: 'logs/', type: 'INCLUDE'],
-                                                    [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                                    [pattern: '.coverage', type: 'INCLUDE'],
-                                                    [pattern: 'coverage/', type: 'INCLUDE'],
-                                                    [pattern: 'coverage-sources.zip', type: 'INCLUDE'],
-                                                    [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                                    [pattern: '.pylint_cache/', type: 'INCLUDE'],
-                                                    [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                    ]
-                                            )
-                                            sh 'ls -la'
                                         }
                                     }
                                 }
@@ -630,6 +639,11 @@ pipeline {
                                 params.containsKey("INCLUDE_${OS}-${ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${OS}-${ARCHITECTURE}".toUpperCase()]
                             }
                         }
+                        environment{
+                            UV_PYTHON="${PYTHON_VERSION}"
+                            TOX_ENV="py${PYTHON_VERSION.replace('.', '')}"
+                            UV_INDEX_STRATEGY='unsafe-best-match'
+                        }
                         stages {
                             stage('Test Package in container') {
                                 when{
@@ -645,7 +659,6 @@ pipeline {
                                 }
                                 environment{
                                     PIP_CACHE_DIR="${isUnix() ? '/tmp/pipcache': 'C:\\Users\\ContainerUser\\Documents\\pipcache'}"
-                                    UV_INDEX_STRATEGY='unsafe-best-match'
                                     UV_TOOL_DIR="${isUnix() ? '/tmp/uvtools': 'C:\\Users\\ContainerUser\\Documents\\uvtools'}"
                                     UV_PYTHON_INSTALL_DIR="${isUnix() ? '/tmp/uvpython': 'C:\\Users\\ContainerUser\\Documents\\uvpython'}"
                                     UV_CACHE_DIR="${isUnix() ? '/tmp/uvcache': 'C:\\Users\\ContainerUser\\Documents\\uvcache'}"
@@ -653,35 +666,38 @@ pipeline {
                                 steps {
                                     unstash 'PYTHON_PACKAGES'
                                     script{
-                                        def installpkg = findFiles(glob: PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path
-                                        if(isUnix()){
-                                            sh(
-                                                label: 'Testing with tox',
-                                                script: """python3 -m venv venv
-                                                           . ./venv/bin/activate
-                                                           pip install uv
-                                                           UV_INDEX_STRATEGY=unsafe-best-match uvx --with tox-uv tox --installpkg ${installpkg} -e py${PYTHON_VERSION.replace('.', '')}
-                                                        """
-                                            )
-                                        } else {
-                                            bat(
-                                                label: 'Install uv',
-                                                script: """python -m venv venv
-                                                           call venv\\Scripts\\activate.bat
-                                                           pip install uv
-                                                        """
-                                            )
-                                            script{
-                                                retry(3){
-                                                    bat(
-                                                        label: 'Testing with tox',
-                                                        script: """call venv\\Scripts\\activate.bat
-                                                                   uvx --index-strategy=unsafe-best-match --with tox-uv tox --installpkg ${installpkg} -e py${PYTHON_VERSION.replace('.', '')}
-                                                                """
-                                                    )
+                                        withEnv(
+                                            ["TOX_INSTALL_PKG=${findFiles(glob: PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path}"]
+                                            ) {
+                                            if(isUnix()){
+                                                sh(
+                                                    label: 'Testing with tox',
+                                                    script: '''python3 -m venv venv
+                                                               . ./venv/bin/activate
+                                                               trap "rm -rf venv" EXIT
+                                                               pip install uv
+                                                               uvx --with tox-uv tox
+                                                            '''
+                                                )
+                                            } else {
+                                                bat(
+                                                    label: 'Install uv',
+                                                    script: '''python -m venv venv
+                                                               call venv\\Scripts\\activate.bat
+                                                               pip install uv
+                                                            '''
+                                                )
+                                                script{
+                                                    retry(3){
+                                                        bat(
+                                                            label: 'Testing with tox',
+                                                            script: '''call venv\\Scripts\\activate.bat
+                                                                       uvx --with tox-uv tox
+                                                                    '''
+                                                        )
+                                                    }
                                                 }
                                             }
-
                                         }
                                     }
                                 }
@@ -707,14 +723,19 @@ pipeline {
                                 }
                                 steps {
                                     unstash 'PYTHON_PACKAGES'
-                                    sh(
-                                        label: 'Testing with tox',
-                                        script: """python3 -m venv venv
-                                                   . ./venv/bin/activate
-                                                   pip install uv
-                                                   UV_INDEX_STRATEGY=unsafe-best-match uvx --with tox-uv tox --installpkg ${findFiles(glob: PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${PYTHON_VERSION.replace('.', '')}
-                                                """
-                                    )
+                                    withEnv(
+                                        ["TOX_INSTALL_PKG=${findFiles(glob: PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path}"]
+                                        ) {
+                                        sh(
+                                            label: 'Testing with tox',
+                                            script: '''python3 -m venv venv
+                                                       trap "rm -rf venv" EXIT
+                                                       . ./venv/bin/activate
+                                                       pip install uv
+                                                       uvx --with tox-uv tox
+                                                    '''
+                                        )
+                                    }
                                 }
                                 post{
                                     cleanup{
