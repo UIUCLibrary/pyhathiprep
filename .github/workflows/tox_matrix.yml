@@ -19,11 +19,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip' # caching pip dependencies
-          cache-dependency-path: requirements/requirements-tox.txt
+          cache-dependency-path: requirements-dev.txt
       - name: Install requirements
         run: |
           pip install wheel
-          pip install -r requirements/requirements-tox.txt
+          pip install -r requirements-dev.txt
       - name: Run tox
         run: tox -e py -vvv
         env:
