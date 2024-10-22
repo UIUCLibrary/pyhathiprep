@@ -10,6 +10,7 @@ pytz
 ruamel.yaml
 setuptools>=30.3.0
 sphinx
+tox
 twine
 types-tzlocal<5.0
 typing-extensions;python_version<"3.10"
