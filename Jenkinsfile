@@ -413,7 +413,7 @@ pipeline {
                                                  sh(script: 'python3 -m venv venv && venv/bin/pip install uv')
                                                  envs = sh(
                                                      label: 'Get tox environments',
-                                                     script: './venv/bin/uvx --quiet --with tox-uv tox list -d --no-desc',
+                                                     script: './venv/bin/uvx --quiet --with requirements-dev.txt --with tox-uv tox list -d --no-desc',
                                                      returnStdout: true,
                                                  ).trim().split('\n')
                                              } finally{
@@ -441,7 +441,7 @@ pipeline {
                                                                      script: """python3 -m venv venv && venv/bin/pip install uv
                                                                                 . ./venv/bin/activate
                                                                                 uv python install cpython-${version}
-                                                                                uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                                uvx -p ${version} --with requirements-dev.txt --with tox-uv tox run -e ${toxEnv}
                                                                              """
                                                                      )
                                                              } catch(e) {
@@ -489,7 +489,7 @@ pipeline {
                                                  bat(script: 'python -m venv venv && venv\\Scripts\\pip install uv')
                                                  envs = bat(
                                                      label: 'Get tox environments',
-                                                     script: '@.\\venv\\Scripts\\uvx --quiet --with tox-uv tox list -d --no-desc',
+                                                     script: '@.\\venv\\Scripts\\uvx --quiet --with requirements-dev.txt --with tox-uv tox list -d --no-desc',
                                                      returnStdout: true,
                                                  ).trim().split('\r\n')
                                              } finally{
@@ -520,7 +520,7 @@ pipeline {
                                                                      bat(label: 'Running Tox',
                                                                          script: """call venv\\Scripts\\activate.bat
                                                                                 uv python install cpython-${version}
-                                                                                uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                                uvx -p ${version} --with requirements-dev.txt --with tox-uv tox run -e ${toxEnv}
                                                                              """
                                                                      )
                                                                  }
@@ -678,7 +678,7 @@ pipeline {
                                                                trap "rm -rf venv" EXIT
                                                                pip install uv
                                                                trap "rm -rf venv && rm -rf .tox" EXIT
-                                                               uvx --with tox-uv tox
+                                                               uvx --with requirements-dev.txt --with tox-uv tox
                                                             '''
                                                 )
                                             } else {
@@ -694,7 +694,7 @@ pipeline {
                                                         bat(
                                                             label: 'Testing with tox',
                                                             script: '''call venv\\Scripts\\activate.bat
-                                                                       uvx --with tox-uv tox
+                                                                       uvx --with requirements-dev.txt --with tox-uv tox
                                                                        rmdir /S /Q .tox
                                                                     '''
                                                         )
@@ -736,7 +736,7 @@ pipeline {
                                                        trap "rm -rf venv" EXIT
                                                        . ./venv/bin/activate
                                                        pip install uv
-                                                       uvx --with tox-uv tox
+                                                       uvx --with requirements-dev.txt --with tox-uv tox
                                                     '''
                                         )
                                     }
