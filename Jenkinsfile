@@ -413,7 +413,7 @@ pipeline {
                                                  sh(script: 'python3 -m venv venv && venv/bin/pip install uv')
                                                  envs = sh(
                                                      label: 'Get tox environments',
-                                                     script: './venv/bin/uvx --quiet --with tox-uv tox list -d --no-desc',
+                                                     script: './venv/bin/uvx --quiet --with-requirements requirements-dev.txt --with tox-uv tox list -d --no-desc',
                                                      returnStdout: true,
                                                  ).trim().split('\n')
                                              } finally{
@@ -441,7 +441,8 @@ pipeline {
                                                                      script: """python3 -m venv venv && venv/bin/pip install uv
                                                                                 . ./venv/bin/activate
                                                                                 uv python install cpython-${version}
-                                                                                uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                                trap "rm -rf venv && rm -rf .tox" EXIT
+                                                                                uvx -p ${version} --with-requirements requirements-dev.txt --with tox-uv tox run -e ${toxEnv}
                                                                              """
                                                                      )
                                                              } catch(e) {
@@ -489,7 +490,7 @@ pipeline {
                                                  bat(script: 'python -m venv venv && venv\\Scripts\\pip install uv')
                                                  envs = bat(
                                                      label: 'Get tox environments',
-                                                     script: '@.\\venv\\Scripts\\uvx --quiet --with tox-uv tox list -d --no-desc',
+                                                     script: '@.\\venv\\Scripts\\uvx --quiet --with-requirements requirements-dev.txt --with tox-uv tox list -d --no-desc',
                                                      returnStdout: true,
                                                  ).trim().split('\r\n')
                                              } finally{
@@ -513,14 +514,14 @@ pipeline {
                                                          docker.image('python').inside('--mount source=python-tmp-pyhathiprep,target=C:\\Users\\ContainerUser\\Documents'){
                                                              checkout scm
                                                              try{
-                                                                 bat(label: 'Install uv',
-                                                                     script: 'python -m venv venv && venv\\Scripts\\pip install uv'
-                                                                 )
                                                                  retry(3){
                                                                      bat(label: 'Running Tox',
-                                                                         script: """call venv\\Scripts\\activate.bat
+                                                                         script: """python -m venv venv && venv\\Scripts\\pip install uv
+                                                                                call venv\\Scripts\\activate.bat
                                                                                 uv python install cpython-${version}
-                                                                                uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                                uvx -p ${version} --with-requirements requirements-dev.txt --with tox-uv tox run -e ${toxEnv}
+                                                                                rmdir /S /Q .tox
+                                                                                rmdir /S /Q venv
                                                                              """
                                                                      )
                                                                  }
@@ -677,7 +678,8 @@ pipeline {
                                                                . ./venv/bin/activate
                                                                trap "rm -rf venv" EXIT
                                                                pip install uv
-                                                               uvx --with tox-uv tox
+                                                               trap "rm -rf venv && rm -rf .tox" EXIT
+                                                               uvx --with-requirements requirements-dev.txt --with tox-uv tox
                                                             '''
                                                 )
                                             } else {
@@ -693,7 +695,8 @@ pipeline {
                                                         bat(
                                                             label: 'Testing with tox',
                                                             script: '''call venv\\Scripts\\activate.bat
-                                                                       uvx --with tox-uv tox
+                                                                       uvx --with-requirements requirements-dev.txt --with tox-uv tox
+                                                                       rmdir /S /Q .tox
                                                                     '''
                                                         )
                                                     }
@@ -706,6 +709,7 @@ pipeline {
                                     cleanup{
                                         cleanWs(
                                             patterns: [
+                                                [pattern: '.tox/', type: 'INCLUDE'],
                                                 [pattern: 'dist/', type: 'INCLUDE'],
                                                 [pattern: 'venv/', type: 'INCLUDE'],
                                                 [pattern: '**/__pycache__/', type: 'INCLUDE'],
@@ -733,7 +737,7 @@ pipeline {
                                                        trap "rm -rf venv" EXIT
                                                        . ./venv/bin/activate
                                                        pip install uv
-                                                       uvx --with tox-uv tox
+                                                       uvx --with-requirements requirements-dev.txt --with tox-uv tox
                                                     '''
                                         )
                                     }
