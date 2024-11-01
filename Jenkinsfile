@@ -413,7 +413,7 @@ pipeline {
                                                  sh(script: 'python3 -m venv venv && venv/bin/pip install uv')
                                                  envs = sh(
                                                      label: 'Get tox environments',
-                                                     script: './venv/bin/uvx --quiet --with requirements-dev.txt --with tox-uv tox list -d --no-desc',
+                                                     script: './venv/bin/uvx --quiet --with-requirements requirements-dev.txt --with tox-uv tox list -d --no-desc',
                                                      returnStdout: true,
                                                  ).trim().split('\n')
                                              } finally{
