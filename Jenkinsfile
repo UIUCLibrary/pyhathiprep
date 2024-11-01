@@ -677,6 +677,7 @@ pipeline {
                                                                . ./venv/bin/activate
                                                                trap "rm -rf venv" EXIT
                                                                pip install uv
+                                                               trap "rm -rf venv && rm -rf .tox" EXIT
                                                                uvx --with tox-uv tox
                                                             '''
                                                 )
@@ -694,6 +695,7 @@ pipeline {
                                                             label: 'Testing with tox',
                                                             script: '''call venv\\Scripts\\activate.bat
                                                                        uvx --with tox-uv tox
+                                                                       rmdir /S /Q .tox
                                                                     '''
                                                         )
                                                     }
@@ -706,6 +708,7 @@ pipeline {
                                     cleanup{
                                         cleanWs(
                                             patterns: [
+                                                [pattern: '.tox/', type: 'INCLUDE'],
                                                 [pattern: 'dist/', type: 'INCLUDE'],
                                                 [pattern: 'venv/', type: 'INCLUDE'],
                                                 [pattern: '**/__pycache__/', type: 'INCLUDE'],
