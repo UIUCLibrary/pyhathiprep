@@ -422,24 +422,26 @@ def call(){
                                  steps{
                                      script{
                                          def envs = []
-                                         node('docker && windows'){
-                                             docker.image('python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
-                                                 try{
-                                                     checkout scm
-                                                     bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
-                                                     envs = bat(
-                                                         label: 'Get tox environments',
-                                                         script: '@.\\venv\\Scripts\\uvx --quiet --with-requirements requirements-dev.txt --with tox-uv tox list -d --no-desc',
-                                                         returnStdout: true,
-                                                     ).trim().split('\r\n')
-                                                 } finally{
-                                                     cleanWs(
-                                                         patterns: [
-                                                             [pattern: 'venv/', type: 'INCLUDE'],
-                                                             [pattern: '.tox', type: 'INCLUDE'],
-                                                             [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                         ]
-                                                     )
+                                         retry(3){
+                                             node('docker && windows'){
+                                                 docker.image('python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
+                                                     try{
+                                                         checkout scm
+                                                         bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
+                                                         envs = bat(
+                                                             label: 'Get tox environments',
+                                                             script: '@.\\venv\\Scripts\\uvx --quiet --with-requirements requirements-dev.txt --with tox-uv tox list -d --no-desc',
+                                                             returnStdout: true,
+                                                         ).trim().split('\r\n')
+                                                     } finally{
+                                                         cleanWs(
+                                                             patterns: [
+                                                                 [pattern: 'venv/', type: 'INCLUDE'],
+                                                                 [pattern: '.tox', type: 'INCLUDE'],
+                                                                 [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                                             ]
+                                                         )
+                                                     }
                                                  }
                                              }
                                          }
