@@ -24,7 +24,7 @@ jobs:
         run: |
           pip install uv
       - name: Run tox
-        run: uvx --with-requirements requirements-dev.txt tox -e py -vvv
+        run: uvx --constraint requirements-dev.txt tox -e py -vvv
         env:
           UV_PYTHON: ${{matrix.python-version}}
           PIP_EXTRA_INDEX_URL: ${{vars.PIP_EXTRA_INDEX_URL}}
