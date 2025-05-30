@@ -13,7 +13,7 @@ dependencies = [
     'typing-extensions;python_version<"3.10"'
 ]
 readme = "README.rst"
-license = {text = "University of Illinois/NCSA Open Source License"}
+license = "NCSA"
 authors = [
     {name = "University Library at The University of Illinois at Urbana Champaign: Preservation Services", email = "prescons@library.illinois.edu"},
 ]
