@@ -147,7 +147,7 @@ def call(){
                                                     catchError(buildResult: 'UNSTABLE', message: 'Pytest tests failed', stageResult: 'UNSTABLE') {
                                                         sh(label: 'Running pytest',
                                                            script: '''mkdir -p reports/pytest/
-                                                                      ./venv/bin/uv run coverage run --parallel-mode --source=pyhathiprep -m pytest --junitxml=reports/pytest/junit-pytest.xml
+                                                                      ./venv/bin/uv run coverage run --parallel-mode --source=src -m pytest --junitxml=reports/pytest/junit-pytest.xml
                                                                    '''
 
                                                         )
@@ -161,7 +161,7 @@ def call(){
                                             }
                                             stage('Documentation'){
                                                 steps{
-                                                    sh './venv/bin/uv run coverage run --parallel-mode --source=pyhathiprep -m sphinx docs/source build/docs -b=doctest -W --keep-going'
+                                                    sh './venv/bin/uv run coverage run --parallel-mode --source=src -m sphinx docs/source build/docs -b=doctest -W --keep-going'
                                                 }
                                             }
                                             stage('MyPy'){
@@ -193,12 +193,12 @@ def call(){
                                                     withEnv(['PYLINTHOME=.pylint_cache']) {
                                                         catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
                                                             sh(label: 'Running pylint',
-                                                                script: './venv/bin/uv run pylint pyhathiprep -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt'
+                                                                script: './venv/bin/uv run pylint src/pyhathiprep -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt'
 
                                                             )
                                                         }
                                                         sh(
-                                                            script: './venv/bin/uv run pylint pyhathiprep -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
+                                                            script: './venv/bin/uv run pylint src/pyhathiprep -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
                                                             label: 'Running pylint for sonarqube',
                                                             returnStatus: true
                                                         )
@@ -216,7 +216,7 @@ def call(){
                                                     catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
                                                         sh(label: 'Running flake8',
                                                            script: '''mkdir -p logs
-                                                                      ./venv/bin/uv run flake8 pyhathiprep --tee --output-file=logs/flake8.log
+                                                                      ./venv/bin/uv run flake8 src/pyhathiprep --tee --output-file=logs/flake8.log
                                                                    '''
                                                          )
                                                     }
