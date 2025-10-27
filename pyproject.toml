@@ -26,6 +26,29 @@ description = "Replacement for HathiPrep script"
 Documentation = "https://www.library.illinois.edu/dccdocs/pyhathiprep"
 Download = "https://github.com/UIUCLibrary/pyhathiprep"
 
+[dependency-groups]
+test = ['coverage', 'pytest']
+type_checking = ["mypy", "lxml", "types-tzlocal<5.0", 'typing-extensions;python_version<"3.10"']
+docs = ["sphinx"]
+lint = [
+    "flake8",
+    "bandit",
+    "pydocstyle",
+    "pylint",
+    {include-group = "type_checking"},
+]
+tox = ["tox"]
+release = ["twine"]
+dev = [
+    {include-group = "lint"},
+    {include-group = "docs"},
+    {include-group = "test"},
+]
+ci = [
+    "pysonar",
+    {include-group = "release"},
+    {include-group = "dev"},
+]
 [tool.setuptools]
 packages = [
     "pyhathiprep",
