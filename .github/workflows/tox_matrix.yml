@@ -22,7 +22,7 @@ jobs:
       - id: dataStep
         run: |
           python -m pip install uv
-          echo "myoutput=$(uv run --only-group tox --quiet --with tox-uv tox list -d --no-desc | sed -E 's/(.*py)([0-9])([0-9]+)/\2.\3/' | jq  --raw-input . | jq -c --slurp)" >> $GITHUB_OUTPUT
+          echo "myoutput=$(uv run --only-group=tox-uv --quiet tox list -d --no-desc | sed -E 's/(.*py)([0-9])([0-9]+)/\2.\3/' | jq  --raw-input . | jq -c --slurp)" >> $GITHUB_OUTPUT
 
   build:
     needs: setup
@@ -43,7 +43,7 @@ jobs:
         run: |
           pip install uv
       - name: Run tox
-        run: uv run --only-group tox --with tox-uv tox -e py -vvv --runner uv-venv-lock-runner
+        run: uv run --only-group=tox-uv tox -e py -vvv --runner uv-venv-lock-runner
         env:
           UV_PYTHON: ${{matrix.python-version}}
           PIP_EXTRA_INDEX_URL: ${{vars.PIP_EXTRA_INDEX_URL}}
