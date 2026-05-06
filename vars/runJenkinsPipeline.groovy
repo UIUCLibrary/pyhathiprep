@@ -95,7 +95,7 @@ def call(){
                                     docker{
                                         image 'ghcr.io/astral-sh/uv:debian'
                                         label 'docker && linux && x86_64'
-                                        args '--mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /.config  --tmpfs /.local/share:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv --tmpfs /.tree-sitter:exec'
+                                        args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /.config  --tmpfs /.local/share:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv --tmpfs /.tree-sitter:exec"
                                     }
                                 }
                                 stages{
@@ -348,7 +348,7 @@ def call(){
                                          node('docker && linux'){
                                              checkout scm
                                              try{
-                                                 docker.image('ghcr.io/astral-sh/uv:debian').inside('--mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv -e TOX_WORK_DIR=/tmp_data/.tox'){
+                                                 docker.image('ghcr.io/astral-sh/uv:debian').inside("--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv -e TOX_WORK_DIR=/tmp_data/.tox"){
                                                      withEnv(["UV_CONFIG_FILE=${createUnixUvConfig()}"]){
                                                          envs = sh(
                                                              label: 'Get tox environments',
@@ -371,7 +371,7 @@ def call(){
                                                              checkout scm
                                                              retry(3){
                                                                  try{
-                                                                    docker.image('ghcr.io/astral-sh/uv:debian').inside('--mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /.local/share:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv -e TOX_WORK_DIR=/tmp_data/.tox'){
+                                                                    docker.image('ghcr.io/astral-sh/uv:debian').inside("--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /.local/share:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv -e TOX_WORK_DIR=/tmp_data/.tox"){
                                                                         withEnv(["UV_CONFIG_FILE=${createUnixUvConfig()}"]){
                                                                             sh( label: 'Running Tox',
                                                                                 script: "uv run --only-group=tox-uv tox run -e ${toxEnv} --runner uv-venv-lock-runner"
@@ -409,6 +409,7 @@ def call(){
                                                 try{
                                                     docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python')
                                                         .inside("\
+                                                             --label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" \
                                                              --mount type=volume,source=uv_python_cache_dir,target=${env.UV_PYTHON_CACHE_DIR} \
                                                              --mount type=volume,source=pipcache,target=${env.PIP_CACHE_DIR} \
                                                              --mount type=volume,source=uv_cache_dir,target=${env.UV_CACHE_DIR}\
@@ -440,6 +441,7 @@ def call(){
                                                                      checkout scm
                                                                      docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python')
                                                                          .inside("\
+                                                                             --label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" \
                                                                              --mount type=volume,source=uv_python_cache_dir,target=${env.UV_PYTHON_CACHE_DIR} \
                                                                              --mount type=volume,source=pipcache,target=${env.PIP_CACHE_DIR} \
                                                                              --mount type=volume,source=uv_cache_dir,target=${env.UV_CACHE_DIR}\
@@ -567,12 +569,15 @@ def call(){
                                                     unstash 'PYTHON_PACKAGES'
                                                     if(['linux', 'windows'].contains(entry.OS) && params.containsKey("INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]){
                                                         docker.image(isUnix() ? 'ghcr.io/astral-sh/uv:debian': 'python')
-                                                            .inside(
-                                                                isUnix() ?
-                                                                '--mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /.local/share:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv -e TOX_WORK_DIR=/tmp_data/.tox --tmpfs /.local/bin:exec':
-                                                                '--mount type=volume,source=uv_python_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython \
-                                                                 --mount type=volume,source=pipcache,target=C:\\Users\\ContainerUser\\Documents\\cache\\pipcache \
-                                                                 --mount type=volume,source=uv_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvcache'
+                                                            .inside("--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" " +
+                                                                (
+                                                                    isUnix() ?
+                                                                        '--mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /.local/share:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv -e TOX_WORK_DIR=/tmp_data/.tox --tmpfs /.local/bin:exec'
+                                                                    :
+                                                                        '--mount type=volume,source=uv_python_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython \
+                                                                         --mount type=volume,source=pipcache,target=C:\\Users\\ContainerUser\\Documents\\cache\\pipcache \
+                                                                         --mount type=volume,source=uv_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvcache'
+                                                                )
                                                             ){
                                                              if(isUnix()){
                                                                 withEnv([
