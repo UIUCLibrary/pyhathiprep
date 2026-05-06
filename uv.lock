@@ -1054,7 +1054,6 @@ release = [
     { name = "twine" },
 ]
 test = [
-    { name = "coverage" },
     { name = "pytest" },
 ]
 tox = [
@@ -1119,10 +1118,7 @@ lint = [
     { name = "typing-extensions", marker = "python_full_version < '3.10'" },
 ]
 release = [{ name = "twine" }]
-test = [
-    { name = "coverage" },
-    { name = "pytest" },
-]
+test = [{ name = "pytest" }]
 tox = [{ name = "tox" }]
 tox-uv = [
     { name = "tox" },

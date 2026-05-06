@@ -27,7 +27,7 @@ Documentation = "https://www.library.illinois.edu/dccdocs/pyhathiprep"
 Download = "https://github.com/UIUCLibrary/pyhathiprep"
 
 [dependency-groups]
-test = ['coverage', 'pytest']
+test = ['pytest']
 type_checking = ["mypy", "lxml", "types-tzlocal<5.0", 'typing-extensions;python_version<"3.10"']
 docs = ["sphinx"]
 lint = [
@@ -44,6 +44,7 @@ tox-uv = [
 ]
 release = ["twine"]
 dev = [
+    'coverage',
     {include-group = "lint"},
     {include-group = "docs"},
     {include-group = "test"},
