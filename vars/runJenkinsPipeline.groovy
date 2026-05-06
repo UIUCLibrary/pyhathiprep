@@ -95,7 +95,7 @@ def call(){
                                     docker{
                                         image 'ghcr.io/astral-sh/uv:debian'
                                         label 'docker && linux && x86_64'
-                                        args '--mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /.config  --tmpfs /.local/share:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv'
+                                        args '--mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /.config  --tmpfs /.local/share:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv --tmpfs /.tree-sitter:exec'
                                     }
                                 }
                                 stages{
