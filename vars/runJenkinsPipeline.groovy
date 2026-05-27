@@ -164,6 +164,13 @@ def call(){
                                                     sh 'uv run coverage run --parallel-mode --source=src -m sphinx docs/source build/docs -b=doctest -W --keep-going'
                                                 }
                                             }
+                                            stage('Audit Lockfile Dependencies'){
+                                                steps{
+                                                    catchError(buildResult: 'UNSTABLE', message: 'uv audit found issues', stageResult: 'UNSTABLE') {
+                                                        sh 'uv audit'
+                                                    }
+                                                }
+                                            }
                                             stage('MyPy'){
                                                 steps{
                                                     catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
