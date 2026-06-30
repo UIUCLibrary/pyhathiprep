@@ -375,7 +375,14 @@ def call(){
                                                      "Tox Environment: ${toxEnv}",
                                                      {
                                                          node('docker && linux'){
-                                                             checkout scm
+                                                             retry(2){
+                                                                try{
+                                                                    checkout scm
+                                                                } catch(e){
+                                                                    sleep 5
+                                                                    throw e
+                                                                }
+                                                             }
                                                              retry(3){
                                                                  try{
                                                                     docker.image('ghcr.io/astral-sh/uv:debian').inside("--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-pyhathiprep,target=/tmp --tmpfs /.local/share:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv -e TOX_WORK_DIR=/tmp_data/.tox"){
