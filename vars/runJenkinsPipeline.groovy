@@ -579,7 +579,14 @@ def call(){
                                         stage('Test Package') {
                                             node("${entry.OS} && ${entry.ARCHITECTURE} ${['linux', 'windows'].contains(entry.OS) ? '&& docker': ''}"){
                                                 try{
-                                                    checkout scm
+                                                    retry(2){
+                                                        try{
+                                                            checkout scm
+                                                        } catch(e){
+                                                            sleep 5
+                                                            throw e
+                                                        }
+                                                    }
                                                     unstash 'PYTHON_PACKAGES'
                                                     if(['linux', 'windows'].contains(entry.OS) && params.containsKey("INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]){
                                                         docker.image(isUnix() ? 'ghcr.io/astral-sh/uv:debian': 'python')
