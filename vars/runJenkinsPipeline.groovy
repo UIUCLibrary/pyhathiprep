@@ -626,7 +626,8 @@ def call(){
                                                                     'UV_TOOL_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvtools',
                                                                     'UV_PYTHON_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython',
                                                                     'UV_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvcache',
-                                                                    "UV_CONFIG_FILE=${createWindowsUVConfig()}"
+                                                                    "UV_CONFIG_FILE=${createWindowsUVConfig()}",
+                                                                    "TOX_RESULTS_JSON=tox_results_py${entry.PYTHON_VERSION.replace('.', '')}.json",
                                                                 ]){
                                                                     withEnv(["TOX_UV_PATH=${WORKSPACE}\\venv\\Scripts\\uv.exe"]){
                                                                         try{
@@ -640,12 +641,14 @@ def call(){
                                                                                 withEnv([(attempt == 1) ? 'UV_OFFLINE=1' : 'UV_OFFLINE=0']){
                                                                                     bat(
                                                                                         label: "Testing with tox: ${(attempt == 1) ? 'Offline' : 'Online'}",
-                                                                                        script: ".\\venv\\Scripts\\uv run --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')} --result-json=${WORKSPACE_TMP}/tox_results_py${entry.PYTHON_VERSION.replace('.', '')}.json"
+                                                                                        script: ".\\venv\\Scripts\\uv run --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')} --result-json=${WORKSPACE_TMP}/${env.TOX_RESULTS_JSON}"
                                                                                     )
                                                                                 }
                                                                             }
                                                                         } catch(e){
-                                                                            archiveArtifacts artifacts: "${WORKSPACE_TMP}/*.json"
+                                                                            if(fileExists("${WORKSPACE_TMP}/${env.TOX_RESULTS_JSON}")){
+                                                                                archiveArtifacts artifacts: "${WORKSPACE_TMP}/*.json"
+                                                                            }
                                                                             throw e
                                                                         }
                                                                     }
