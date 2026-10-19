@@ -576,10 +576,11 @@ def call(){
                                 when: {entry -> "INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase() && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]},
                                 stages: [
                                     { entry ->
+                                        def MAX_RETRIES = 2
                                         stage('Test Package') {
                                             node("${entry.OS} && ${entry.ARCHITECTURE} ${['linux', 'windows'].contains(entry.OS) ? '&& docker': ''}"){
                                                 try{
-                                                    retry(2){
+                                                    retry(MAX_RETRIES){
                                                         try{
                                                             checkout scm
                                                         } catch(e){
@@ -610,7 +611,7 @@ def call(){
                                                                 ]){
                                                                      sh "uv python install cpython-${entry.PYTHON_VERSION}"
                                                                      def attempt = 0
-                                                                     retry(2){
+                                                                     retry(MAX_RETRIES){
                                                                         attempt += 1
                                                                         withEnv([(attempt == 1) ? 'UV_OFFLINE=1' : 'UV_OFFLINE=0']){
                                                                             sh(
@@ -636,7 +637,7 @@ def call(){
                                                                                    .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
                                                                                 """
                                                                             def attempt = 0
-                                                                            retry(2){
+                                                                            retry(MAX_RETRIES){
                                                                                 attempt += 1
                                                                                 withEnv([(attempt == 1) ? 'UV_OFFLINE=1' : 'UV_OFFLINE=0']){
                                                                                     bat(
@@ -663,7 +664,7 @@ def call(){
                                                                       ./venv/bin/uv python install cpython-${entry.PYTHON_VERSION}
                                                                    """
                                                                 def attempt = 0
-                                                                retry(2){
+                                                                retry(MAX_RETRIES){
                                                                     attempt += 1
                                                                     withEnv([(attempt == 1) ? 'UV_OFFLINE=1' : 'UV_OFFLINE=0']){
                                                                         sh(
@@ -680,13 +681,20 @@ def call(){
                                                                        .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
                                                                     """
                                                                 def attempt = 0
-                                                                retry(2){
+                                                                retry(MAX_RETRIES){
                                                                     attempt += 1
                                                                     withEnv([(attempt == 1) ? 'UV_OFFLINE=1' : 'UV_OFFLINE=0']){
-                                                                        bat(
-                                                                            label: "Testing with tox: ${(attempt == 1) ? 'Offline' : 'Online'}",
-                                                                            script: ".\\venv\\Scripts\\uv run --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}"
-                                                                        )
+                                                                        try{
+                                                                            bat(
+                                                                                label: "Testing with tox: ${(attempt == 1) ? 'Offline' : 'Online'}",
+                                                                                script: ".\\venv\\Scripts\\uv run --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}"
+                                                                            )
+                                                                        } catch (Exception e) {
+                                                                            if (attempt < MAX_RETRIES) {
+                                                                                sleep(5)
+                                                                            }
+                                                                            throw e
+                                                                        }
                                                                     }
                                                                 }
                                                             }
